@@ -1,4 +1,4 @@
-package sources
+package readers
 
 import (
 	"fmt"
@@ -7,19 +7,21 @@ import (
 	"time"
 
 	"github.com/tyba/opensource-search/sources/social/http"
+	"github.com/tyba/opensource-search/types/social"
+	"github.com/tyba/opensource-search/types/social/linkedin"
 
 	"github.com/PuerkitoBio/goquery"
 )
 
-type LinkedIn struct {
+type LinkedInReader struct {
 	client *http.Client
 }
 
-func NewLinkedIn(client *http.Client) *LinkedIn {
-	return &LinkedIn{client}
+func NewLinkedInReader(client *http.Client) *LinkedInReader {
+	return &LinkedInReader{client}
 }
 
-func (l *LinkedIn) GetProfileByURL(url string) (*LinkedInProfile, error) {
+func (l *LinkedInReader) GetProfileByURL(url string) (*social.LinkedInProfile, error) {
 	req, err := http.NewRequest(url)
 	if err != nil {
 		return nil, err
@@ -34,95 +36,22 @@ func (l *LinkedIn) GetProfileByURL(url string) (*LinkedInProfile, error) {
 		return nil, fmt.Errorf("Non-200 error code: %d", res.StatusCode)
 	}
 
-	return NewLinkedInProfile(url, doc), nil
+	p := &social.LinkedInProfile{URL: url, Created: time.Now()}
+	l.fillConnections(p, doc)
+	l.fillBasicInfo(p, doc)
+	l.fillExperience(p, doc)
+	l.fillLanguages(p, doc)
+	l.fillSkills(p, doc)
+	l.fillEducation(p, doc)
+	l.fillPatents(p, doc)
+	l.fillProjects(p, doc)
+	l.fillPublications(p, doc)
+	l.fillAlsoViewed(p, doc)
+
+	return p, nil
 }
 
-type LinkedInProfile struct {
-	Created      time.Time
-	URL          string
-	Connections  int
-	FullName     string
-	Title        string
-	Locality     string
-	Industry     string
-	Websites     map[string]string
-	Current      map[string]string
-	Previous     map[string]string
-	Summary      string
-	Experience   []experience
-	Languages    map[string]string
-	Skills       []string
-	Education    []education
-	Patents      []patent
-	Projects     []project
-	Publications []publication
-	Related      []person
-}
-
-type experience struct {
-	Title     string
-	Company   string
-	Link      string
-	StartDate time.Time
-	EndDate   time.Time
-	Locality  string
-	Summary   string
-}
-
-type education struct {
-	Summary string
-	Degree  string
-	Major   string
-	Extra   string
-	Date    string
-}
-
-type patent struct {
-	Title   string
-	Date    string
-	Id      string
-	Summary string
-	Persons []person
-}
-
-type project struct {
-	Title   string
-	Link    string
-	Date    string
-	Summary string
-	Persons []person
-}
-
-type publication struct {
-	Title   string
-	Link    string
-	Date    string
-	Summary string
-	Persons []person
-}
-
-type person struct {
-	Name string
-	Link string
-}
-
-func NewLinkedInProfile(url string, doc *goquery.Document) *LinkedInProfile {
-	p := &LinkedInProfile{URL: url, Created: time.Now()}
-	fillConnections(p, doc)
-	fillBasicInfo(p, doc)
-	fillExperience(p, doc)
-	fillLanguages(p, doc)
-	fillSkills(p, doc)
-	fillEducation(p, doc)
-	fillPatents(p, doc)
-	fillProjects(p, doc)
-	fillPublications(p, doc)
-	fillAlsoViewed(p, doc)
-
-	return p
-}
-
-func fillConnections(p *LinkedInProfile, doc *goquery.Document) {
+func (l *LinkedInReader) fillConnections(p *social.LinkedInProfile, doc *goquery.Document) {
 	c := doc.Find(".profile-overview .member-connections strong").Text()
 	if c == "500+" {
 		p.Connections = 500
@@ -131,7 +60,7 @@ func fillConnections(p *LinkedInProfile, doc *goquery.Document) {
 	}
 }
 
-func fillBasicInfo(p *LinkedInProfile, doc *goquery.Document) {
+func (l *LinkedInReader) fillBasicInfo(p *social.LinkedInProfile, doc *goquery.Document) {
 	p.FullName = doc.Find(".full-name").Text()
 	p.Title = doc.Find(".title").Text()
 	p.Industry = doc.Find("#location .industry").Text()
@@ -140,7 +69,7 @@ func fillBasicInfo(p *LinkedInProfile, doc *goquery.Document) {
 	p.Websites = make(map[string]string, 0)
 	doc.Find("#overview-summary-websites").Find("li").Each(func(i int, s *goquery.Selection) {
 		href, _ := s.Find("a").Attr("href")
-		url, _ := getURLFromRedirect(href)
+		url, _ := l.getURLFromRedirect(href)
 
 		p.Websites[s.Text()] = url
 	})
@@ -162,10 +91,10 @@ func fillBasicInfo(p *LinkedInProfile, doc *goquery.Document) {
 	p.Summary = doc.Find("#summary-item").Text()
 }
 
-func fillExperience(p *LinkedInProfile, doc *goquery.Document) {
-	p.Experience = make([]experience, 0)
+func (l *LinkedInReader) fillExperience(p *social.LinkedInProfile, doc *goquery.Document) {
+	p.Experience = make([]linkedin.Experience, 0)
 	doc.Find("#background-experience").Find(".section-item").Each(func(i int, s *goquery.Selection) {
-		e := experience{}
+		e := linkedin.Experience{}
 		e.Title = s.Find("h4").Text()
 		e.Company = s.Find("h5").Text()
 		e.Link, _ = s.Find("h5").Find("a").Attr("href")
@@ -173,7 +102,7 @@ func fillExperience(p *LinkedInProfile, doc *goquery.Document) {
 		e.Summary = s.Find(".description").Text()
 
 		s.Find("time").Each(func(i int, s *goquery.Selection) {
-			date, _ := getTimeFromString(s.Text())
+			date, _ := l.getTimeFromString(s.Text())
 			if i == 0 {
 				e.StartDate = date
 			} else {
@@ -185,7 +114,7 @@ func fillExperience(p *LinkedInProfile, doc *goquery.Document) {
 	})
 }
 
-func fillLanguages(p *LinkedInProfile, doc *goquery.Document) {
+func (l *LinkedInReader) fillLanguages(p *social.LinkedInProfile, doc *goquery.Document) {
 	p.Languages = make(map[string]string, 0)
 	doc.Find("#languages").Find(".section-item").Each(func(i int, s *goquery.Selection) {
 		language := s.Find("h4").Text()
@@ -195,7 +124,7 @@ func fillLanguages(p *LinkedInProfile, doc *goquery.Document) {
 	})
 }
 
-func fillSkills(p *LinkedInProfile, doc *goquery.Document) {
+func (l *LinkedInReader) fillSkills(p *social.LinkedInProfile, doc *goquery.Document) {
 	p.Skills = make([]string, 0)
 	doc.Find(".endorse-item ").Each(func(i int, s *goquery.Selection) {
 		if _, ok := s.Attr("id"); !ok {
@@ -204,10 +133,10 @@ func fillSkills(p *LinkedInProfile, doc *goquery.Document) {
 	})
 }
 
-func fillEducation(p *LinkedInProfile, doc *goquery.Document) {
-	p.Education = make([]education, 0)
+func (l *LinkedInReader) fillEducation(p *social.LinkedInProfile, doc *goquery.Document) {
+	p.Education = make([]linkedin.Education, 0)
 	doc.Find("#background-education").Find(".section-item").Each(func(i int, s *goquery.Selection) {
-		e := education{}
+		e := linkedin.Education{}
 		e.Summary = s.Find("h4").Text()
 		e.Degree = s.Find(".degree").Text()
 		e.Major = s.Find(".major").Text()
@@ -218,58 +147,58 @@ func fillEducation(p *LinkedInProfile, doc *goquery.Document) {
 	})
 }
 
-func fillPatents(p *LinkedInProfile, doc *goquery.Document) {
-	p.Patents = make([]patent, 0)
+func (l *LinkedInReader) fillPatents(p *social.LinkedInProfile, doc *goquery.Document) {
+	p.Patents = make([]linkedin.Patent, 0)
 	doc.Find("#background-patents").Find(".section-item").Each(func(i int, s *goquery.Selection) {
-		pa := patent{}
+		pa := linkedin.Patent{}
 		pa.Title = s.Find("h4 span:first-of-type").Text()
 		pa.Id = s.Find("h5").Text()
 		pa.Date = s.Find(".patents-date").Text()
 		pa.Summary = s.Find(".description").Text()
-		pa.Persons = getPersons(s.Find(".associated-endorsements"))
+		pa.Persons = l.getPersons(s.Find(".associated-endorsements"))
 
 		p.Patents = append(p.Patents, pa)
 	})
 }
 
-func fillProjects(p *LinkedInProfile, doc *goquery.Document) {
-	p.Projects = make([]project, 0)
+func (l *LinkedInReader) fillProjects(p *social.LinkedInProfile, doc *goquery.Document) {
+	p.Projects = make([]linkedin.Project, 0)
 	doc.Find("#background-projects").Find(".section-item").Each(func(i int, s *goquery.Selection) {
-		pr := project{}
+		pr := linkedin.Project{}
 		pr.Title = s.Find("h4 span:first-of-type").Text()
 		href, _ := s.Find("h4").Find("a").Attr("href")
-		pr.Link, _ = getURLFromRedirect(href)
+		pr.Link, _ = l.getURLFromRedirect(href)
 		pr.Date = s.Find("time").Text()
 		pr.Summary = s.Find(".description").Text()
-		pr.Persons = getPersons(s.Find(".associated-endorsements"))
+		pr.Persons = l.getPersons(s.Find(".associated-endorsements"))
 
 		p.Projects = append(p.Projects, pr)
 	})
 }
 
-func fillPublications(p *LinkedInProfile, doc *goquery.Document) {
-	p.Publications = make([]publication, 0)
+func (l *LinkedInReader) fillPublications(p *social.LinkedInProfile, doc *goquery.Document) {
+	p.Publications = make([]linkedin.Publication, 0)
 	doc.Find("#background-publications").Find(".section-item").Each(func(i int, s *goquery.Selection) {
-		pu := publication{}
+		pu := linkedin.Publication{}
 		pu.Title = s.Find("h4").Text()
 		href, _ := s.Find("h4").Find("a").Attr("href")
-		pu.Link, _ = getURLFromRedirect(href)
+		pu.Link, _ = l.getURLFromRedirect(href)
 		pu.Date = s.Find(".publication-date").Text()
 		pu.Summary = s.Find(".description").Text()
-		pu.Persons = getPersons(s.Find(".associated-endorsements"))
+		pu.Persons = l.getPersons(s.Find(".associated-endorsements"))
 
 		p.Publications = append(p.Publications, pu)
 	})
 }
 
-func fillAlsoViewed(p *LinkedInProfile, doc *goquery.Document) {
-	p.Related = getPersons(doc.Find(".insights-browse-map"))
+func (l *LinkedInReader) fillAlsoViewed(p *social.LinkedInProfile, doc *goquery.Document) {
+	p.Related = l.getPersons(doc.Find(".insights-browse-map"))
 }
 
-func getPersons(s *goquery.Selection) []person {
-	result := make([]person, 0)
+func (l *LinkedInReader) getPersons(s *goquery.Selection) []linkedin.Person {
+	result := make([]linkedin.Person, 0)
 	s.Find("a").Each(func(i int, s *goquery.Selection) {
-		pe := person{}
+		pe := linkedin.Person{}
 		pe.Name = s.Text()
 		if pe.Name == "" {
 			return
@@ -283,12 +212,12 @@ func getPersons(s *goquery.Selection) []person {
 	return result
 }
 
-func getTimeFromString(date string) (time.Time, error) {
+func (l *LinkedInReader) getTimeFromString(date string) (time.Time, error) {
 	const longForm = "January 2006"
 	return time.Parse(longForm, date)
 }
 
-func getURLFromRedirect(href string) (string, error) {
+func (l *LinkedInReader) getURLFromRedirect(href string) (string, error) {
 	u, err := url.Parse(href)
 	if err != nil {
 		return "", err

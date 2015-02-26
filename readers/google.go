@@ -1,4 +1,4 @@
-package sources
+package readers
 
 import (
 	"fmt"
@@ -12,15 +12,15 @@ import (
 
 const googleSearch = "http://www.google.com/search?hl=en&q=%s&ie=UTF-8&btnG=Google+Search&inurl=https"
 
-type GoogleSearch struct {
+type GoogleSearchReader struct {
 	client *http.Client
 }
 
-func NewGoogleSearch(client *http.Client) *GoogleSearch {
-	return &GoogleSearch{client}
+func NewGoogleSearchReader(client *http.Client) *GoogleSearchReader {
+	return &GoogleSearchReader{client}
 }
 
-func (g *GoogleSearch) SearchByQuery(query string) (*GoogleSearchResult, error) {
+func (g *GoogleSearchReader) SearchByQuery(query string) (*GoogleSearchResult, error) {
 	query = strings.Replace(query, " ", "+", -1)
 	req, err := http.NewRequest(fmt.Sprintf(googleSearch, query))
 	if err != nil {

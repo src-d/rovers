@@ -1,4 +1,4 @@
-package sources
+package readers
 
 import (
 	"github.com/tyba/opensource-search/sources/social/http"
@@ -7,7 +7,7 @@ import (
 )
 
 func (s *SourcesSuite) TestTwitter_GetProfileByHandle(c *C) {
-	a := NewTwitter(http.NewClient(true))
+	a := NewTwitterReader(http.NewClient(true))
 	g, err := a.GetProfileByURL("https://twitter.com/mcuadros_")
 	c.Assert(err, IsNil)
 	c.Assert(g.Url, Equals, "https://twitter.com/mcuadros_")

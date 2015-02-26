@@ -1,4 +1,4 @@
-package sources
+package readers
 
 import (
 	"github.com/tyba/opensource-search/sources/social/http"
@@ -8,15 +8,15 @@ import (
 
 var savannahList = "http://savannah.gnu.org/search/?type_of_search=soft&words=%2A&offset=0&max_rows=25000"
 
-type Savannah struct {
+type SavannahReader struct {
 	client *http.Client
 }
 
-func NewSavannah(client *http.Client) *Savannah {
-	return &Savannah{client}
+func NewSavannahReader(client *http.Client) *SavannahReader {
+	return &SavannahReader{client}
 }
 
-func (s *Savannah) GetRepositories() (*SavannahResult, error) {
+func (s *SavannahReader) GetRepositories() (*SavannahResult, error) {
 	req, err := http.NewRequest(savannahList)
 	if err != nil {
 		return nil, err

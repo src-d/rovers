@@ -1,4 +1,4 @@
-package sources
+package readers
 
 import (
 	chttp "net/http"
@@ -9,15 +9,15 @@ import (
 
 var bitbucketURL = "https://api.bitbucket.org/2.0/repositories"
 
-type Bitbucket struct {
+type BitbucketReader struct {
 	client *http.Client
 }
 
-func NewBitbucket(client *http.Client) *Bitbucket {
-	return &Bitbucket{client}
+func NewBitbucketReader(client *http.Client) *BitbucketReader {
+	return &BitbucketReader{client}
 }
 
-func (a *Bitbucket) GetRepositories(q url.Values) (*BitbucketPagedResult, error) {
+func (a *BitbucketReader) GetRepositories(q url.Values) (*BitbucketPagedResult, error) {
 	r := &BitbucketPagedResult{}
 
 	_, err := a.doRequest(q, r)
@@ -28,7 +28,7 @@ func (a *Bitbucket) GetRepositories(q url.Values) (*BitbucketPagedResult, error)
 	return r, nil
 }
 
-func (a *Bitbucket) buildURL(q url.Values) *url.URL {
+func (a *BitbucketReader) buildURL(q url.Values) *url.URL {
 	url, _ := url.Parse(bitbucketURL)
 	if q.Get("page") != "" {
 		url.RawQuery = q.Encode()
@@ -37,7 +37,7 @@ func (a *Bitbucket) buildURL(q url.Values) *url.URL {
 	return url
 }
 
-func (a *Bitbucket) doRequest(q url.Values, result interface{}) (*chttp.Response, error) {
+func (a *BitbucketReader) doRequest(q url.Values, result interface{}) (*chttp.Response, error) {
 	req, err := http.NewRequest(a.buildURL(q).String())
 	if err != nil {
 		return nil, err

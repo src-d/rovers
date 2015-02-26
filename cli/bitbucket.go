@@ -5,7 +5,7 @@ import (
 	"net/url"
 
 	"github.com/tyba/opensource-search/sources/social/http"
-	"github.com/tyba/opensource-search/sources/social/sources"
+	"github.com/tyba/opensource-search/sources/social/readers"
 
 	"gopkg.in/mgo.v2"
 )
@@ -14,14 +14,14 @@ type Bitbucket struct {
 	MongoDBHost string `short:"m" long:"mongo" default:"localhost" description:"mongodb hostname"`
 	MaxThreads  int    `short:"t" long:"threads" default:"4" description:"number of t"`
 
-	bitbucket *sources.Bitbucket
+	bitbucket *readers.BitbucketReader
 	storage   *mgo.Collection
 }
 
 func (b *Bitbucket) Execute(args []string) error {
 	session, _ := mgo.Dial("mongodb://" + b.MongoDBHost)
 
-	b.bitbucket = sources.NewBitbucket(http.NewClient(true))
+	b.bitbucket = readers.NewBitbucketReader(http.NewClient(true))
 	b.storage = session.DB("bitbucket").C("repositories")
 
 	r, err := b.bitbucket.GetRepositories(url.Values{})
@@ -41,7 +41,7 @@ func (b *Bitbucket) Execute(args []string) error {
 	return nil
 }
 
-func (b *Bitbucket) saveBitbucketPagedResult(res *sources.BitbucketPagedResult) error {
+func (b *Bitbucket) saveBitbucketPagedResult(res *readers.BitbucketPagedResult) error {
 	fmt.Printf("Retrieved: %d repositorie(s)\nNext: %s\n", len(res.Values), res.Next)
 
 	for _, r := range res.Values {

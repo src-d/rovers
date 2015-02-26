@@ -4,7 +4,8 @@ import (
 	"fmt"
 
 	"github.com/tyba/opensource-search/sources/social/http"
-	"github.com/tyba/opensource-search/sources/social/sources"
+	"github.com/tyba/opensource-search/sources/social/readers"
+	"github.com/tyba/opensource-search/types/social"
 
 	"labix.org/v2/mgo"
 	"labix.org/v2/mgo/bson"
@@ -13,7 +14,7 @@ import (
 type Twitter struct {
 	MongoDBHost string `short:"m" long:"mongo" default:"localhost" description:"mongodb hostname"`
 
-	twitter *sources.Twitter
+	twitter *readers.TwitterReader
 	augur   *mgo.Collection
 	storage *mgo.Collection
 }
@@ -21,7 +22,7 @@ type Twitter struct {
 func (t *Twitter) Execute(args []string) error {
 	session, _ := mgo.Dial("mongodb://" + t.MongoDBHost)
 
-	t.twitter = sources.NewTwitter(http.NewCachedClient(session))
+	t.twitter = readers.NewTwitterReader(http.NewCachedClient(session))
 	t.storage = session.DB("social").C("twitter")
 	t.augur = session.DB("social").C("augur")
 
@@ -99,6 +100,6 @@ func (t *Twitter) done(url string, status int) {
 	}
 }
 
-func (t *Twitter) saveTwitterProfile(p *sources.TwitterProfile) error {
+func (t *Twitter) saveTwitterProfile(p *social.TwitterProfile) error {
 	return t.storage.Insert(p)
 }

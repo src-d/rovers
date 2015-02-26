@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/tyba/opensource-search/sources/social/http"
-	"github.com/tyba/opensource-search/sources/social/sources"
+	"github.com/tyba/opensource-search/sources/social/readers"
 
 	"labix.org/v2/mgo"
 	"labix.org/v2/mgo/bson"
@@ -18,7 +18,7 @@ type Augur struct {
 	MongoDBHost string `short:"m" long:"mongo" default:"localhost" description:"mongodb hostname"`
 	MaxThreads  int    `short:"t" long:"threads" default:"4" description:"number of t"`
 
-	augur        *sources.Augur
+	augur        *readers.AugurReader
 	collection   *mgo.Collection
 	storage      *mgo.Collection
 	emailChannel emailChannel
@@ -36,7 +36,7 @@ type emailChannel chan *email
 func (a *Augur) Execute(args []string) error {
 	session, _ := mgo.Dial("mongodb://" + a.MongoDBHost)
 
-	a.augur = sources.NewAugur(http.NewClient(false))
+	a.augur = readers.NewAugurReader(http.NewClient(false))
 	a.collection = session.DB("social").C("emails")
 	a.storage = session.DB("social").C("augur")
 	a.emailChannel = make(emailChannel, a.MaxThreads)
@@ -137,6 +137,6 @@ func (a *Augur) setStatus(e *email, status int) error {
 	return a.collection.Update(q, s)
 }
 
-func (a *Augur) saveAugurInsights(i *sources.AugurInsights) error {
+func (a *Augur) saveAugurInsights(i *readers.AugurInsights) error {
 	return a.storage.Insert(i)
 }

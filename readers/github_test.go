@@ -1,4 +1,4 @@
-package sources
+package readers
 
 import (
 	"github.com/tyba/opensource-search/sources/social/http"
@@ -7,7 +7,7 @@ import (
 )
 
 func (s *SourcesSuite) TestGithub_SearchByEmail(c *C) {
-	a := NewGithub(http.NewClient(true))
+	a := NewGithubReader(http.NewClient(true))
 	g, err := a.GetProfileByURL("https://github.com/mcuadros")
 	c.Assert(err, IsNil)
 	c.Assert(g.Username, Equals, "mcuadros")

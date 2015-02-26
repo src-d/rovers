@@ -7,7 +7,8 @@ import (
 	"strings"
 
 	"github.com/tyba/opensource-search/sources/social/http"
-	"github.com/tyba/opensource-search/sources/social/sources"
+	"github.com/tyba/opensource-search/sources/social/readers"
+	"github.com/tyba/opensource-search/types/social"
 
 	"gopkgs.com/unidecode.v1"
 )
@@ -41,9 +42,9 @@ func NewCrawler() *Crawler {
 	return &Crawler{http.NewClient(true)}
 }
 
-func (c *Crawler) SearchLinkedIn(fullname string, tags ...string) (*sources.LinkedInProfile, error) {
+func (c *Crawler) SearchLinkedIn(fullname string, tags ...string) (*social.LinkedInProfile, error) {
 	q := fmt.Sprintf(linkedInSearch, fullname, strings.Join(tags, " "))
-	r, err := sources.NewGoogleSearch(c.client).SearchByQuery(q)
+	r, err := readers.NewGoogleSearchReader(c.client).SearchByQuery(q)
 	if err != nil {
 		return nil, err
 	}
@@ -53,10 +54,10 @@ func (c *Crawler) SearchLinkedIn(fullname string, tags ...string) (*sources.Link
 		return nil, nil
 	}
 
-	return sources.NewLinkedIn(c.client).GetProfileByURL(url)
+	return readers.NewLinkedInReader(c.client).GetProfileByURL(url)
 }
 
-func (c *Crawler) findLinkedInBestMatchURL(fullname string, search *sources.GoogleSearchResult) string {
+func (c *Crawler) findLinkedInBestMatchURL(fullname string, search *readers.GoogleSearchResult) string {
 	n := c.normalize(fullname)
 	for _, r := range search.FindByHost("linkedin.com") {
 		l := strings.Split(r.Name, "|")
@@ -70,9 +71,9 @@ func (c *Crawler) findLinkedInBestMatchURL(fullname string, search *sources.Goog
 	return ""
 }
 
-func (c *Crawler) SearchGithub(fullname string, tags ...string) (*sources.GithubProfile, error) {
+func (c *Crawler) SearchGithub(fullname string, tags ...string) (*social.GithubProfile, error) {
 	q := fmt.Sprintf(githubSearch, fullname, strings.Join(tags, " "))
-	r, err := sources.NewGoogleSearch(c.client).SearchByQuery(q)
+	r, err := readers.NewGoogleSearchReader(c.client).SearchByQuery(q)
 	if err != nil {
 		return nil, err
 	}
@@ -82,7 +83,7 @@ func (c *Crawler) SearchGithub(fullname string, tags ...string) (*sources.Github
 		return nil, nil
 	}
 
-	return sources.NewGithub(c.client).GetProfileByURL(urls[0].Link)
+	return readers.NewGithubReader(c.client).GetProfileByURL(urls[0].Link)
 }
 
 func (c *Crawler) normalize(name string) string {

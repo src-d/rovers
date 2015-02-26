@@ -5,7 +5,8 @@ import (
 	"strings"
 
 	"github.com/tyba/opensource-search/sources/social/http"
-	"github.com/tyba/opensource-search/sources/social/sources"
+	"github.com/tyba/opensource-search/sources/social/readers"
+	"github.com/tyba/opensource-search/types/social"
 
 	"labix.org/v2/mgo"
 	"labix.org/v2/mgo/bson"
@@ -14,7 +15,7 @@ import (
 type Github struct {
 	MongoDBHost string `short:"m" long:"mongo" default:"localhost" description:"mongodb hostname"`
 
-	github  *sources.Github
+	github  *readers.GithubReader
 	augur   *mgo.Collection
 	storage *mgo.Collection
 }
@@ -26,7 +27,7 @@ type githubUrlData struct {
 func (l *Github) Execute(args []string) error {
 	session, _ := mgo.Dial("mongodb://" + l.MongoDBHost)
 
-	l.github = sources.NewGithub(http.NewCachedClient(session))
+	l.github = readers.NewGithubReader(http.NewCachedClient(session))
 	l.storage = session.DB("social").C("github")
 	l.augur = session.DB("social").C("github_url")
 
@@ -99,6 +100,6 @@ func (l *Github) done(url string, status int) {
 	}
 }
 
-func (l *Github) saveGithubProfile(p *sources.GithubProfile) error {
+func (l *Github) saveGithubProfile(p *social.GithubProfile) error {
 	return l.storage.Insert(p)
 }

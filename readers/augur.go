@@ -1,4 +1,4 @@
-package sources
+package readers
 
 import (
 	"errors"
@@ -16,15 +16,15 @@ var (
 var augurInsightsURL = "https://api.augur.io/v2/user"
 var augurKey = "2bwn2e88g9dbva8pjolgxeid0nz9m4ne"
 
-type Augur struct {
+type AugurReader struct {
 	client *http.Client
 }
 
-func NewAugur(client *http.Client) *Augur {
-	return &Augur{client}
+func NewAugurReader(client *http.Client) *AugurReader {
+	return &AugurReader{client}
 }
 
-func (a *Augur) SearchByEmail(email string) (*AugurInsights, *chttp.Response, error) {
+func (a *AugurReader) SearchByEmail(email string) (*AugurInsights, *chttp.Response, error) {
 	q := &url.Values{}
 	q.Add("email", email)
 
@@ -38,7 +38,7 @@ func (a *Augur) SearchByEmail(email string) (*AugurInsights, *chttp.Response, er
 	return r, res, nil
 }
 
-func (a *Augur) buildURL(q *url.Values) *url.URL {
+func (a *AugurReader) buildURL(q *url.Values) *url.URL {
 	q.Add("key", augurKey)
 
 	url, _ := url.Parse(augurInsightsURL)
@@ -47,7 +47,7 @@ func (a *Augur) buildURL(q *url.Values) *url.URL {
 	return url
 }
 
-func (a *Augur) doRequest(q *url.Values, result interface{}) (*chttp.Response, error) {
+func (a *AugurReader) doRequest(q *url.Values, result interface{}) (*chttp.Response, error) {
 	req, err := http.NewRequest(a.buildURL(q).String())
 	if err != nil {
 		return nil, err

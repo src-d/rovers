@@ -4,7 +4,8 @@ import (
 	"fmt"
 
 	"github.com/tyba/opensource-search/sources/social/http"
-	"github.com/tyba/opensource-search/sources/social/sources"
+	"github.com/tyba/opensource-search/sources/social/readers"
+	"github.com/tyba/opensource-search/types/social"
 
 	"labix.org/v2/mgo"
 	"labix.org/v2/mgo/bson"
@@ -13,7 +14,7 @@ import (
 type LinkedIn struct {
 	MongoDBHost string `short:"m" long:"mongo" default:"localhost" description:"mongodb hostname"`
 
-	linkedin *sources.LinkedIn
+	linkedin *readers.LinkedInReader
 	augur    *mgo.Collection
 	storage  *mgo.Collection
 }
@@ -29,7 +30,7 @@ type augurData struct {
 func (l *LinkedIn) Execute(args []string) error {
 	session, _ := mgo.Dial("mongodb://" + l.MongoDBHost)
 
-	l.linkedin = sources.NewLinkedIn(http.NewCachedClient(session))
+	l.linkedin = readers.NewLinkedInReader(http.NewCachedClient(session))
 	l.storage = session.DB("social").C("linkedin")
 	l.augur = session.DB("social").C("augur")
 
@@ -107,6 +108,6 @@ func (l *LinkedIn) done(url string, status int) {
 	}
 }
 
-func (l *LinkedIn) saveLinkedInProfile(p *sources.LinkedInProfile) error {
+func (l *LinkedIn) saveLinkedInProfile(p *social.LinkedInProfile) error {
 	return l.storage.Insert(p)
 }

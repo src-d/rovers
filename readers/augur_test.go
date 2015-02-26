@@ -1,4 +1,4 @@
-package sources
+package readers
 
 import (
 	"testing"
@@ -15,8 +15,8 @@ type SourcesSuite struct{}
 
 var _ = Suite(&SourcesSuite{})
 
-func (s *SourcesSuite) TestAugur_SearchByEmail(c *C) {
-	a := NewAugur(http.NewClient(true))
+func (s *SourcesSuite) TestAugurReader_SearchByEmail(c *C) {
+	a := NewAugurReader(http.NewClient(true))
 	r, res, err := a.SearchByEmail("nawar.alsafar126@gmail.com")
 
 	c.Assert(err, IsNil)
@@ -24,8 +24,8 @@ func (s *SourcesSuite) TestAugur_SearchByEmail(c *C) {
 	c.Assert(r.Status, Equals, 200)
 }
 
-func (s *SourcesSuite) TestAugur_SearchByEmailBadRequest(c *C) {
-	a := NewAugur(http.NewClient(true))
+func (s *SourcesSuite) TestAugurReader_SearchByEmailBadRequest(c *C) {
+	a := NewAugurReader(http.NewClient(true))
 	r, res, err := a.SearchByEmail("foo")
 
 	c.Assert(r, IsNil)
