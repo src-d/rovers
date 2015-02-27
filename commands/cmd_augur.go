@@ -1,4 +1,4 @@
-package cli
+package commands
 
 import (
 	"fmt"
@@ -12,7 +12,7 @@ import (
 	"labix.org/v2/mgo/bson"
 )
 
-type Augur struct {
+type CmdAugur struct {
 	FilterBy    int    `short:"f" long:"filter" description:"filter by status"`
 	SortBy      string `short:"s" long:"sort" default:"email" description:"order by"`
 	MongoDBHost string `short:"m" long:"mongo" default:"localhost" description:"mongodb hostname"`
@@ -33,7 +33,7 @@ type email struct {
 
 type emailChannel chan *email
 
-func (a *Augur) Execute(args []string) error {
+func (a *CmdAugur) Execute(args []string) error {
 	session, _ := mgo.Dial("mongodb://" + a.MongoDBHost)
 
 	a.augur = readers.NewAugurReader(http.NewClient(false))
@@ -47,7 +47,7 @@ func (a *Augur) Execute(args []string) error {
 	return nil
 }
 
-func (a *Augur) queue() {
+func (a *CmdAugur) queue() {
 	pending := a.get()
 	defer pending.Close()
 
@@ -63,7 +63,7 @@ func (a *Augur) queue() {
 	close(a.emailChannel)
 }
 
-func (a *Augur) get() *mgo.Iter {
+func (a *CmdAugur) get() *mgo.Iter {
 	q := bson.M{
 		"status": bson.M{
 			"$exists": 0,
@@ -77,7 +77,7 @@ func (a *Augur) get() *mgo.Iter {
 	return a.collection.Find(q).Sort(a.SortBy).Iter()
 }
 
-func (a *Augur) process() {
+func (a *CmdAugur) process() {
 	for i := 0; i < a.MaxThreads; i++ {
 		a.Add(1)
 		go func(i int) {
@@ -93,7 +93,7 @@ func (a *Augur) process() {
 	a.Wait()
 }
 
-func (a *Augur) readFromChannel(i int) bool {
+func (a *CmdAugur) readFromChannel(i int) bool {
 	a.Lock()
 	email, ok := <-a.emailChannel
 	a.Unlock()
@@ -107,7 +107,7 @@ func (a *Augur) readFromChannel(i int) bool {
 	return ok
 }
 
-func (a *Augur) processEmail(e *email) error {
+func (a *CmdAugur) processEmail(e *email) error {
 	r, res, err := a.augur.SearchByEmail(e.Email)
 	if err != nil && res == nil {
 		return err
@@ -123,7 +123,7 @@ func (a *Augur) processEmail(e *email) error {
 	return err
 }
 
-func (a *Augur) setStatus(e *email, status int) error {
+func (a *CmdAugur) setStatus(e *email, status int) error {
 	q := bson.M{"_id": e.Email}
 	s := bson.M{
 		"$set": bson.M{
@@ -137,6 +137,6 @@ func (a *Augur) setStatus(e *email, status int) error {
 	return a.collection.Update(q, s)
 }
 
-func (a *Augur) saveAugurInsights(i *readers.AugurInsights) error {
+func (a *CmdAugur) saveAugurInsights(i *readers.AugurInsights) error {
 	return a.storage.Insert(i)
 }

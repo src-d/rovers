@@ -1,4 +1,4 @@
-package cli
+package commands
 
 import (
 	"fmt"
@@ -12,7 +12,7 @@ import (
 	"labix.org/v2/mgo/bson"
 )
 
-type Github struct {
+type CmdGithub struct {
 	MongoDBHost string `short:"m" long:"mongo" default:"localhost" description:"mongodb hostname"`
 
 	github  *readers.GithubReader
@@ -24,7 +24,7 @@ type githubUrlData struct {
 	Url string
 }
 
-func (l *Github) Execute(args []string) error {
+func (l *CmdGithub) Execute(args []string) error {
 	session, _ := mgo.Dial("mongodb://" + l.MongoDBHost)
 
 	l.github = readers.NewGithubReader(http.NewCachedClient(session))
@@ -44,7 +44,7 @@ func (l *Github) Execute(args []string) error {
 	return nil
 }
 
-func (l *Github) get() *mgo.Iter {
+func (l *CmdGithub) get() *mgo.Iter {
 	q := bson.M{
 		"done": bson.M{
 			"$exists": 1,
@@ -54,7 +54,7 @@ func (l *Github) get() *mgo.Iter {
 	return l.augur.Find(q).Skip(300000).Iter()
 }
 
-func (l *Github) processData(d *githubUrlData) {
+func (l *CmdGithub) processData(d *githubUrlData) {
 	url := strings.Replace(d.Url, "https:", "http:", 1)
 	if l.has(url) {
 		fmt.Printf("SKIP: %q\n", url)
@@ -76,7 +76,7 @@ func (l *Github) processData(d *githubUrlData) {
 	return
 }
 
-func (l *Github) has(url string) bool {
+func (l *CmdGithub) has(url string) bool {
 	q := bson.M{"url": url}
 
 	if c, _ := l.storage.Find(q).Count(); c == 0 {
@@ -86,7 +86,7 @@ func (l *Github) has(url string) bool {
 	return true
 }
 
-func (l *Github) done(url string, status int) {
+func (l *CmdGithub) done(url string, status int) {
 	q := bson.M{"url": url}
 	s := bson.M{
 		"$set": bson.M{
@@ -100,6 +100,6 @@ func (l *Github) done(url string, status int) {
 	}
 }
 
-func (l *Github) saveGithubProfile(p *social.GithubProfile) error {
+func (l *CmdGithub) saveGithubProfile(p *social.GithubProfile) error {
 	return l.storage.Insert(p)
 }

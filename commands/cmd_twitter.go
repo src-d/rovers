@@ -1,4 +1,4 @@
-package cli
+package commands
 
 import (
 	"fmt"
@@ -11,7 +11,7 @@ import (
 	"labix.org/v2/mgo/bson"
 )
 
-type Twitter struct {
+type CmdTwitter struct {
 	MongoDBHost string `short:"m" long:"mongo" default:"localhost" description:"mongodb hostname"`
 
 	twitter *readers.TwitterReader
@@ -19,7 +19,7 @@ type Twitter struct {
 	storage *mgo.Collection
 }
 
-func (t *Twitter) Execute(args []string) error {
+func (t *CmdTwitter) Execute(args []string) error {
 	session, _ := mgo.Dial("mongodb://" + t.MongoDBHost)
 
 	t.twitter = readers.NewTwitterReader(http.NewCachedClient(session))
@@ -39,7 +39,7 @@ func (t *Twitter) Execute(args []string) error {
 	return nil
 }
 
-func (t *Twitter) get() *mgo.Iter {
+func (t *CmdTwitter) get() *mgo.Iter {
 	q := bson.M{
 		"profiles.twitter_url": bson.M{
 			"$exists": 1,
@@ -52,7 +52,7 @@ func (t *Twitter) get() *mgo.Iter {
 	return t.augur.Find(q).Sort("-_id").Iter()
 }
 
-func (t *Twitter) processData(d *augurData) {
+func (t *CmdTwitter) processData(d *augurData) {
 	url := d.Profiles.TwitterURL
 	if t.has(url) {
 		fmt.Printf("SKIP: %q\n", url)
@@ -76,7 +76,7 @@ func (t *Twitter) processData(d *augurData) {
 	return
 }
 
-func (t *Twitter) has(url string) bool {
+func (t *CmdTwitter) has(url string) bool {
 	q := bson.M{"url": url}
 
 	if c, _ := t.storage.Find(q).Count(); c == 0 {
@@ -86,7 +86,7 @@ func (t *Twitter) has(url string) bool {
 	return true
 }
 
-func (t *Twitter) done(url string, status int) {
+func (t *CmdTwitter) done(url string, status int) {
 	q := bson.M{"profiles.twitter_url": url}
 	s := bson.M{
 		"$set": bson.M{
@@ -100,6 +100,6 @@ func (t *Twitter) done(url string, status int) {
 	}
 }
 
-func (t *Twitter) saveTwitterProfile(p *social.TwitterProfile) error {
+func (t *CmdTwitter) saveTwitterProfile(p *social.TwitterProfile) error {
 	return t.storage.Insert(p)
 }

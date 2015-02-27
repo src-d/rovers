@@ -1,4 +1,4 @@
-package cli
+package commands
 
 import (
 	"fmt"
@@ -10,7 +10,7 @@ import (
 	"gopkg.in/mgo.v2"
 )
 
-type Bitbucket struct {
+type CmdBitbucket struct {
 	MongoDBHost string `short:"m" long:"mongo" default:"localhost" description:"mongodb hostname"`
 	MaxThreads  int    `short:"t" long:"threads" default:"4" description:"number of t"`
 
@@ -18,7 +18,7 @@ type Bitbucket struct {
 	storage   *mgo.Collection
 }
 
-func (b *Bitbucket) Execute(args []string) error {
+func (b *CmdBitbucket) Execute(args []string) error {
 	session, _ := mgo.Dial("mongodb://" + b.MongoDBHost)
 
 	b.bitbucket = readers.NewBitbucketReader(http.NewClient(true))
@@ -41,7 +41,7 @@ func (b *Bitbucket) Execute(args []string) error {
 	return nil
 }
 
-func (b *Bitbucket) saveBitbucketPagedResult(res *readers.BitbucketPagedResult) error {
+func (b *CmdBitbucket) saveBitbucketPagedResult(res *readers.BitbucketPagedResult) error {
 	fmt.Printf("Retrieved: %d repositorie(s)\nNext: %s\n", len(res.Values), res.Next)
 
 	for _, r := range res.Values {

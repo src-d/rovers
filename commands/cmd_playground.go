@@ -1,4 +1,4 @@
-package cli
+package commands
 
 import (
 	"encoding/json"
@@ -13,12 +13,12 @@ import (
 	"gopkgs.com/unidecode.v1"
 )
 
-type Playground struct {
+type CmdPlayground struct {
 	FullName string `short:"f" long:"fullname" description:"fullname"`
 	Tags     string `short:"t" long:"tags" description:"tags"`
 }
 
-func (t *Playground) Execute(args []string) error {
+func (t *CmdPlayground) Execute(args []string) error {
 	c := NewCrawler()
 	g, _ := c.SearchLinkedIn(t.FullName, strings.Split(t.Tags, " ")...)
 

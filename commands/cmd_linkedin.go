@@ -1,4 +1,4 @@
-package cli
+package commands
 
 import (
 	"fmt"
@@ -11,7 +11,7 @@ import (
 	"labix.org/v2/mgo/bson"
 )
 
-type LinkedIn struct {
+type CmdLinkedIn struct {
 	MongoDBHost string `short:"m" long:"mongo" default:"localhost" description:"mongodb hostname"`
 
 	linkedin *readers.LinkedInReader
@@ -27,7 +27,7 @@ type augurData struct {
 	}
 }
 
-func (l *LinkedIn) Execute(args []string) error {
+func (l *CmdLinkedIn) Execute(args []string) error {
 	session, _ := mgo.Dial("mongodb://" + l.MongoDBHost)
 
 	l.linkedin = readers.NewLinkedInReader(http.NewCachedClient(session))
@@ -47,7 +47,7 @@ func (l *LinkedIn) Execute(args []string) error {
 	return nil
 }
 
-func (l *LinkedIn) get() *mgo.Iter {
+func (l *CmdLinkedIn) get() *mgo.Iter {
 	q := bson.M{
 		"profiles.linkedin_url": bson.M{
 			"$exists": 1,
@@ -60,7 +60,7 @@ func (l *LinkedIn) get() *mgo.Iter {
 	return l.augur.Find(q).Sort("-_id").Iter()
 }
 
-func (l *LinkedIn) processData(d *augurData) {
+func (l *CmdLinkedIn) processData(d *augurData) {
 	url := d.Profiles.LinkedInURL
 	if l.has(url) {
 		fmt.Printf("SKIP: %q\n", url)
@@ -84,7 +84,7 @@ func (l *LinkedIn) processData(d *augurData) {
 	return
 }
 
-func (l *LinkedIn) has(url string) bool {
+func (l *CmdLinkedIn) has(url string) bool {
 	q := bson.M{"url": url}
 
 	if c, _ := l.storage.Find(q).Count(); c == 0 {
@@ -94,7 +94,7 @@ func (l *LinkedIn) has(url string) bool {
 	return true
 }
 
-func (l *LinkedIn) done(url string, status int) {
+func (l *CmdLinkedIn) done(url string, status int) {
 	q := bson.M{"profiles.linkedin_url": url}
 	s := bson.M{
 		"$set": bson.M{
@@ -108,6 +108,6 @@ func (l *LinkedIn) done(url string, status int) {
 	}
 }
 
-func (l *LinkedIn) saveLinkedInProfile(p *social.LinkedInProfile) error {
+func (l *CmdLinkedIn) saveLinkedInProfile(p *social.LinkedInProfile) error {
 	return l.storage.Insert(p)
 }
