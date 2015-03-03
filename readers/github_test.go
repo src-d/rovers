@@ -14,7 +14,7 @@ func (s *SourcesSuite) TestGithub_SearchByEmail(c *C) {
 	c.Assert(g.FullName, Equals, "Máximo Cuadros")
 	c.Assert(g.Location, Equals, "Madrid, Spain")
 	c.Assert(g.Email, Equals, "mcuadros@gmail.com")
-	c.Assert(g.Description, Equals, "mcuadros has 64 repositories written in PHP, Go, and Shell. Follow their code on GitHub.")
+	c.Assert(g.Description, Equals, "mcuadros has 67 repositories written in PHP, Go, and Shell. Follow their code on GitHub.")
 	c.Assert(g.JoinDate.Unix(), Equals, int64(1332676111))
 	c.Assert(g.Organizations, HasLen, 4)
 	c.Assert(g.Organizations[0], Equals, "/sourcegraph")
