@@ -12,7 +12,7 @@ import (
 	"github.com/gregjones/httpcache"
 	"github.com/mcuadros/go-mgo-cache"
 	"golang.org/x/net/html"
-	"labix.org/v2/mgo"
+	"gopkg.in/mgo.v2"
 )
 
 type Client struct {
