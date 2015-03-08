@@ -11,7 +11,6 @@ import (
 
 type CmdGithubApi struct {
 	MongoDBHost string `short:"m" long:"mongo" default:"localhost" description:"mongodb hostname"`
-	Since       int    `short:"" long:"since" default:"0" description:"since"`
 
 	github  *readers.GithubAPIReader
 	storage *mgo.Collection
@@ -23,7 +22,7 @@ func (l *CmdGithubApi) Execute(args []string) error {
 	l.github = readers.NewGithubAPIReader(nil)
 	l.storage = session.DB("social").C("github_repositories")
 
-	since := l.Since
+	since := l.getSince()
 	for {
 		fmt.Printf("Requesting since %d ...", since)
 		repos, resp, err := l.github.GetAllRepositories(since)
@@ -40,6 +39,13 @@ func (l *CmdGithubApi) Execute(args []string) error {
 	}
 
 	return nil
+}
+
+func (l *CmdGithubApi) getSince() int {
+	var r github.Repository
+	l.storage.Find(nil).Sort("-id").One(&r)
+
+	return *r.ID
 }
 
 func (l *CmdGithubApi) save(repos []github.Repository) {
