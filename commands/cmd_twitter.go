@@ -23,8 +23,8 @@ func (t *CmdTwitter) Execute(args []string) error {
 	session, _ := mgo.Dial("mongodb://" + t.MongoDBHost)
 
 	t.twitter = readers.NewTwitterReader(http.NewCachedClient(session))
-	t.storage = session.DB("social").C("twitter")
-	t.augur = session.DB("social").C("augur")
+	t.storage = session.DB("sources").C("twitter")
+	t.augur = session.DB("sources").C("augur")
 
 	pending := t.get()
 	for {

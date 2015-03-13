@@ -22,7 +22,7 @@ func (b *CmdBitbucket) Execute(args []string) error {
 	session, _ := mgo.Dial("mongodb://" + b.MongoDBHost)
 
 	b.bitbucket = readers.NewBitbucketReader(http.NewClient(true))
-	b.storage = session.DB("bitbucket").C("repositories")
+	b.storage = session.DB("sources").C("bitbucket_repositories")
 
 	r, err := b.bitbucket.GetRepositories(url.Values{})
 	if err != nil {

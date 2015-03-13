@@ -31,8 +31,8 @@ func (l *CmdLinkedIn) Execute(args []string) error {
 	session, _ := mgo.Dial("mongodb://" + l.MongoDBHost)
 
 	l.linkedin = readers.NewLinkedInReader(http.NewCachedClient(session))
-	l.storage = session.DB("social").C("linkedin")
-	l.augur = session.DB("social").C("augur")
+	l.storage = session.DB("sources").C("linkedin")
+	l.augur = session.DB("sources").C("augur")
 
 	pending := l.get()
 	for {

@@ -37,8 +37,8 @@ func (a *CmdAugur) Execute(args []string) error {
 	session, _ := mgo.Dial("mongodb://" + a.MongoDBHost)
 
 	a.augur = readers.NewAugurReader(http.NewClient(false))
-	a.collection = session.DB("social").C("emails")
-	a.storage = session.DB("social").C("augur")
+	a.collection = session.DB("sources").C("emails")
+	a.storage = session.DB("sources").C("augur")
 	a.emailChannel = make(emailChannel, a.MaxThreads)
 
 	go a.queue()

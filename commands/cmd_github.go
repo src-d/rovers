@@ -28,8 +28,8 @@ func (l *CmdGithub) Execute(args []string) error {
 	session, _ := mgo.Dial("mongodb://" + l.MongoDBHost)
 
 	l.github = readers.NewGithubReader(http.NewCachedClient(session))
-	l.storage = session.DB("social").C("github")
-	l.augur = session.DB("social").C("github_url")
+	l.storage = session.DB("sources").C("github")
+	l.augur = session.DB("sources").C("github_url")
 
 	pending := l.get()
 	for {
