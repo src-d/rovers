@@ -4,8 +4,8 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/tyba/opensource-search/domain/models/social"
 	"github.com/tyba/opensource-search/sources/social/http"
-	"github.com/tyba/opensource-search/types/social"
 
 	"github.com/PuerkitoBio/goquery"
 )

@@ -6,9 +6,9 @@ import (
 	"time"
 
 	"github.com/PuerkitoBio/goquery"
+	"github.com/tyba/opensource-search/domain/models/social"
+	"github.com/tyba/opensource-search/domain/models/social/github"
 	"github.com/tyba/opensource-search/sources/social/http"
-	"github.com/tyba/opensource-search/types/social"
-	"github.com/tyba/opensource-search/types/social/github"
 )
 
 type GithubReader struct {

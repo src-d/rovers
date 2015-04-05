@@ -3,9 +3,9 @@ package commands
 import (
 	"fmt"
 
+	"github.com/tyba/opensource-search/domain/models/social"
 	"github.com/tyba/opensource-search/sources/social/http"
 	"github.com/tyba/opensource-search/sources/social/readers"
-	"github.com/tyba/opensource-search/types/social"
 
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"

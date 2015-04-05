@@ -6,9 +6,9 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/tyba/opensource-search/domain/models/social"
+	"github.com/tyba/opensource-search/domain/models/social/linkedin"
 	"github.com/tyba/opensource-search/sources/social/http"
-	"github.com/tyba/opensource-search/types/social"
-	"github.com/tyba/opensource-search/types/social/linkedin"
 
 	"github.com/PuerkitoBio/goquery"
 )
