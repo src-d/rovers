@@ -10,7 +10,7 @@ import (
 	"github.com/tyba/opensource-search/sources/social/http"
 	"github.com/tyba/opensource-search/sources/social/readers"
 
-	"github.com/rainycape/unidecode"
+	//"github.com/rainycape/unidecode"
 )
 
 type CmdPlayground struct {
@@ -87,8 +87,8 @@ func (c *Crawler) SearchGithub(fullname string, tags ...string) (*social.GithubP
 }
 
 func (c *Crawler) normalize(name string) string {
-	u := unidecode.Unidecode(name)
-	u = strings.ToLower(u)
+	//u := unidecode.Unidecode(name)
+	u := strings.ToLower(u)
 	u = justCharsRegexp.ReplaceAllString(u, "")
 	u = smallWordsRegexp.ReplaceAllString(u, "")
 
