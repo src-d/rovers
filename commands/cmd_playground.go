@@ -10,7 +10,7 @@ import (
 	"github.com/tyba/opensource-search/sources/social/http"
 	"github.com/tyba/opensource-search/sources/social/readers"
 
-	"gopkgs.com/unidecode.v1"
+	"github.com/rainycape/unidecode"
 )
 
 type CmdPlayground struct {
