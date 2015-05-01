@@ -2,6 +2,7 @@ package readers
 
 import (
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/tyba/opensource-search/domain/models/social"
@@ -41,7 +42,7 @@ func (g *TwitterReader) GetProfileByURL(url string) (*social.TwitterProfile, err
 func (g *TwitterReader) fillBasicInfo(doc *goquery.Document, p *social.TwitterProfile) {
 	p.Handle = doc.Find(".ProfileHeaderCard-screenname span").Text()
 	p.FullName = doc.Find(".ProfileHeaderCard-name a").Text()
-	p.Location = doc.Find(".ProfileHeaderCard-locationText").Text()
+	p.Location = strings.Trim(doc.Find(".ProfileHeaderCard-locationText").Text(), "\n\r\t ")
 	p.Bio = doc.Find(".ProfileHeaderCard-bio").Text()
 	p.Web, _ = doc.Find(".ProfileHeaderCard-url a").Attr("title")
 }
