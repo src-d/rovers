@@ -88,7 +88,7 @@ func (c *Crawler) SearchGithub(fullname string, tags ...string) (*social.GithubP
 
 func (c *Crawler) normalize(name string) string {
 	//u := unidecode.Unidecode(name)
-	u := strings.ToLower(u)
+	u := strings.ToLower(name)
 	u = justCharsRegexp.ReplaceAllString(u, "")
 	u = smallWordsRegexp.ReplaceAllString(u, "")
 
