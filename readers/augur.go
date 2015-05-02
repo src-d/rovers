@@ -5,7 +5,7 @@ import (
 	chttp "net/http"
 	"net/url"
 
-	"github.com/tyba/opensource-search/sources/social/http"
+	"github.com/tyba/oss/sources/social/http"
 )
 
 var (

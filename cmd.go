@@ -4,7 +4,7 @@ import (
 	"os"
 
 	"github.com/jessevdk/go-flags"
-	"github.com/tyba/opensource-search/sources/social/commands"
+	"github.com/tyba/oss/sources/social/commands"
 )
 
 func main() {

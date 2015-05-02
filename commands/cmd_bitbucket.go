@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"net/url"
 
-	"github.com/tyba/opensource-search/sources/social/http"
-	"github.com/tyba/opensource-search/sources/social/readers"
+	"github.com/tyba/oss/sources/social/http"
+	"github.com/tyba/oss/sources/social/readers"
 
 	"gopkg.in/mgo.v2"
 )

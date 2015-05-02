@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/mcuadros/go-github/github"
-	"github.com/tyba/opensource-search/sources/social/readers"
+	"github.com/tyba/oss/sources/social/readers"
 
 	"gopkg.in/mgo.v2"
 )

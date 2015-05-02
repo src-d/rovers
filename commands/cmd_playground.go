@@ -6,9 +6,9 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/tyba/opensource-search/domain/models/social"
-	"github.com/tyba/opensource-search/sources/social/http"
-	"github.com/tyba/opensource-search/sources/social/readers"
+	"github.com/tyba/oss/domain/models/social"
+	"github.com/tyba/oss/sources/social/http"
+	"github.com/tyba/oss/sources/social/readers"
 
 	//"github.com/rainycape/unidecode"
 )
