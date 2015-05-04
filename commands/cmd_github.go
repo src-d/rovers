@@ -47,11 +47,11 @@ func (l *CmdGithub) Execute(args []string) error {
 func (l *CmdGithub) get() *mgo.Iter {
 	q := bson.M{
 		"done": bson.M{
-			"$exists": 1,
+			"$exists": 0,
 		},
 	}
 
-	return l.augur.Find(q).Skip(300000).Iter()
+	return l.augur.Find(q).Iter()
 }
 
 func (l *CmdGithub) processData(d *githubUrlData) {
@@ -69,7 +69,11 @@ func (l *CmdGithub) processData(d *githubUrlData) {
 		return
 	}
 
-	l.saveGithubProfile(p)
+	if err := l.saveGithubProfile(p); err != nil {
+		fmt.Printf("ERROR saving: %q, %s\n", url, err)
+		return
+	}
+
 	fmt.Printf("DONE: %s\n", p.Description)
 	l.done(url, 200)
 
@@ -101,5 +105,6 @@ func (l *CmdGithub) done(url string, status int) {
 }
 
 func (l *CmdGithub) saveGithubProfile(p *social.GithubProfile) error {
+	p.SetId(bson.NewObjectId())
 	return l.storage.Insert(p)
 }

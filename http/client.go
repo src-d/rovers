@@ -5,10 +5,8 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
-	"strings"
 
 	"github.com/PuerkitoBio/goquery"
-	iconv "github.com/djimenez/iconv-go"
 	"github.com/gregjones/httpcache"
 	"github.com/mcuadros/go-mgo-cache"
 	"golang.org/x/net/html"
@@ -93,14 +91,6 @@ func (c *Client) buildDocument(res *http.Response) (*goquery.Document, error) {
 
 	var reader io.Reader
 	reader = body
-
-	ct := strings.Split(res.Header.Get("Content-Type"), "=")
-	if len(ct) == 2 && ct[1] != "UTF-8" {
-		reader, err = iconv.NewReader(reader, ct[1], "utf-8")
-		if err != nil {
-			return nil, err
-		}
-	}
 
 	root, err := html.Parse(reader)
 	if err != nil {

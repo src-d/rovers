@@ -31,6 +31,12 @@ func (g *GithubReader) GetProfileByURL(url string) (*social.GithubProfile, error
 	}
 
 	p := &social.GithubProfile{Url: url, Created: time.Now()}
+	g.fillOrganizationInfo(doc, p)
+	if p.Organization == true {
+		g.fillMembers(doc, p)
+		return p, nil
+	}
+
 	g.fillBasicInfo(doc, p)
 	g.fillOrganizations(doc, p)
 	g.fillRepositories(doc, p)
@@ -38,6 +44,28 @@ func (g *GithubReader) GetProfileByURL(url string) (*social.GithubProfile, error
 	g.fillStats(doc, p)
 
 	return p, nil
+}
+
+func (g *GithubReader) fillOrganizationInfo(doc *goquery.Document, p *social.GithubProfile) {
+	p.FullName = doc.Find(".org-name span").Text()
+	p.Username, _ = doc.Find(".js-username").Attr("data-name")
+	p.Location = doc.Find("[itemprop='location']").Text()
+	p.Email = doc.Find("[itemprop='email']").Text()
+	p.Web = doc.Find("[itemprop='url']").Text()
+
+	if p.FullName != "" {
+		p.Organization = true
+	}
+}
+
+func (g *GithubReader) fillMembers(doc *goquery.Document, p *social.GithubProfile) {
+	p.Members = make([]string, 0)
+	doc.Find(".member-avatar-group .avatar").Each(func(i int, s *goquery.Selection) {
+		username, _ := s.Attr("alt")
+		if len(username) != 0 && username[0] == '@' {
+			p.Members = append(p.Members, username[1:])
+		}
+	})
 }
 
 func (g *GithubReader) fillBasicInfo(doc *goquery.Document, p *social.GithubProfile) {

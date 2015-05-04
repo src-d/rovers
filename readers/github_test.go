@@ -6,22 +6,37 @@ import (
 	. "gopkg.in/check.v1"
 )
 
-func (s *SourcesSuite) TestGithub_SearchByEmail(c *C) {
-	//TODO: search a non-changing profile
-	return
+func (s *SourcesSuite) TestGithub_GetProfileByURLCompany(c *C) {
+	a := NewGithubReader(http.NewClient(true))
+	g, err := a.GetProfileByURL("https://github.com/tyba")
+	c.Assert(err, IsNil)
+	c.Assert(g.Organization, Equals, true)
+	c.Assert(g.Username, Equals, "tyba")
+	c.Assert(g.FullName, Equals, "Tyba")
+	c.Assert(g.Location, Equals, "Madrid, Spain")
+	c.Assert(g.Email, Equals, "hello@tyba.com")
+	c.Assert(g.Url, Equals, "https://github.com/tyba")
+	c.Assert(g.Members, DeepEquals, []string{"mcuadros", "tcard"})
+}
 
+func (s *SourcesSuite) TestGithub_SearchByEmail(c *C) {
 	a := NewGithubReader(http.NewClient(true))
 	g, err := a.GetProfileByURL("https://github.com/mcuadros")
 	c.Assert(err, IsNil)
+	c.Assert(g.Organization, Equals, false)
 	c.Assert(g.Username, Equals, "mcuadros")
 	c.Assert(g.FullName, Equals, "Máximo Cuadros")
 	c.Assert(g.Location, Equals, "Madrid, Spain")
 	c.Assert(g.Email, Equals, "mcuadros@gmail.com")
-	c.Assert(g.Description, Equals, "mcuadros has 73 repositories written in PHP, Go, and Shell. Follow their code on GitHub.")
+	c.Assert(g.Description, Not(Equals), "")
 	c.Assert(g.JoinDate.Unix(), Equals, int64(1332676111))
 	c.Assert(g.Organizations, HasLen, 4)
 	c.Assert(g.Organizations[0], Equals, "/sourcegraph")
 	c.Assert(g.Repositories, HasLen, 5)
+
+	return
+
+	//Change a lot so is hard to test
 	c.Assert(g.Repositories[0].Name, Equals, "dockership")
 	c.Assert(g.Repositories[0].Url, Equals, "/mcuadros/dockership")
 	c.Assert(g.Repositories[0].Owner, Equals, "mcuadros")
