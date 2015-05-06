@@ -3,6 +3,7 @@ package commands
 import (
 	"fmt"
 	"strings"
+	"sync"
 
 	"github.com/tyba/oss/domain/models/social"
 	"github.com/tyba/oss/sources/social/http"
@@ -14,10 +15,15 @@ import (
 
 type CmdGithub struct {
 	MongoDBHost string `short:"m" long:"mongo" default:"localhost" description:"mongodb hostname"`
+	MaxThreads  int    `short:"t" long:"threads" default:"4" description:"number of t"`
 
 	github  *readers.GithubReader
 	augur   *mgo.Collection
 	storage *mgo.Collection
+
+	c chan *githubUrlData
+	sync.WaitGroup
+	sync.Mutex
 }
 
 type githubUrlData struct {
@@ -25,23 +31,34 @@ type githubUrlData struct {
 }
 
 func (l *CmdGithub) Execute(args []string) error {
+	l.c = make(chan *githubUrlData, l.MaxThreads)
+
 	session, _ := mgo.Dial("mongodb://" + l.MongoDBHost)
 
 	l.github = readers.NewGithubReader(http.NewCachedClient(session))
 	l.storage = session.DB("sources").C("github")
 	l.augur = session.DB("sources").C("github_url")
 
+	go l.queue()
+	l.process()
+
+	return nil
+}
+
+func (l *CmdGithub) queue() {
 	pending := l.get()
+	defer pending.Close()
+
 	for {
 		result := &githubUrlData{}
 		if !pending.Next(result) {
 			break
 		}
 
-		l.processData(result)
+		l.c <- result
 	}
 
-	return nil
+	close(l.c)
 }
 
 func (l *CmdGithub) get() *mgo.Iter {
@@ -51,7 +68,24 @@ func (l *CmdGithub) get() *mgo.Iter {
 		},
 	}
 
-	return l.augur.Find(q).Iter()
+	return l.augur.Find(q).Skip(100000).Iter()
+}
+
+func (l *CmdGithub) process() {
+	for i := 0; i < l.MaxThreads; i++ {
+		l.Add(1)
+		go func() {
+			defer l.Done()
+			for {
+				l.Lock()
+				url, _ := <-l.c
+				l.Unlock()
+				l.processData(url)
+			}
+		}()
+	}
+
+	l.Wait()
 }
 
 func (l *CmdGithub) processData(d *githubUrlData) {
@@ -74,7 +108,7 @@ func (l *CmdGithub) processData(d *githubUrlData) {
 		return
 	}
 
-	fmt.Printf("DONE: %s\n", p.Description)
+	fmt.Printf("DONE: Organization: %b Username: %s\n", p.Organization, p.Username)
 	l.done(url, 200)
 
 	return
