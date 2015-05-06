@@ -25,9 +25,13 @@ func (g *GithubReader) GetProfileByURL(url string) (*social.GithubProfile, error
 		return nil, err
 	}
 
-	doc, _, err := g.client.DoHTML(req)
+	doc, res, err := g.client.DoHTML(req)
 	if err != nil {
 		return nil, err
+	}
+
+	if res.StatusCode == 404 {
+		return nil, http.NotFound
 	}
 
 	p := &social.GithubProfile{Url: url, Created: time.Now()}

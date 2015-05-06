@@ -6,6 +6,12 @@ import (
 	. "gopkg.in/check.v1"
 )
 
+func (s *SourcesSuite) TestGithub_GetProfileByURL404(c *C) {
+	a := NewGithubReader(http.NewClient(true))
+	_, err := a.GetProfileByURL("https://github.com/foobarqux")
+	c.Assert(err, Equals, http.NotFound)
+}
+
 func (s *SourcesSuite) TestGithub_GetProfileByURLCompany(c *C) {
 	a := NewGithubReader(http.NewClient(true))
 	g, err := a.GetProfileByURL("https://github.com/tyba")

@@ -3,6 +3,7 @@ package http
 import (
 	"compress/gzip"
 	"encoding/json"
+	"errors"
 	"io"
 	"net/http"
 
@@ -12,6 +13,8 @@ import (
 	"golang.org/x/net/html"
 	"gopkg.in/mgo.v2"
 )
+
+var NotFound = errors.New("Document not found")
 
 type Client struct {
 	http.Client

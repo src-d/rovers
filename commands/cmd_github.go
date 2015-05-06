@@ -98,8 +98,13 @@ func (l *CmdGithub) processData(d *githubUrlData) {
 
 	p, err := l.github.GetProfileByURL(url)
 	if err != nil {
+		if err == http.NotFound {
+			l.done(url, 404)
+		} else {
+			l.done(url, 500)
+		}
+
 		fmt.Printf("ERROR: %q, %s\n", url, err)
-		l.done(url, 500)
 		return
 	}
 
