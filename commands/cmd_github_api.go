@@ -20,7 +20,7 @@ func (l *CmdGithubApi) Execute(args []string) error {
 	session, _ := mgo.Dial("mongodb://" + l.MongoDBHost)
 
 	l.github = readers.NewGithubAPIReader(nil)
-	l.storage = session.DB("sources").C("github_repositories")
+	l.storage = session.DB("github").C("repositories")
 
 	since := l.getSince()
 	for {
