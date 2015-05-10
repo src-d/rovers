@@ -55,6 +55,11 @@ func (l *CmdGithub) queue() {
 			break
 		}
 
+		if pending.Err() != nil {
+			fmt.Println(pending.Err())
+			break
+		}
+
 		l.c <- result
 	}
 
@@ -68,7 +73,7 @@ func (l *CmdGithub) get() *mgo.Iter {
 		},
 	}
 
-	return l.augur.Find(q).Skip(100000).Iter()
+	return l.augur.Find(q).Iter()
 }
 
 func (l *CmdGithub) process() {
@@ -89,6 +94,11 @@ func (l *CmdGithub) process() {
 }
 
 func (l *CmdGithub) processData(d *githubUrlData) {
+	if d == nil {
+		fmt.Println("Empty")
+		return
+	}
+
 	url := strings.Replace(d.Url, "https:", "http:", 1)
 	if l.has(url) {
 		fmt.Printf("SKIP: %q\n", url)
