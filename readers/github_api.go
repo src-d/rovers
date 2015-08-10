@@ -45,3 +45,26 @@ func (g *GithubAPIReader) GetAllRepositories(since int) ([]api.Repository, *api.
 
 	return repos, resp, nil
 }
+
+func (g *GithubAPIReader) GetAllUsers(since int) ([]api.User, *api.Response, error) {
+	start := time.Now()
+	defer func() {
+		needsWait := MinRequestDuration - time.Now().Sub(start)
+		if needsWait > 0 {
+			fmt.Println("waiting ", needsWait)
+			time.Sleep(needsWait)
+		}
+	}()
+
+	o := &api.UserListOptions{Since: since}
+	users, resp, err := g.client.Users.ListAll(o)
+	if err != nil {
+		return nil, resp, err
+	}
+
+	if resp.Remaining < 100 {
+		fmt.Println("low remaining", resp.Remaining)
+	}
+
+	return users, resp, nil
+}
