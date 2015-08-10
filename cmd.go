@@ -10,7 +10,6 @@ import (
 func main() {
 	parser := flags.NewNamedParser("crawler", flags.Default)
 	parser.AddCommand("augur", "Augur retriever", "", &commands.CmdAugur{})
-	parser.AddCommand("linkedin", "LinkedIn crawler", "", &commands.CmdLinkedIn{})
 	parser.AddCommand("github", "Github crawler", "", &commands.CmdGithub{})
 	parser.AddCommand("github-api", "Github API crawler", "", &commands.CmdGithubApi{})
 	parser.AddCommand("twitter", "Twitter crawler", "", &commands.CmdTwitter{})

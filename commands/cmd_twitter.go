@@ -11,6 +11,14 @@ import (
 	"gopkg.in/mgo.v2/bson"
 )
 
+type augurData struct {
+	Profiles struct {
+		LinkedInURL string `bson:"linkedin_url"`
+		GithubURL   string `bson:"github_url"`
+		TwitterURL  string `bson:"twitter_url"`
+	}
+}
+
 type CmdTwitter struct {
 	MongoDBHost string `short:"m" long:"mongo" default:"localhost" description:"mongodb hostname"`
 
