@@ -3,9 +3,9 @@ package commands
 import (
 	"fmt"
 
-	"github.com/mcuadros/go-github/github"
-	"github.com/tyba/oss/sources/social/readers"
+	"github.com/tyba/srcd-rovers/readers"
 
+	"github.com/mcuadros/go-github/github"
 	"gopkg.in/mgo.v2"
 )
 

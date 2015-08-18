@@ -5,10 +5,11 @@ import (
 	"strings"
 	"time"
 
+	"github.com/tyba/srcd-domain/models/social"
+	"github.com/tyba/srcd-domain/models/social/github"
+	"github.com/tyba/srcd-rovers/http"
+
 	"github.com/PuerkitoBio/goquery"
-	"github.com/tyba/oss/domain/models/social"
-	"github.com/tyba/oss/domain/models/social/github"
-	"github.com/tyba/oss/sources/social/http"
 )
 
 type GithubReader struct {

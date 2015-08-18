@@ -4,7 +4,7 @@ import (
 	chttp "net/http"
 	"net/url"
 
-	"github.com/tyba/oss/sources/social/http"
+	"github.com/tyba/srcd-rovers/http"
 )
 
 var bitbucketURL = "https://api.bitbucket.org/2.0/repositories"

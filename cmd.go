@@ -3,8 +3,9 @@ package main
 import (
 	"os"
 
+	"github.com/tyba/srcd-rovers/commands"
+
 	"github.com/jessevdk/go-flags"
-	"github.com/tyba/oss/sources/social/commands"
 )
 
 func main() {

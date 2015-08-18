@@ -1,7 +1,7 @@
 package readers
 
 import (
-	"github.com/tyba/oss/sources/social/http"
+	"github.com/tyba/srcd-rovers/http"
 
 	. "gopkg.in/check.v1"
 )

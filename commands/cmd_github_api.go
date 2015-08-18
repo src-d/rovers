@@ -3,8 +3,9 @@ package commands
 import (
 	"fmt"
 
+	"github.com/tyba/srcd-rovers/readers"
+
 	"github.com/mcuadros/go-github/github"
-	"github.com/tyba/oss/sources/social/readers"
 
 	"gopkg.in/mgo.v2"
 )

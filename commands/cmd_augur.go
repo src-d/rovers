@@ -5,8 +5,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/tyba/oss/sources/social/http"
-	"github.com/tyba/oss/sources/social/readers"
+	"github.com/tyba/srcd-rovers/http"
+	"github.com/tyba/srcd-rovers/readers"
 
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"

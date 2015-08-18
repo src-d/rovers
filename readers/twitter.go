@@ -5,8 +5,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/tyba/oss/domain/models/social"
-	"github.com/tyba/oss/sources/social/http"
+	"github.com/tyba/srcd-domain/models/social"
+	"github.com/tyba/srcd-rovers/http"
 
 	"github.com/PuerkitoBio/goquery"
 )

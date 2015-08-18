@@ -4,9 +4,10 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/tyba/srcd-rovers/http"
+
 	"code.google.com/p/goauth2/oauth"
 	api "github.com/mcuadros/go-github/github"
-	"github.com/tyba/oss/sources/social/http"
 )
 
 var MinRequestDuration = time.Hour / 5000
