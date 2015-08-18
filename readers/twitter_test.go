@@ -13,7 +13,7 @@ func (s *SourcesSuite) TestTwitter_GetProfileByHandle(c *C) {
 	c.Assert(g.Url, Equals, "https://twitter.com/mcuadros_")
 	c.Assert(g.Handle, Equals, "mcuadros_")
 	c.Assert(g.FullName, Equals, "Máximo Cuadros")
-	c.Assert(g.Bio, Equals, "PHP. What else? Hmm maybe Go!")
+	c.Assert(g.Bio, Equals, "(╯°□°）╯︵ ┻━┻")
 	c.Assert(g.Location, Equals, "Madrid, Spain")
 	c.Assert(g.Web, Equals, "http://github.com/mcuadros")
 

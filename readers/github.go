@@ -52,12 +52,14 @@ func (g *GithubReader) GetProfileByURL(url string) (*social.GithubProfile, error
 }
 
 func (g *GithubReader) fillOrganizationInfo(doc *goquery.Document, p *social.GithubProfile) {
+	urlParts := strings.Split(p.Url, "/")
+	if len(urlParts) >= 4 {
+		p.Username = urlParts[3]
+	}
 	p.FullName = doc.Find(".org-name span").Text()
-	p.Username, _ = doc.Find(".js-username").Attr("data-name")
 	p.Location = doc.Find("[itemprop='location']").Text()
 	p.Email = doc.Find("[itemprop='email']").Text()
 	p.Web = doc.Find("[itemprop='url']").Text()
-
 	if p.FullName != "" {
 		p.Organization = true
 	}

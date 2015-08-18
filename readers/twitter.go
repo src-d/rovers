@@ -21,25 +21,25 @@ func NewTwitterReader(client *http.Client) *TwitterReader {
 	return &TwitterReader{client}
 }
 
-func (g *TwitterReader) GetProfileByURL(url string) (*social.TwitterProfile, error) {
+func (t *TwitterReader) GetProfileByURL(url string) (*social.TwitterProfile, error) {
 	req, err := http.NewRequest(url)
 	if err != nil {
 		return nil, err
 	}
 
-	doc, _, err := g.client.DoHTML(req)
+	doc, _, err := t.client.DoHTML(req)
 	if err != nil {
 		return nil, err
 	}
 
 	p := &social.TwitterProfile{Url: url, Created: time.Now()}
-	g.fillBasicInfo(doc, p)
-	g.fillStats(doc, p)
+	t.fillBasicInfo(doc, p)
+	t.fillStats(doc, p)
 
 	return p, nil
 }
 
-func (g *TwitterReader) fillBasicInfo(doc *goquery.Document, p *social.TwitterProfile) {
+func (t *TwitterReader) fillBasicInfo(doc *goquery.Document, p *social.TwitterProfile) {
 	p.Handle = doc.Find(".ProfileHeaderCard-screenname span").Text()
 	p.FullName = doc.Find(".ProfileHeaderCard-name a").Text()
 	p.Location = strings.Trim(doc.Find(".ProfileHeaderCard-locationText").Text(), "\n\r\t ")
@@ -47,7 +47,7 @@ func (g *TwitterReader) fillBasicInfo(doc *goquery.Document, p *social.TwitterPr
 	p.Web, _ = doc.Find(".ProfileHeaderCard-url a").Attr("title")
 }
 
-func (g *TwitterReader) fillStats(doc *goquery.Document, p *social.TwitterProfile) {
+func (t *TwitterReader) fillStats(doc *goquery.Document, p *social.TwitterProfile) {
 	tweets := doc.Find("[data-nav='tweets'] .ProfileNav-value").Text()
 	if value, err := strconv.Atoi(tweets); err == nil {
 		p.Tweets = value

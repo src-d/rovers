@@ -8,13 +8,13 @@ import (
 	. "gopkg.in/check.v1"
 )
 
-func (s *SourcesSuite) TestGithub_GetProfileByURL404(c *C) {
+func (s *SourcesSuite) TestGithub_GetProfileByURL_404(c *C) {
 	a := NewGithubReader(http.NewClient(true))
 	_, err := a.GetProfileByURL("https://github.com/foobarqux")
 	c.Assert(err, Equals, http.NotFound)
 }
 
-func (s *SourcesSuite) TestGithub_GetProfileByURLCompany(c *C) {
+func (s *SourcesSuite) TestGithub_GetProfileByURL_Company(c *C) {
 	a := NewGithubReader(http.NewClient(true))
 	g, err := a.GetProfileByURL("https://github.com/tyba")
 	c.Assert(err, IsNil)
@@ -24,7 +24,9 @@ func (s *SourcesSuite) TestGithub_GetProfileByURLCompany(c *C) {
 	c.Assert(g.Location, Equals, "Madrid, Spain")
 	c.Assert(g.Email, Equals, "hello@tyba.com")
 	c.Assert(g.Url, Equals, "https://github.com/tyba")
-	c.Assert(g.Members, DeepEquals, []string{"mcuadros", "tcard"})
+	members := []string{"dripolles", "eiso", "mcuadros", "tcard", "toqueteos"}
+	sort.Strings(members)
+	c.Assert(g.Members, DeepEquals, members)
 }
 
 func (s *SourcesSuite) TestGithub_SearchByEmail(c *C) {
