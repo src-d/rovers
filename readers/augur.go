@@ -13,8 +13,10 @@ var (
 	ErrPartialResponse      = errors.New("received partial data")
 )
 
-var augurInsightsURL = "https://api.augur.io/v2/user"
-var augurKey = "2bwn2e88g9dbva8pjolgxeid0nz9m4ne"
+const (
+	augurInsightsURL = "https://api.augur.io/v2/insights"
+	augurKey         = "2bwn2e88g9dbva8pjolgxeid0nz9m4ne"
+)
 
 type AugurReader struct {
 	client *http.Client
