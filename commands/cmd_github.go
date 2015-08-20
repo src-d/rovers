@@ -6,7 +6,7 @@ import (
 	"sync"
 
 	"github.com/tyba/srcd-domain/models/social"
-	"github.com/tyba/srcd-rovers/http"
+	"github.com/tyba/srcd-rovers/client"
 	"github.com/tyba/srcd-rovers/readers"
 
 	"gopkg.in/mgo.v2"
@@ -17,7 +17,7 @@ type CmdGithub struct {
 	MongoDBHost string `short:"m" long:"mongo" default:"localhost" description:"mongodb hostname"`
 	MaxThreads  int    `short:"t" long:"threads" default:"4" description:"number of t"`
 
-	github  *readers.GithubReader
+	github  *readers.GithubWebCrawler
 	augur   *mgo.Collection
 	storage *mgo.Collection
 
@@ -35,7 +35,7 @@ func (l *CmdGithub) Execute(args []string) error {
 
 	session, _ := mgo.Dial("mongodb://" + l.MongoDBHost)
 
-	l.github = readers.NewGithubReader(http.NewCachedClient(session))
+	l.github = readers.NewGithubWebCrawler(client.NewCachedClient(session))
 	l.storage = session.DB("github").C("profiles")
 	l.augur = session.DB("github").C("urls")
 
@@ -82,9 +82,7 @@ func (l *CmdGithub) process() {
 		go func() {
 			defer l.Done()
 			for {
-				l.Lock()
 				url, _ := <-l.c
-				l.Unlock()
 				l.processData(url)
 			}
 		}()
@@ -108,7 +106,7 @@ func (l *CmdGithub) processData(d *githubUrlData) {
 
 	p, err := l.github.GetProfileByURL(url)
 	if err != nil {
-		if err == http.NotFound {
+		if err == client.NotFound {
 			l.done(url, 404)
 		} else {
 			l.done(url, 500)

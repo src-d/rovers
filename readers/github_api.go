@@ -4,30 +4,28 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/tyba/srcd-rovers/http"
-
 	"code.google.com/p/goauth2/oauth"
 	api "github.com/mcuadros/go-github/github"
 )
 
 var MinRequestDuration = time.Hour / 5000
 
-type GithubAPIReader struct {
+type GithubAPI struct {
 	client *api.Client
 }
 
-func NewGithubAPIReader(client *http.Client) *GithubAPIReader {
+func NewGithubAPI() *GithubAPI {
 	t := &oauth.Transport{
 		Token: &oauth.Token{AccessToken: "e568ba2365b2bc198da8c5571a4cfb99830bb5ed"},
 	}
 
-	return &GithubAPIReader{api.NewClient(t.Client())}
+	return &GithubAPI{api.NewClient(t.Client())}
 }
 
-func (g *GithubAPIReader) GetAllRepositories(since int) ([]api.Repository, *api.Response, error) {
+func (g *GithubAPI) GetAllRepositories(since int) ([]api.Repository, *api.Response, error) {
 	start := time.Now()
 	defer func() {
-		needsWait := MinRequestDuration - time.Now().Sub(start)
+		needsWait := MinRequestDuration - time.Since(start)
 		if needsWait > 0 {
 			fmt.Println("waiting ", needsWait)
 			time.Sleep(needsWait)
@@ -47,10 +45,10 @@ func (g *GithubAPIReader) GetAllRepositories(since int) ([]api.Repository, *api.
 	return repos, resp, nil
 }
 
-func (g *GithubAPIReader) GetAllUsers(since int) ([]api.User, *api.Response, error) {
+func (g *GithubAPI) GetAllUsers(since int) ([]api.User, *api.Response, error) {
 	start := time.Now()
 	defer func() {
-		needsWait := MinRequestDuration - time.Now().Sub(start)
+		needsWait := MinRequestDuration - time.Since(start)
 		if needsWait > 0 {
 			fmt.Println("waiting ", needsWait)
 			time.Sleep(needsWait)

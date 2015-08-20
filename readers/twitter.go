@@ -5,24 +5,23 @@ import (
 	"strings"
 	"time"
 
-	"github.com/tyba/srcd-domain/models/social"
-	"github.com/tyba/srcd-rovers/http"
-
 	"github.com/PuerkitoBio/goquery"
+	"github.com/tyba/srcd-domain/models/social"
+	"github.com/tyba/srcd-rovers/client"
 )
 
 const TwitterBaseURL = "https://twitter.com/%s"
 
 type TwitterReader struct {
-	client *http.Client
+	client *client.Client
 }
 
-func NewTwitterReader(client *http.Client) *TwitterReader {
+func NewTwitterReader(client *client.Client) *TwitterReader {
 	return &TwitterReader{client}
 }
 
 func (t *TwitterReader) GetProfileByURL(url string) (*social.TwitterProfile, error) {
-	req, err := http.NewRequest(url)
+	req, err := client.NewRequest(url)
 	if err != nil {
 		return nil, err
 	}

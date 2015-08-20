@@ -1,23 +1,23 @@
 package readers
 
 import (
-	chttp "net/http"
+	"net/http"
 	"net/url"
 
-	"github.com/tyba/srcd-rovers/http"
+	"github.com/tyba/srcd-rovers/client"
 )
 
 var bitbucketURL = "https://api.bitbucket.org/2.0/repositories"
 
-type BitbucketReader struct {
-	client *http.Client
+type BitbucketAPI struct {
+	client *client.Client
 }
 
-func NewBitbucketReader(client *http.Client) *BitbucketReader {
-	return &BitbucketReader{client}
+func NewBitbucketAPI(client *client.Client) *BitbucketAPI {
+	return &BitbucketAPI{client}
 }
 
-func (a *BitbucketReader) GetRepositories(q url.Values) (*BitbucketPagedResult, error) {
+func (a *BitbucketAPI) GetRepositories(q url.Values) (*BitbucketPagedResult, error) {
 	r := &BitbucketPagedResult{}
 
 	_, err := a.doRequest(q, r)
@@ -28,17 +28,17 @@ func (a *BitbucketReader) GetRepositories(q url.Values) (*BitbucketPagedResult, 
 	return r, nil
 }
 
-func (a *BitbucketReader) buildURL(q url.Values) *url.URL {
-	url, _ := url.Parse(bitbucketURL)
+func (a *BitbucketAPI) buildURL(q url.Values) *url.URL {
+	u, _ := url.Parse(bitbucketURL)
 	if q.Get("page") != "" {
-		url.RawQuery = q.Encode()
+		u.RawQuery = q.Encode()
 	}
 
-	return url
+	return u
 }
 
-func (a *BitbucketReader) doRequest(q url.Values, result interface{}) (*chttp.Response, error) {
-	req, err := http.NewRequest(a.buildURL(q).String())
+func (a *BitbucketAPI) doRequest(q url.Values, result interface{}) (*http.Response, error) {
+	req, err := client.NewRequest(a.buildURL(q).String())
 	if err != nil {
 		return nil, err
 	}
@@ -81,3 +81,50 @@ func (u *URL) UnmarshalJSON(b []byte) error {
 
 	return nil
 }
+
+// type Href struct {
+// 	Href string `json:"href"`
+// }
+
+// type BitbucketRepository struct {
+// 	CreatedOn   string `json:"created_on"`
+// 	Description string `json:"description"`
+// 	ForkPolicy  string `json:"fork_policy"`
+// 	FullName    string `json:"full_name"`
+// 	HasIssues   bool   `json:"has_issues"`
+// 	HasWiki     bool   `json:"has_wiki"`
+// 	IsPrivate   bool   `json:"is_private"`
+// 	Language    string `json:"language"`
+// 	Links       struct {
+// 		Avatar Href `json:"avatar"`
+// 		Clone  []struct {
+// 			Href string `json:"href"`
+// 			Name string `json:"name"`
+// 		} `json:"clone"`
+// 		Commits      Href `json:"commits"`
+// 		Downloads    Href `json:"downloads"`
+// 		Forks        Href `json:"forks"`
+// 		Hooks        Href `json:"hooks"`
+// 		Html         Href `json:"html"`
+// 		Pullrequests Href `json:"pullrequests"`
+// 		Self         Href `json:"self"`
+// 		Watchers     Href `json:"watchers"`
+// 	} `json:"links"`
+// 	Name  string `json:"name"`
+// 	Owner struct {
+// 		DisplayName string `json:"display_name"`
+// 		Links       struct {
+// 			Avatar Href `json:"avatar"`
+// 			Html   Href `json:"html"`
+// 			Self   Href `json:"self"`
+// 		} `json:"links"`
+// 		Type     string `json:"type"`
+// 		Username string `json:"username"`
+// 		Uuid     string `json:"uuid"`
+// 	} `json:"owner"`
+// 	Scm       string  `json:"scm"`
+// 	Size      float64 `json:"size"`
+// 	Type      string  `json:"type"`
+// 	UpdatedOn string  `json:"updated_on"`
+// 	Uuid      string  `json:"uuid"`
+// }
