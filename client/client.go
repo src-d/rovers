@@ -38,7 +38,7 @@ func NewCachedClient(session *mgo.Session) *Client {
 }
 
 func NewClient(cacheEnforced bool) *Client {
-	session, _ := mgo.Dial("mongodb://localhost")
+	session, _ := mgo.Dial("127.0.0.1:27017")
 	collection := session.DB(DatabaseName).C(CollectionName)
 
 	transport := httpcache.NewTransport(mgocache.New(collection))
