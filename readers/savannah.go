@@ -1,7 +1,7 @@
 package readers
 
 import (
-	"github.com/tyba/srcd-rovers/http"
+	"github.com/tyba/srcd-rovers/client"
 
 	"github.com/PuerkitoBio/goquery"
 )
@@ -9,15 +9,15 @@ import (
 var savannahList = "http://savannah.gnu.org/search/?type_of_search=soft&words=%2A&offset=0&max_rows=25000"
 
 type SavannahReader struct {
-	client *http.Client
+	client *client.Client
 }
 
-func NewSavannahReader(client *http.Client) *SavannahReader {
+func NewSavannahReader(client *client.Client) *SavannahReader {
 	return &SavannahReader{client}
 }
 
 func (s *SavannahReader) GetRepositories() (*SavannahResult, error) {
-	req, err := http.NewRequest(savannahList)
+	req, err := client.NewRequest(savannahList)
 	if err != nil {
 		return nil, err
 	}

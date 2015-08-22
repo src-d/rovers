@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/tyba/srcd-domain/models/social"
-	"github.com/tyba/srcd-rovers/http"
+	"github.com/tyba/srcd-rovers/client"
 	"github.com/tyba/srcd-rovers/readers"
 
 	"gopkg.in/mgo.v2"
@@ -30,7 +30,7 @@ type CmdTwitter struct {
 func (t *CmdTwitter) Execute(args []string) error {
 	session, _ := mgo.Dial("mongodb://" + t.MongoDBHost)
 
-	t.twitter = readers.NewTwitterReader(http.NewCachedClient(session))
+	t.twitter = readers.NewTwitterReader(client.NewCachedClient(session))
 	t.storage = session.DB("sources").C("twitter")
 	t.augur = session.DB("sources").C("augur")
 

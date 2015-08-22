@@ -5,23 +5,22 @@ import (
 	"strings"
 	"time"
 
+	"github.com/PuerkitoBio/goquery"
 	"github.com/tyba/srcd-domain/models/social"
 	"github.com/tyba/srcd-domain/models/social/github"
-	"github.com/tyba/srcd-rovers/http"
-
-	"github.com/PuerkitoBio/goquery"
+	"github.com/tyba/srcd-rovers/client"
 )
 
-type GithubReader struct {
-	client *http.Client
+type GithubWebCrawler struct {
+	client *client.Client
 }
 
-func NewGithubReader(client *http.Client) *GithubReader {
-	return &GithubReader{client}
+func NewGithubWebCrawler(client *client.Client) *GithubWebCrawler {
+	return &GithubWebCrawler{client}
 }
 
-func (g *GithubReader) GetProfileByURL(url string) (*social.GithubProfile, error) {
-	req, err := http.NewRequest(url)
+func (g *GithubWebCrawler) GetProfileByURL(url string) (*social.GithubProfile, error) {
+	req, err := client.NewRequest(url)
 	if err != nil {
 		return nil, err
 	}
@@ -32,7 +31,7 @@ func (g *GithubReader) GetProfileByURL(url string) (*social.GithubProfile, error
 	}
 
 	if res.StatusCode == 404 {
-		return nil, http.NotFound
+		return nil, client.NotFound
 	}
 
 	p := &social.GithubProfile{Url: url, Created: time.Now()}
@@ -51,7 +50,7 @@ func (g *GithubReader) GetProfileByURL(url string) (*social.GithubProfile, error
 	return p, nil
 }
 
-func (g *GithubReader) fillOrganizationInfo(doc *goquery.Document, p *social.GithubProfile) {
+func (g *GithubWebCrawler) fillOrganizationInfo(doc *goquery.Document, p *social.GithubProfile) {
 	urlParts := strings.Split(p.Url, "/")
 	if len(urlParts) >= 4 {
 		p.Username = urlParts[3]
@@ -65,7 +64,7 @@ func (g *GithubReader) fillOrganizationInfo(doc *goquery.Document, p *social.Git
 	}
 }
 
-func (g *GithubReader) fillMembers(doc *goquery.Document, p *social.GithubProfile) {
+func (g *GithubWebCrawler) fillMembers(doc *goquery.Document, p *social.GithubProfile) {
 	p.Members = make([]string, 0)
 	doc.Find(".member-avatar-group .avatar").Each(func(i int, s *goquery.Selection) {
 		username, _ := s.Attr("alt")
@@ -75,7 +74,7 @@ func (g *GithubReader) fillMembers(doc *goquery.Document, p *social.GithubProfil
 	})
 }
 
-func (g *GithubReader) fillBasicInfo(doc *goquery.Document, p *social.GithubProfile) {
+func (g *GithubWebCrawler) fillBasicInfo(doc *goquery.Document, p *social.GithubProfile) {
 	p.Username = doc.Find(".vcard-username").Text()
 	p.FullName = doc.Find(".vcard-fullname").Text()
 	p.Location = doc.Find("[itemprop='homeLocation']").Text()
@@ -88,7 +87,7 @@ func (g *GithubReader) fillBasicInfo(doc *goquery.Document, p *social.GithubProf
 	p.JoinDate, _ = time.Parse("2006-01-02T15:04:05Z", date)
 }
 
-func (g *GithubReader) fillOrganizations(doc *goquery.Document, p *social.GithubProfile) {
+func (g *GithubWebCrawler) fillOrganizations(doc *goquery.Document, p *social.GithubProfile) {
 	p.Organizations = make([]string, 0)
 	doc.Find("[itemprop='follows']").Each(func(i int, s *goquery.Selection) {
 		href, _ := s.Attr("href")
@@ -96,7 +95,7 @@ func (g *GithubReader) fillOrganizations(doc *goquery.Document, p *social.Github
 	})
 }
 
-func (g *GithubReader) fillRepositories(doc *goquery.Document, p *social.GithubProfile) {
+func (g *GithubWebCrawler) fillRepositories(doc *goquery.Document, p *social.GithubProfile) {
 	p.Repositories = make([]github.Repository, 0)
 	doc.Find(".one-half:first-of-type").Find(".mini-repo-list-item").Each(func(i int, s *goquery.Selection) {
 		r := github.Repository{}
@@ -110,7 +109,7 @@ func (g *GithubReader) fillRepositories(doc *goquery.Document, p *social.GithubP
 	})
 }
 
-func (g *GithubReader) fillContributions(doc *goquery.Document, p *social.GithubProfile) {
+func (g *GithubWebCrawler) fillContributions(doc *goquery.Document, p *social.GithubProfile) {
 	p.Contributions = make([]github.Repository, 0)
 	doc.Find(".one-half:last-of-type").Find(".mini-repo-list-item").Each(func(i int, s *goquery.Selection) {
 		r := github.Repository{}
@@ -124,7 +123,7 @@ func (g *GithubReader) fillContributions(doc *goquery.Document, p *social.Github
 	})
 }
 
-func (g *GithubReader) fillStats(doc *goquery.Document, p *social.GithubProfile) {
+func (g *GithubWebCrawler) fillStats(doc *goquery.Document, p *social.GithubProfile) {
 	p.Followers, _ = strconv.Atoi(doc.Find(".vcard-stat-count").Eq(0).Text())
 	p.Starred, _ = strconv.Atoi(doc.Find(".vcard-stat-count").Eq(1).Text())
 	p.Following, _ = strconv.Atoi(doc.Find(".vcard-stat-count").Eq(2).Text())

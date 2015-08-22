@@ -3,19 +3,19 @@ package readers
 import (
 	"sort"
 
-	"github.com/tyba/srcd-rovers/http"
+	"github.com/tyba/srcd-rovers/client"
 
 	. "gopkg.in/check.v1"
 )
 
 func (s *SourcesSuite) TestGithub_GetProfileByURL_404(c *C) {
-	a := NewGithubReader(http.NewClient(true))
+	a := NewGithubWebCrawler(client.NewClient(true))
 	_, err := a.GetProfileByURL("https://github.com/foobarqux")
-	c.Assert(err, Equals, http.NotFound)
+	c.Assert(err, Equals, client.NotFound)
 }
 
 func (s *SourcesSuite) TestGithub_GetProfileByURL_Company(c *C) {
-	a := NewGithubReader(http.NewClient(true))
+	a := NewGithubWebCrawler(client.NewClient(true))
 	g, err := a.GetProfileByURL("https://github.com/tyba")
 	c.Assert(err, IsNil)
 	c.Assert(g.Organization, Equals, true)
@@ -30,7 +30,7 @@ func (s *SourcesSuite) TestGithub_GetProfileByURL_Company(c *C) {
 }
 
 func (s *SourcesSuite) TestGithub_SearchByEmail(c *C) {
-	a := NewGithubReader(http.NewClient(true))
+	a := NewGithubWebCrawler(client.NewClient(true))
 	g, err := a.GetProfileByURL("https://github.com/mcuadros")
 	c.Assert(err, IsNil)
 	c.Assert(g.Organization, Equals, false)

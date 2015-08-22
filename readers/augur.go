@@ -1,11 +1,16 @@
 package readers
 
 import (
+	"encoding/json"
 	"errors"
-	chttp "net/http"
+	"net/http"
 	"net/url"
+	"time"
 
-	"github.com/tyba/srcd-rovers/http"
+	"github.com/tyba/srcd-domain/container"
+	"github.com/tyba/srcd-domain/models"
+	"github.com/tyba/srcd-domain/models/rovers/augur"
+	"github.com/tyba/srcd-rovers/client"
 )
 
 var (
@@ -16,31 +21,73 @@ var (
 const (
 	augurInsightsURL = "https://api.augur.io/v2/insights"
 	augurKey         = "2bwn2e88g9dbva8pjolgxeid0nz9m4ne"
+	augurRateLimit   = 1 * time.Second
 )
 
-type AugurReader struct {
-	client *http.Client
+type AugurInsightsAPI struct {
+	client       *client.Client
+	next         time.Time
+	insightStore *augur.InsightStore
 }
 
-func NewAugurReader(client *http.Client) *AugurReader {
-	return &AugurReader{client}
+func NewAugurInsightsAPI(client *client.Client) *AugurInsightsAPI {
+	return &AugurInsightsAPI{
+		client:       client,
+		next:         time.Now(),
+		insightStore: container.GetDomainModelsRoversAugurInsightStore(),
+	}
 }
 
-func (a *AugurReader) SearchByEmail(email string) (*AugurInsights, *chttp.Response, error) {
+func (a *AugurInsightsAPI) SearchByEmail(email string) (*augur.Insight, *http.Response, error) {
+	if time.Now().Before(a.next) {
+		time.Sleep(time.Now().Sub(a.next))
+	}
+	a.next = time.Now().Add(augurRateLimit)
+
 	q := &url.Values{}
 	q.Add("email", email)
 
-	r := &AugurInsights{}
+	var (
+		i = a.insightStore.New()
+		r RawInsight
+	)
 
-	res, err := a.doRequest(q, r)
+	res, err := a.doRequest(q, &r)
 	if err != nil {
 		return nil, res, err
 	}
 
-	return r, res, nil
+	i.Demographics.Gender = getFirstValue(r.Demographics.Gender)
+	i.Demographics.Language = getFirstValue(r.Demographics.Language)
+	i.Geographics.Locale = getFirstValue(r.Geographics.Locale)
+	i.Geographics.Location = getFirstValue(r.Geographics.Location)
+	i.Private.Bio = getFirstValue(r.Private.Bio)
+	i.Private.Description = getFirstValue(r.Private.Description)
+	i.Private.Email = getFirstValue(r.Private.Email)
+	i.Private.Homepage = getFirstValue(r.Private.Homepage)
+	i.Private.Name = getFirstValue(r.Private.Name)
+	i.Private.Phone = getFirstValue(r.Private.Phone)
+	i.Private.Photo = getFirstValue(r.Private.Photo)
+	i.Profiles.Handle = getFirstValue(r.Profiles.Handle)
+	i.Profiles.Post = getFirstValue(r.Profiles.Post)
+	i.Profiles.Service = getFirstValue(r.Profiles.Service)
+	i.Profiles.URL = getFirstValue(r.Profiles.URL)
+	i.Psychographics.Color = getFirstValue(r.Psychographics.Color)
+	i.Psychographics.Keyword = getFirstValue(r.Psychographics.Keyword)
+	i.Misc = r.Misc
+	i.Status = r.Status
+
+	return i, res, nil
 }
 
-func (a *AugurReader) buildURL(q *url.Values) *url.URL {
+func getFirstValue(values []Value) string {
+	if len(values) == 0 {
+		return ""
+	}
+	return values[0].Value
+}
+
+func (a *AugurInsightsAPI) buildURL(q *url.Values) *url.URL {
 	q.Add("key", augurKey)
 
 	url, _ := url.Parse(augurInsightsURL)
@@ -49,8 +96,8 @@ func (a *AugurReader) buildURL(q *url.Values) *url.URL {
 	return url
 }
 
-func (a *AugurReader) doRequest(q *url.Values, result interface{}) (*chttp.Response, error) {
-	req, err := http.NewRequest(a.buildURL(q).String())
+func (a *AugurInsightsAPI) doRequest(q *url.Values, result interface{}) (*http.Response, error) {
+	req, err := client.NewRequest(a.buildURL(q).String())
 	if err != nil {
 		return nil, err
 	}
@@ -70,12 +117,81 @@ func (a *AugurReader) doRequest(q *url.Values, result interface{}) (*chttp.Respo
 	}
 }
 
-type AugurInsights struct {
-	Private        interface{} `json:"PRIVATE"`
-	Demographics   interface{} `json:"DEMOGRAPHICS"`
-	Psychographics interface{} `json:"PSYCHOGRAPHICS"`
-	Geographics    interface{} `json:"GEOGRAPHICS"`
-	Profiles       interface{} `json:"PROFILES"`
-	Misc           interface{} `json:"MISC"`
-	Status         int
+type RawInsight struct {
+	Demographics struct {
+		Gender   []Value `json:"gender"`
+		Language []Value `json:"language"`
+	} `json:"DEMOGRAPHICS"`
+	Geographics struct {
+		Locale   []Value `json:"locale"`
+		Location []Value `json:"location"`
+	} `json:"GEOGRAPHICS"`
+	Private struct {
+		Bio         []Value `json:"bio"`
+		Description []Value `json:"description"`
+		Email       []Value `json:"email"`
+		Homepage    []Value `json:"homepage"`
+		Name        []Value `json:"name"`
+		Phone       []Value `json:"phone"`
+		Photo       []Value `json:"photo"`
+	} `json:"PRIVATE"`
+	Profiles struct {
+		Handle  []Value `json:"handle"`
+		Post    []Value `json:"post"`
+		Service []Value `json:"service"`
+		URL     []Value `json:"url"`
+	} `json:"PROFILES"`
+	Psychographics struct {
+		Color   []Value `json:"color"`
+		Keyword []Value `json:"keyword"`
+	} `json:"PSYCHOGRAPHICS"`
+	Misc struct {
+		BackgroundImage       []Value `json:"background_image"`
+		ColorBackground       []Value `json:"color_background"`
+		ColorForeground       []Value `json:"color_foreground"`
+		FacebookHandle        []Value `json:"facebook_handle"`
+		FacebookID            []Value `json:"facebook_id"`
+		FacebookURL           []Value `json:"facebook_url"`
+		FirstName             []Value `json:"first_name"`
+		KloutHandle           []Value `json:"klout_handle"`
+		KloutURL              []Value `json:"klout_url"`
+		LastName              []Value `json:"last_name"`
+		LinkedinHandle        []Value `json:"linkedin_handle"`
+		LinkedinURL           []Value `json:"linkedin_url"`
+		LocationCity          []Value `json:"location_city"`
+		LocationCountry       []Value `json:"location_country"`
+		LocationFormatted     []Value `json:"location_formatted"`
+		LocationState         []Value `json:"location_state"`
+		MentionName           []Value `json:"mention_name"`
+		MentionTwitterHandle  []Value `json:"mention_twitter_handle"`
+		MentionTwitterID      []Value `json:"mention_twitter_id"`
+		PersonUid             string  `json:"person_uid"`
+		PostHashtag           []Value `json:"post_hashtag"`
+		PostLink              []Value `json:"post_link"`
+		PostPhoto             []Value `json:"post_photo"`
+		RecentRetweetedCount  []Value `json:"recent_retweeted_count"`
+		ReplyToTwitterHandle  []Value `json:"reply_to_twitter_handle"`
+		ReplyToTwitterID      []Value `json:"reply_to_twitter_id"`
+		RepostedCount         []Value `json:"reposted_count"`
+		SingleFollowingCount  []Value `json:"single_following_count"`
+		SingleFolowersCount   []Value `json:"single_folowers_count"`
+		SinglePostsCount      []Value `json:"single_posts_count"`
+		Timestamp             float64 `json:"timestamp"` // 1378273006.96988
+		TimeZone              []Value `json:"time_zone"`
+		TweetPostSource       []Value `json:"tweet_post_source"`
+		TwitterFollowingCount []Value `json:"twitter_following_count"`
+		TwitterFolowersCount  []Value `json:"twitter_folowers_count"`
+		TwitterHandle         []Value `json:"twitter_handle"`
+		TwitterID             []Value `json:"twitter_id"`
+		TwitterListedCount    []Value `json:"twitter_listed_count"`
+		TwitterPostsCount     []Value `json:"twitter_posts_count"`
+		TwitterURL            []Value `json:"twitter_url"`
+		UrlDomain             []Value `json:"url_domain"`
+	} `json:"MISC"`
+	Status int `json:"status"`
+}
+
+type Value struct {
+	Score json.Number `json:"score"`
+	Value string      `json:"value"`
 }

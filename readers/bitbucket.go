@@ -1,23 +1,23 @@
 package readers
 
 import (
-	chttp "net/http"
+	"net/http"
 	"net/url"
 
-	"github.com/tyba/srcd-rovers/http"
+	"github.com/tyba/srcd-rovers/client"
 )
 
 var bitbucketURL = "https://api.bitbucket.org/2.0/repositories"
 
-type BitbucketReader struct {
-	client *http.Client
+type BitbucketAPI struct {
+	client *client.Client
 }
 
-func NewBitbucketReader(client *http.Client) *BitbucketReader {
-	return &BitbucketReader{client}
+func NewBitbucketAPI(client *client.Client) *BitbucketAPI {
+	return &BitbucketAPI{client}
 }
 
-func (a *BitbucketReader) GetRepositories(q url.Values) (*BitbucketPagedResult, error) {
+func (a *BitbucketAPI) GetRepositories(q url.Values) (*BitbucketPagedResult, error) {
 	r := &BitbucketPagedResult{}
 
 	_, err := a.doRequest(q, r)
@@ -28,17 +28,17 @@ func (a *BitbucketReader) GetRepositories(q url.Values) (*BitbucketPagedResult, 
 	return r, nil
 }
 
-func (a *BitbucketReader) buildURL(q url.Values) *url.URL {
-	url, _ := url.Parse(bitbucketURL)
+func (a *BitbucketAPI) buildURL(q url.Values) *url.URL {
+	u, _ := url.Parse(bitbucketURL)
 	if q.Get("page") != "" {
-		url.RawQuery = q.Encode()
+		u.RawQuery = q.Encode()
 	}
 
-	return url
+	return u
 }
 
-func (a *BitbucketReader) doRequest(q url.Values, result interface{}) (*chttp.Response, error) {
-	req, err := http.NewRequest(a.buildURL(q).String())
+func (a *BitbucketAPI) doRequest(q url.Values, result interface{}) (*http.Response, error) {
+	req, err := client.NewRequest(a.buildURL(q).String())
 	if err != nil {
 		return nil, err
 	}
