@@ -4,7 +4,7 @@ import (
 	"time"
 
 	"github.com/tyba/srcd-domain/container"
-	"github.com/tyba/srcd-domain/models/rovers/augur"
+	"github.com/tyba/srcd-domain/models/social"
 	"github.com/tyba/srcd-rovers/client"
 	"github.com/tyba/srcd-rovers/readers"
 
@@ -20,19 +20,19 @@ type CmdAugur struct {
 	// Source   string `short:"" long:"source" default:"people" description:""`
 
 	client       *readers.AugurInsightsAPI
-	emailStore   *augur.EmailStore
-	insightStore *augur.InsightStore
+	emailStore   *social.EmailStore
+	insightStore *social.InsightStore
 }
 
 func (cmd *CmdAugur) Execute(args []string) error {
 	// switch cmd.Source {
 	// case "people":
-	// 	cmd.emailSource = augur.NewAugurPeopleSource()
+	// 	cmd.emailSource = social.NewAugurPeopleSource()
 	// }
 
 	cmd.client = readers.NewAugurInsightsAPI(client.NewClient(false))
-	cmd.emailStore = container.GetDomainModelsRoversAugurEmailStore()
-	cmd.insightStore = container.GetDomainModelsRoversAugurInsightStore()
+	cmd.emailStore = container.GetDomainModelsSocialAugurEmailStore()
+	cmd.insightStore = container.GetDomainModelsSocialAugurInsightStore()
 
 	cmd.process()
 
@@ -43,7 +43,7 @@ func (cmd *CmdAugur) process() {
 	q := cmd.emailStore.Query()
 	q.FindWithoutStatus()
 	if cmd.FilterBy != 0 {
-		q.AddCriteria(op.Eq(augur.Schema.Email.Status, cmd.FilterBy))
+		q.AddCriteria(op.Eq(social.Schema.Email.Status, cmd.FilterBy))
 	}
 
 	set := cmd.emailStore.MustFind(q)
@@ -60,7 +60,7 @@ func (cmd *CmdAugur) process() {
 	}
 }
 
-func (cmd *CmdAugur) processEmail(e *augur.Email) error {
+func (cmd *CmdAugur) processEmail(e *social.Email) error {
 	insight, resp, err := cmd.client.SearchByEmail(e.Email)
 	if err != nil && resp == nil {
 		return err
@@ -76,7 +76,7 @@ func (cmd *CmdAugur) processEmail(e *augur.Email) error {
 	return err
 }
 
-func (cmd *CmdAugur) setStatus(doc *augur.Email, status int) error {
+func (cmd *CmdAugur) setStatus(doc *social.Email, status int) error {
 	doc.Status = status
 	doc.Last = time.Now()
 
@@ -85,6 +85,6 @@ func (cmd *CmdAugur) setStatus(doc *augur.Email, status int) error {
 	return err
 }
 
-func (cmd *CmdAugur) saveAugurInsights(doc *augur.Insight) error {
+func (cmd *CmdAugur) saveAugurInsights(doc *social.Insight) error {
 	return cmd.insightStore.Insert(doc)
 }

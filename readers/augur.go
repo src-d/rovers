@@ -8,8 +8,7 @@ import (
 	"time"
 
 	"github.com/tyba/srcd-domain/container"
-	"github.com/tyba/srcd-domain/models"
-	"github.com/tyba/srcd-domain/models/rovers/augur"
+	"github.com/tyba/srcd-domain/models/social"
 	"github.com/tyba/srcd-rovers/client"
 )
 
@@ -27,18 +26,18 @@ const (
 type AugurInsightsAPI struct {
 	client       *client.Client
 	next         time.Time
-	insightStore *augur.InsightStore
+	insightStore *social.InsightStore
 }
 
 func NewAugurInsightsAPI(client *client.Client) *AugurInsightsAPI {
 	return &AugurInsightsAPI{
 		client:       client,
 		next:         time.Now(),
-		insightStore: container.GetDomainModelsRoversAugurInsightStore(),
+		insightStore: container.GetDomainModelsSocialAugurInsightStore(),
 	}
 }
 
-func (a *AugurInsightsAPI) SearchByEmail(email string) (*augur.Insight, *http.Response, error) {
+func (a *AugurInsightsAPI) SearchByEmail(email string) (*social.Insight, *http.Response, error) {
 	if time.Now().Before(a.next) {
 		time.Sleep(time.Now().Sub(a.next))
 	}
