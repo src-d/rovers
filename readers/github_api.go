@@ -16,7 +16,7 @@ type GithubAPI struct {
 
 func NewGithubAPI() *GithubAPI {
 	t := &oauth.Transport{
-		Token: &oauth.Token{AccessToken: "e568ba2365b2bc198da8c5571a4cfb99830bb5ed"},
+		Token: &oauth.Token{AccessToken: "b286be1a91d5656483209a9f3fdf120ab1174b67"},
 	}
 
 	return &GithubAPI{api.NewClient(t.Client())}
