@@ -1,8 +1,9 @@
 package readers
 
 import (
-	"fmt"
 	"time"
+
+	"gopkg.in/inconshreveable/log15.v2"
 
 	"code.google.com/p/goauth2/oauth"
 	api "github.com/mcuadros/go-github/github"
@@ -16,7 +17,7 @@ type GithubAPI struct {
 
 func NewGithubAPI() *GithubAPI {
 	t := &oauth.Transport{
-		Token: &oauth.Token{AccessToken: "e568ba2365b2bc198da8c5571a4cfb99830bb5ed"},
+		Token: &oauth.Token{AccessToken: "b286be1a91d5656483209a9f3fdf120ab1174b67"},
 	}
 
 	return &GithubAPI{api.NewClient(t.Client())}
@@ -27,7 +28,7 @@ func (g *GithubAPI) GetAllRepositories(since int) ([]api.Repository, *api.Respon
 	defer func() {
 		needsWait := MinRequestDuration - time.Since(start)
 		if needsWait > 0 {
-			fmt.Println("waiting ", needsWait)
+			log15.Info("Waiting", "duration", needsWait)
 			time.Sleep(needsWait)
 		}
 	}()
@@ -39,7 +40,7 @@ func (g *GithubAPI) GetAllRepositories(since int) ([]api.Repository, *api.Respon
 	}
 
 	if resp.Remaining < 100 {
-		fmt.Println("low remaining", resp.Remaining)
+		log15.Info("Low remaining", "value", resp.Remaining)
 	}
 
 	return repos, resp, nil
@@ -50,7 +51,7 @@ func (g *GithubAPI) GetAllUsers(since int) ([]api.User, *api.Response, error) {
 	defer func() {
 		needsWait := MinRequestDuration - time.Since(start)
 		if needsWait > 0 {
-			fmt.Println("waiting ", needsWait)
+			log15.Info("Waiting", "duration", needsWait)
 			time.Sleep(needsWait)
 		}
 	}()
@@ -62,7 +63,7 @@ func (g *GithubAPI) GetAllUsers(since int) ([]api.User, *api.Response, error) {
 	}
 
 	if resp.Remaining < 100 {
-		fmt.Println("low remaining", resp.Remaining)
+		log15.Info("Low remaining", "value", resp.Remaining)
 	}
 
 	return users, resp, nil
