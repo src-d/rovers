@@ -6,7 +6,6 @@ import (
 
 	"github.com/tyba/srcd-domain/container"
 	"github.com/tyba/srcd-domain/models/social"
-
 	"github.com/tyba/srcd-rovers/client"
 	"github.com/tyba/srcd-rovers/readers"
 
