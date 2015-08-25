@@ -57,31 +57,7 @@ func (b *CmdBitbucket) Execute(args []string) error {
 func (b *CmdBitbucket) insertRepository(res *readers.BitbucketPagedResult) (n int, err error) {
 	for _, value := range res.Values {
 		repository := b.store.New()
-		repository.CreatedOn = value.CreatedOn
-		repository.Description = value.Description
-		repository.ForkPolicy = value.ForkPolicy
-		repository.FullName = value.FullName
-		repository.HasIssues = value.HasIssues
-		repository.HasWiki = value.HasWiki
-		repository.IsPrivate = value.IsPrivate
-		repository.Language = value.Language
-		repository.Links.Avatar = value.Links.Avatar.Href
-		repository.Links.Clone = value.Links.Clone
-		repository.Links.Self = value.Links.Self.Href
-		repository.Name = value.Name
-		repository.Owner.Links.Avatar = value.Owner.Links.Avatar.Href
-		repository.Owner.Links.Html = value.Owner.Links.Html.Href
-		repository.Owner.Links.Self = value.Owner.Links.Self.Href
-		repository.Owner.DisplayName = value.Owner.DisplayName
-		repository.Owner.Type = value.Owner.Type
-		repository.Owner.Username = value.Owner.Username
-		repository.Owner.UUID = value.Owner.UUID
-		repository.Size = value.Size
-		repository.Type = value.Type
-		repository.UpdatedOn = value.UpdatedOn
-		repository.URL = value.Links.Html.Href
-		repository.UUID = value.UUID
-		repository.VCS = value.SCM
+		parseRepository(repository, value)
 
 		err = b.store.Insert(repository)
 		if err != nil {
@@ -95,4 +71,32 @@ func (b *CmdBitbucket) insertRepository(res *readers.BitbucketPagedResult) (n in
 	log15.Debug("Save", "num_repos", len(res.Values), "next", res.Next)
 
 	return n, nil
+}
+
+func parseRepository(repository *social.BitbucketRepository, value readers.Repository) {
+	repository.CreatedOn = value.CreatedOn
+	repository.Description = value.Description
+	repository.ForkPolicy = value.ForkPolicy
+	repository.FullName = value.FullName
+	repository.HasIssues = value.HasIssues
+	repository.HasWiki = value.HasWiki
+	repository.IsPrivate = value.IsPrivate
+	repository.Language = value.Language
+	repository.Links.Avatar = value.Links.Avatar.Href
+	repository.Links.Clone = value.Links.Clone
+	repository.Links.Self = value.Links.Self.Href
+	repository.Name = value.Name
+	repository.Owner.Links.Avatar = value.Owner.Links.Avatar.Href
+	repository.Owner.Links.Html = value.Owner.Links.Html.Href
+	repository.Owner.Links.Self = value.Owner.Links.Self.Href
+	repository.Owner.DisplayName = value.Owner.DisplayName
+	repository.Owner.Type = value.Owner.Type
+	repository.Owner.Username = value.Owner.Username
+	repository.Owner.UUID = value.Owner.UUID
+	repository.Size = value.Size
+	repository.Type = value.Type
+	repository.UpdatedOn = value.UpdatedOn
+	repository.URL = value.Links.Html.Href
+	repository.UUID = value.UUID
+	repository.VCS = value.SCM
 }
