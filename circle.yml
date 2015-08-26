@@ -1,0 +1,26 @@
+checkout:
+  post:
+    - rm -rf ~/.go_workspace/src/github.com/tyba
+    - mkdir -p ~/.go_workspace/src/github.com/tyba
+    - cp -R ~/$CIRCLE_PROJECT_REPONAME ~/.go_workspace/src/github.com/tyba/$CIRCLE_PROJECT_REPONAME
+
+dependencies:
+  cache_directories:
+    - mongodb-linux-x86_64-ubuntu1204-3.0.5
+  pre:
+    - if [[ ! -d mongodb-linux-x86_64-ubuntu1204-3.0.5 ]]; then curl https://fastdl.mongodb.org/linux/mongodb-linux-x86_64-ubuntu1204-3.0.5.tgz --insecure -O && tar -xvzf mongodb-linux-x86_64-ubuntu1204-3.0.5.tgz; fi
+    - sudo /etc/init.d/mongodb stop
+    - sudo cp mongodb-linux-x86_64-ubuntu1204-3.0.5/bin/* /usr/bin
+    - sudo /etc/init.d/mongodb start
+  override:
+    - make dependencies
+
+test:
+  override:
+    - make test
+
+deployment:
+  production:
+    branch: master
+    commands:
+      - make upload
