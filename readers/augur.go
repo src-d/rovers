@@ -1,10 +1,13 @@
 package readers
 
 import (
+	"bufio"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"net/url"
+	"os"
 	"time"
 
 	"github.com/tyba/srcd-domain/container"
@@ -193,4 +196,67 @@ type RawInsight struct {
 type Value struct {
 	Score json.Number `json:"score"`
 	Value string      `json:"value"`
+}
+
+type AugurEmailSource interface {
+	Next() bool
+	Get() (string, error)
+}
+
+type AugurPeopleSource struct {
+	results *models.PersonResultSet
+	emails  []string
+}
+
+func NewAugurPeopleSource() *AugurPeopleSource {
+	store := container.GetDomainModelsPersonStore()
+	q := store.Query()
+	return &AugurPeopleSource{
+		results: store.MustFind(q),
+	}
+}
+
+func (s *AugurPeopleSource) Next() bool {
+	return s.results.Next()
+}
+
+func (s *AugurPeopleSource) Get() (string, error) {
+	if len(s.emails) > 0 {
+		email := s.emails[0]
+		s.emails = s.emails[1:]
+		return email, nil
+	}
+	person, err := s.results.Get()
+	if err != nil {
+		return "", err
+	}
+	var emails []string
+	for _, email := range person.Email {
+		emails = append(emails, email)
+	}
+	email := emails[0]
+	s.emails = emails[1:]
+	return email, nil
+}
+
+type AugurFileSource struct {
+	scanner *bufio.Scanner
+}
+
+func NewAugurFileSource(filename string) *AugurFileSource {
+	f, err := os.Open(filename)
+	if err != nil {
+		panic(fmt.Sprintf("couldn't open %q - error: %s", filename, err))
+	}
+	return &AugurFileSource{
+		scanner: bufio.NewScanner(f),
+	}
+}
+
+func (s *AugurFileSource) Next() bool {
+	return s.scanner.Scan()
+}
+
+func (s *AugurFileSource) Get() (string, error) {
+	return s.scanner.Text(), s.scanner.Err()
 }
