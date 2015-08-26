@@ -5,6 +5,7 @@ import (
 	"net/url"
 	"time"
 
+	"github.com/tyba/srcd-domain/models/social/bitbucket"
 	"github.com/tyba/srcd-rovers/client"
 )
 
@@ -74,13 +75,10 @@ type Repository struct {
 	IsPrivate   bool      `json:"is_private"`
 	Language    string    `json:"language"`
 	Links       struct {
-		Avatar Href `json:"avatar"`
-		Clone  []struct {
-			Href string `json:"href"`
-			Name string `json:"name"`
-		} `json:"clone"`
-		Html Href `json:"html"`
-		Self Href `json:"self"`
+		Avatar Href              `json:"avatar"`
+		Clone  []bitbucket.Clone `json:"clone"`
+		Html   Href              `json:"html"`
+		Self   Href              `json:"self"`
 	} `json:"links"`
 	Name  string `json:"name"`
 	Owner struct {

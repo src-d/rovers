@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"errors"
 	"time"
 
 	"github.com/tyba/srcd-domain/container"
@@ -16,6 +17,7 @@ import (
 type CmdAugur struct {
 	FilterBy int    `short:"f" long:"filter" description:"filter by status"`
 	Source   string `short:"" long:"source" default:"people" description:""`
+	File     string `short:"" long:"file" default:"" description:"requires source=file, path to file"`
 
 	emailSource  readers.AugurEmailSource
 	client       *readers.AugurInsightsAPI
@@ -26,9 +28,12 @@ type CmdAugur struct {
 func (cmd *CmdAugur) Execute(args []string) error {
 	switch cmd.Source {
 	case "people":
-		cmd.emailSource = augur.NewAugurPeopleSource()
+		cmd.emailSource = readers.NewAugurPeopleSource()
 	case "file":
-		cmd.emailSource = augur.NewAugurFileSource()
+		if cmd.File != "" {
+			return errors.New("no file param provided")
+		}
+		cmd.emailSource = readers.NewAugurFileSource(cmd.File)
 	}
 
 	cmd.client = readers.NewAugurInsightsAPI(client.NewClient(false))
@@ -53,13 +58,13 @@ func (cmd *CmdAugur) process() {
 	}
 }
 
-func (cmd *CmdAugur) processEmail(e *social.AugurEmail) error {
-	insight, resp, err := cmd.client.SearchByEmail(e.Email)
+func (cmd *CmdAugur) processEmail(email string) error {
+	insight, resp, err := cmd.client.SearchByEmail(email)
 	if err != nil && resp == nil {
 		return err
 	}
 
-	if err := cmd.setStatus(e, resp.StatusCode); err != nil {
+	if err := cmd.setStatus(email, resp.StatusCode); err != nil {
 		return err
 	}
 
@@ -74,7 +79,8 @@ func (cmd *CmdAugur) processEmail(e *social.AugurEmail) error {
 	return nil
 }
 
-func (cmd *CmdAugur) setStatus(doc *social.AugurEmail, status int) error {
+func (cmd *CmdAugur) setStatus(email string, status int) error {
+	doc := cmd.emailStore.New()
 	doc.Status = status
 	doc.Last = time.Now()
 

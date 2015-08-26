@@ -84,6 +84,7 @@ func parseRepository(repository *social.BitbucketRepository, value readers.Repos
 	repository.Language = value.Language
 	repository.Links.Avatar = value.Links.Avatar.Href
 	repository.Links.Clone = value.Links.Clone
+	repository.Links.Clone = value.Links.Clone
 	repository.Links.Self = value.Links.Self.Href
 	repository.Name = value.Name
 	repository.Owner.Links.Avatar = value.Owner.Links.Avatar.Href
