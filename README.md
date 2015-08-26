@@ -1,4 +1,4 @@
-# srcd-rovers
+# source{d} rovers [![Circle CI](https://circleci.com/gh/tyba/srcd-rovers.svg?style=svg&circle-token=662647aec7bf50cd00c97487a868437f8dd0fb6e)](https://circleci.com/gh/tyba/srcd-rovers) [![Circle CI](https://circleci.com/gh/tyba/srcd-rovers/tree/dev.svg?style=svg&circle-token=662647aec7bf50cd00c97487a868437f8dd0fb6e)](https://circleci.com/gh/tyba/srcd-rovers/tree/dev) 
 
 Source{d} rovers defines (sub)commands for retrieving different external services.
 
