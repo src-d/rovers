@@ -53,9 +53,8 @@ dependencies:
 	for pkg in $(INTERNAL); do \
 		$(GOGET) github.com/tyba/$${pkg}/...; \
 		cd $(GOPATH)/src/github.com/tyba/$${pkg} && git checkout $(BRANCH); \
-		$(GOGET) github.com/tyba/$${pkg}/...; \
 	done; \
-	$(GOGET) ./...
+	cd $(GOPATH)/src/github.com/tyba/$(PROJECT); $(GOGET) ./...
 
 test:
 	$(GOTEST) ./...
