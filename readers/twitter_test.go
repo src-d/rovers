@@ -10,7 +10,7 @@ func (s *SourcesSuite) TestTwitter_GetProfileByHandle(c *C) {
 	a := NewTwitterReader(client.NewClient(true))
 	g, err := a.GetProfileByURL("https://twitter.com/mcuadros_")
 	c.Assert(err, IsNil)
-	c.Assert(g.Url, Equals, "https://twitter.com/mcuadros_")
+	c.Assert(g.URL, Equals, "https://twitter.com/mcuadros_")
 	c.Assert(g.Handle, Equals, "mcuadros_")
 	c.Assert(g.FullName, Equals, "Máximo Cuadros")
 	c.Assert(g.Bio, Equals, "(╯°□°）╯︵ ┻━┻")
