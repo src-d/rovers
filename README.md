@@ -12,7 +12,7 @@ Source{d} rovers defines (sub)commands for retrieving different external service
 - `github-api-users`: GitHub API crawler for GitHub users.
 - `twitter`: Twitter web crawler for Twitter profiles (followers, following, tweets, location, bio, ...). Requires `augur` data, Twitter profile URL.
 
-## Environment
+## Usage
 
 - `augur` command requires `augur-emails` command to be run first.
 - `github` and `twitter` commands require `augur` command to be run first.
