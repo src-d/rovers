@@ -51,7 +51,7 @@ dependencies:
 	for i in $(DEPENDENCIES); do $(GOGET) $$i; done
 
 	for pkg in $(INTERNAL); do \
-		go get github.com/tyba/$${pkg}; \
+		go get github.com/tyba/$${pkg}/...; \
 		cd $(GOPATH)/src/github.com/tyba/$${pkg} && git checkout $(BRANCH); \
 	done; \
 	$(GOGET) -d -v ./...
