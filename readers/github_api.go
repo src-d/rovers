@@ -3,24 +3,26 @@ package readers
 import (
 	"time"
 
+	"golang.org/x/oauth2"
 	"gopkg.in/inconshreveable/log15.v2"
 
-	"code.google.com/p/goauth2/oauth"
 	api "github.com/mcuadros/go-github/github"
 )
 
-var MinRequestDuration = time.Hour / 5000
+const (
+	GithubToken        = "b286be1a91d5656483209a9f3fdf120ab1174b67"
+	MinRequestDuration = time.Hour / 5000
+)
 
 type GithubAPI struct {
 	client *api.Client
 }
 
 func NewGithubAPI() *GithubAPI {
-	t := &oauth.Transport{
-		Token: &oauth.Token{AccessToken: "b286be1a91d5656483209a9f3fdf120ab1174b67"},
-	}
+	token := &oauth2.Token{AccessToken: GithubToken}
+	client := oauth2.NewClient(oauth2.NoContext, oauth2.StaticTokenSource(token))
 
-	return &GithubAPI{api.NewClient(t.Client())}
+	return &GithubAPI{api.NewClient(client)}
 }
 
 func (g *GithubAPI) GetAllRepositories(since int) ([]api.Repository, *api.Response, error) {
@@ -33,8 +35,8 @@ func (g *GithubAPI) GetAllRepositories(since int) ([]api.Repository, *api.Respon
 		}
 	}()
 
-	o := &api.RepositoryListAllOptions{Since: since}
-	repos, resp, err := g.client.Repositories.ListAll(o)
+	options := &api.RepositoryListAllOptions{Since: since}
+	repos, resp, err := g.client.Repositories.ListAll(options)
 	if err != nil {
 		return nil, resp, err
 	}
