@@ -8,7 +8,6 @@ import (
 	"github.com/tyba/srcd-rovers/readers"
 
 	"gopkg.in/inconshreveable/log15.v2"
-	"gopkg.in/tyba/storable.v1"
 )
 
 type CmdAugurEmails struct {
@@ -60,7 +59,7 @@ func (cmd *CmdAugurEmails) isInserted(email string) bool {
 	q := cmd.emailStore.Query()
 	q.FindByEmail(email)
 	doc, err := cmd.emailStore.FindOne(q)
-	if err == storable.ErrNotFound || err != nil {
+	if err != nil {
 		return false
 	}
 	return doc != nil
