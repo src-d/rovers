@@ -36,7 +36,7 @@ ifneq ($(origin CI), undefined)
 	GITHUB_REPO := $(CIRCLE_PROJECT_REPONAME)
 	SHA1 := $(shell echo $(CIRCLE_SHA1) | cut -c1-10)
 	BRANCH := $(CIRCLE_BRANCH)
-	GOPATH = /home/ubuntu/.go_workspace/
+	GOPATH = $(HOME)/.go/$(CIRCLE_BUILD_NUM)
 endif
 
 # Exports
@@ -51,11 +51,10 @@ dependencies:
 	for i in $(DEPENDENCIES); do $(GOGET) $$i; done
 
 	for pkg in $(INTERNAL); do \
-		go get github.com/tyba/$${pkg}/...; \
+		$(GOGET) github.com/tyba/$${pkg}/...; \
 		cd $(GOPATH)/src/github.com/tyba/$${pkg} && git checkout $(BRANCH); \
 	done; \
-	$(GOGET) -d -v ./...
-
+	$(GOGET) -d -v -t ./...
 
 test:
 	go test -v ./...
@@ -66,7 +65,7 @@ packages: dependencies
 			cd $(BASE_PATH); \
 			mkdir -p $(BUILD_PATH)/$(PROJECT)_$${os}_$${arch}; \
 			for cmd in $(COMMANDS); do \
-				GOOS=$${os} GOARCH=$${arch} $(GOCMD) build -ldflags "-X main.version $(SHA1) -X main.build \"$(BUILD)\"" -o $(BUILD_PATH)/$(PROJECT)_$${os}_$${arch}/$${cmd} $${cmd}.go ; \
+				GOOS=$${os} GOARCH=$${arch} $(GOBUILD) -ldflags "-X main.version $(SHA1) -X main.build \"$(BUILD)\"" -o $(BUILD_PATH)/$(PROJECT)_$${os}_$${arch}/$${cmd} $${cmd}.go ; \
 			done; \
 			for content in $(PKG_CONTENT); do \
 				cp -rf $${content} $(BUILD_PATH)/$(PROJECT)_$${os}_$${arch}/; \
