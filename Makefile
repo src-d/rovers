@@ -26,8 +26,8 @@ PKG_TAG = build
 GOCMD = go
 GOBUILD = $(GOCMD) build
 GOCLEAN = $(GOCMD) clean
-GOGET = $(GOCMD) get
-GOTEST = $(GOCMD) test
+GOGET = $(GOCMD) get -v -t
+GOTEST = $(GOCMD) test -v
 GHRELEASE = github-release
 
 # CircleCI
@@ -54,10 +54,10 @@ dependencies:
 		$(GOGET) github.com/tyba/$${pkg}/...; \
 		cd $(GOPATH)/src/github.com/tyba/$${pkg} && git checkout $(BRANCH); \
 	done; \
-	$(GOGET) -d -v -t ./...
+	$(GOGET) ./...
 
 test:
-	go test -v ./...
+	$(GOTEST) ./...
 
 packages: dependencies
 	for os in $(PKG_OS); do \
