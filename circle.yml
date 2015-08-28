@@ -1,17 +1,22 @@
-checkout:
-  post:
-    - rm -rf ~/.go_workspace/src/github.com/tyba
-    - mkdir -p ~/.go_workspace/src/github.com/tyba
-    - cp -R ~/$CIRCLE_PROJECT_REPONAME ~/.go_workspace/src/github.com/tyba/$CIRCLE_PROJECT_REPONAME
+machine:
+  environment:
+    GOPATH: $HOME/.go/$CIRCLE_BUILD_NUM
+    GOROOT: $HOME/go
+    PATH: $GOROOT/bin:$PATH
 
 dependencies:
   cache_directories:
-    - mongodb-linux-x86_64-ubuntu1204-3.0.5
+    - mongo
+    - go
   pre:
-    - if [[ ! -d mongodb-linux-x86_64-ubuntu1204-3.0.5 ]]; then curl https://fastdl.mongodb.org/linux/mongodb-linux-x86_64-ubuntu1204-3.0.5.tgz --insecure -O && tar -xvzf mongodb-linux-x86_64-ubuntu1204-3.0.5.tgz; fi
+    - if [[ ! -d mongo ]]; then wget http://fastdl.mongodb.org/linux/mongodb-linux-x86_64-ubuntu1204-3.0.5.tgz -O mongo.tgz && tar -xvzf mongo.tgz; fi
     - sudo /etc/init.d/mongodb stop
     - sudo cp mongodb-linux-x86_64-ubuntu1204-3.0.5/bin/* /usr/bin
     - sudo /etc/init.d/mongodb start
+
+    - if [[ ! -d go ]]; then wget https://storage.googleapis.com/golang/go1.5.linux-amd64.tar.gz -O go.tar.gz && tar -xvzf go.tar.gz && rm -rf go.tar.gz && mv go $HOME/;  fi
+    - rm -rf $GOPATH
+    - mkdir -p $GOPATH
   override:
     - make dependencies
 
