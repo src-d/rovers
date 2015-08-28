@@ -65,7 +65,7 @@ func (cmd *CmdAugurEmails) isInserted(email string) bool {
 	return doc != nil
 }
 
-func (c *CmdAugurEmails) insertEmail(email string) error {
+func (cmd *CmdAugurEmails) insertEmail(email string) error {
 	doc := cmd.emailStore.New()
 	doc.Email = email
 
