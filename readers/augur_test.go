@@ -25,5 +25,5 @@ func (s *SourcesSuite) TestAugurReader_SearchByEmailBadRequest(c *C) {
 
 	c.Assert(r, IsNil)
 	c.Assert(err, Equals, ErrUnexpectedStatusCode)
-	c.Assert(res.StatusCode, Equals, 422)
+	c.Assert(res.StatusCode, Equals, 400)
 }
