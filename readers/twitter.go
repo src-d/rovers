@@ -3,10 +3,10 @@ package readers
 import (
 	"strconv"
 	"strings"
-	"time"
 
+	"github.com/tyba/srcd-domain/container"
 	"github.com/tyba/srcd-domain/models/social"
-	"github.com/tyba/srcd-rovers/http"
+	"github.com/tyba/srcd-rovers/client"
 
 	"github.com/PuerkitoBio/goquery"
 )
@@ -14,15 +14,15 @@ import (
 const TwitterBaseURL = "https://twitter.com/%s"
 
 type TwitterReader struct {
-	client *http.Client
+	client *client.Client
 }
 
-func NewTwitterReader(client *http.Client) *TwitterReader {
+func NewTwitterReader(client *client.Client) *TwitterReader {
 	return &TwitterReader{client}
 }
 
 func (t *TwitterReader) GetProfileByURL(url string) (*social.TwitterProfile, error) {
-	req, err := http.NewRequest(url)
+	req, err := client.NewRequest(url)
 	if err != nil {
 		return nil, err
 	}
@@ -32,11 +32,15 @@ func (t *TwitterReader) GetProfileByURL(url string) (*social.TwitterProfile, err
 		return nil, err
 	}
 
-	p := &social.TwitterProfile{Url: url, Created: time.Now()}
-	t.fillBasicInfo(doc, p)
-	t.fillStats(doc, p)
+	store := container.GetDomainModelsSocialTwitterProfileStore()
+	profile, err := store.New(url)
+	if err != nil {
+		return nil, err
+	}
+	t.fillBasicInfo(doc, profile)
+	t.fillStats(doc, profile)
 
-	return p, nil
+	return profile, nil
 }
 
 func (t *TwitterReader) fillBasicInfo(doc *goquery.Document, p *social.TwitterProfile) {

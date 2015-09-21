@@ -1,58 +1,59 @@
 package readers
 
 import (
-	"fmt"
 	"time"
 
-	"github.com/tyba/srcd-rovers/http"
+	"golang.org/x/oauth2"
+	"gopkg.in/inconshreveable/log15.v2"
 
-	"code.google.com/p/goauth2/oauth"
 	api "github.com/mcuadros/go-github/github"
 )
 
-var MinRequestDuration = time.Hour / 5000
+const (
+	GithubToken        = "b286be1a91d5656483209a9f3fdf120ab1174b67"
+	MinRequestDuration = time.Hour / 5000
+)
 
-type GithubAPIReader struct {
+type GithubAPI struct {
 	client *api.Client
 }
 
-func NewGithubAPIReader(client *http.Client) *GithubAPIReader {
-	t := &oauth.Transport{
-		Token: &oauth.Token{AccessToken: "e568ba2365b2bc198da8c5571a4cfb99830bb5ed"},
-	}
+func NewGithubAPI() *GithubAPI {
+	token := &oauth2.Token{AccessToken: GithubToken}
+	client := oauth2.NewClient(oauth2.NoContext, oauth2.StaticTokenSource(token))
 
-	return &GithubAPIReader{api.NewClient(t.Client())}
+	return &GithubAPI{api.NewClient(client)}
 }
 
-func (g *GithubAPIReader) GetAllRepositories(since int) ([]api.Repository, *api.Response, error) {
+func (g *GithubAPI) GetAllRepositories(since int) ([]api.Repository, *api.Response, error) {
 	start := time.Now()
 	defer func() {
-		needsWait := MinRequestDuration - time.Now().Sub(start)
+		needsWait := MinRequestDuration - time.Since(start)
 		if needsWait > 0 {
-			fmt.Println("waiting ", needsWait)
+			log15.Info("Waiting", "duration", needsWait)
 			time.Sleep(needsWait)
 		}
 	}()
 
-	o := &api.RepositoryListAllOptions{Since: since}
-	repos, resp, err := g.client.Repositories.ListAll(o)
+	options := &api.RepositoryListAllOptions{Since: since}
+	repos, resp, err := g.client.Repositories.ListAll(options)
 	if err != nil {
 		return nil, resp, err
 	}
 
 	if resp.Remaining < 100 {
-		fmt.Println("low remaining", resp.Remaining)
+		log15.Info("Low remaining", "value", resp.Remaining)
 	}
 
 	return repos, resp, nil
 }
 
-func (g *GithubAPIReader) GetAllUsers(since int) ([]api.User, *api.Response, error) {
+func (g *GithubAPI) GetAllUsers(since int) ([]api.User, *api.Response, error) {
 	start := time.Now()
 	defer func() {
-		needsWait := MinRequestDuration - time.Now().Sub(start)
+		needsWait := MinRequestDuration - time.Since(start)
 		if needsWait > 0 {
-			fmt.Println("waiting ", needsWait)
+			log15.Info("Waiting", "duration", needsWait)
 			time.Sleep(needsWait)
 		}
 	}()
@@ -64,7 +65,7 @@ func (g *GithubAPIReader) GetAllUsers(since int) ([]api.User, *api.Response, err
 	}
 
 	if resp.Remaining < 100 {
-		fmt.Println("low remaining", resp.Remaining)
+		log15.Info("Low remaining", "value", resp.Remaining)
 	}
 
 	return users, resp, nil

@@ -1,0 +1,32 @@
+machine:
+  environment:
+    GOPATH: $HOME/.go/$CIRCLE_BUILD_NUM
+    GOROOT: $HOME/go
+    PATH: $GOROOT/bin:$PATH
+
+dependencies:
+  cache_directories:
+    - mongo
+    - go
+  pre:
+    - if [[ ! -d mongo ]]; then wget http://fastdl.mongodb.org/linux/mongodb-linux-x86_64-ubuntu1204-3.0.5.tgz -O mongo.tgz && tar -xvzf mongo.tgz; fi
+    - sudo /etc/init.d/mongodb stop
+    - sudo cp mongodb-linux-x86_64-ubuntu1204-3.0.5/bin/* /usr/bin
+    - sudo /etc/init.d/mongodb start
+
+    - if [[ ! -d go ]]; then wget https://storage.googleapis.com/golang/go1.5.linux-amd64.tar.gz -O go.tar.gz && tar -xvzf go.tar.gz && rm -rf go.tar.gz && mv go $HOME/;  fi
+    - rm -rf $GOPATH
+    - mkdir -p $GOPATH/src/github.com/tyba/
+    - ln -s $HOME/$CIRCLE_PROJECT_REPONAME $GOPATH/src/github.com/tyba/$CIRCLE_PROJECT_REPONAME
+  override:
+    - make dependencies
+
+test:
+  override:
+    - make test
+
+deployment:
+  production:
+    branch: master
+    commands:
+      - make upload

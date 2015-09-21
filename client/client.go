@@ -1,4 +1,4 @@
-package http
+package client
 
 import (
 	"compress/gzip"
@@ -14,6 +14,11 @@ import (
 	"gopkg.in/mgo.v2"
 )
 
+const (
+	DatabaseName   = "rovers"
+	CollectionName = "cache"
+)
+
 var NotFound = errors.New("Document not found")
 
 type Client struct {
@@ -21,7 +26,7 @@ type Client struct {
 }
 
 func NewCachedClient(session *mgo.Session) *Client {
-	collection := session.DB("crawler").C("cache")
+	collection := session.DB(DatabaseName).C(CollectionName)
 
 	transport := httpcache.NewTransport(mgocache.New(collection))
 	transport.Transport = &responseModifier{}
@@ -32,15 +37,15 @@ func NewCachedClient(session *mgo.Session) *Client {
 	return cli
 }
 
-func NewClient(cacheEnfornced bool) *Client {
-	session, _ := mgo.Dial("mongodb://localhost")
-	collection := session.DB("crawler").C("cache")
+func NewClient(cacheEnforced bool) *Client {
+	session, _ := mgo.Dial("127.0.0.1:27017")
+	collection := session.DB(DatabaseName).C(CollectionName)
 
 	transport := httpcache.NewTransport(mgocache.New(collection))
 	transport.Transport = &responseModifier{}
 
 	cli := &Client{}
-	if cacheEnfornced {
+	if cacheEnforced {
 		cli.Transport = transport
 	}
 
@@ -52,7 +57,6 @@ func (c *Client) DoJSON(req *http.Request, result interface{}) (*http.Response, 
 	if err != nil {
 		return res, err
 	}
-
 	if res.StatusCode >= 400 {
 		return res, nil
 	}

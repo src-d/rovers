@@ -1,142 +1,94 @@
 package commands
 
 import (
-	"fmt"
-	"sync"
+	"errors"
 	"time"
 
-	"github.com/tyba/srcd-rovers/http"
+	"github.com/tyba/srcd-domain/container"
+	"github.com/tyba/srcd-domain/models/social"
+	"github.com/tyba/srcd-rovers/client"
 	"github.com/tyba/srcd-rovers/readers"
 
-	"gopkg.in/mgo.v2"
-	"gopkg.in/mgo.v2/bson"
+	"gopkg.in/inconshreveable/log15.v2"
 )
 
+// Due to Augur having a rate limit of 1 req/s this is a single goroutine
+// process.
 type CmdAugur struct {
-	FilterBy    int    `short:"f" long:"filter" description:"filter by status"`
-	SortBy      string `short:"s" long:"sort" default:"email" description:"order by"`
-	MongoDBHost string `short:"m" long:"mongo" default:"localhost" description:"mongodb hostname"`
-	MaxThreads  int    `short:"t" long:"threads" default:"4" description:"number of t"`
+	FilterBy int    `short:"f" long:"filter" description:"filter by status"`
+	Source   string `short:"" long:"source" default:"people" description:""`
+	File     string `short:"" long:"file" default:"" description:"requires source=file, path to file"`
 
-	augur        *readers.AugurReader
-	collection   *mgo.Collection
-	storage      *mgo.Collection
-	emailChannel emailChannel
-	sync.WaitGroup
-	sync.Mutex
+	emailSource  readers.AugurEmailSource
+	client       *readers.AugurInsightsAPI
+	emailStore   *social.AugurEmailStore
+	insightStore *social.AugurInsightStore
 }
 
-type email struct {
-	Email  string `bson:"_id"`
-	Status int
-}
+func (cmd *CmdAugur) Execute(args []string) error {
+	switch cmd.Source {
+	case "people":
+		cmd.emailSource = readers.NewAugurPeopleSource()
+	case "file":
+		if cmd.File != "" {
+			return errors.New("no file param provided")
+		}
+		cmd.emailSource = readers.NewAugurFileSource(cmd.File)
+	}
 
-type emailChannel chan *email
+	cmd.client = readers.NewAugurInsightsAPI(client.NewClient(false))
+	cmd.emailStore = container.GetDomainModelsSocialAugurEmailStore()
+	cmd.insightStore = container.GetDomainModelsSocialAugurInsightStore()
 
-func (a *CmdAugur) Execute(args []string) error {
-	session, _ := mgo.Dial("mongodb://" + a.MongoDBHost)
-
-	a.augur = readers.NewAugurReader(http.NewClient(false))
-	a.collection = session.DB("sources").C("emails")
-	a.storage = session.DB("sources").C("augur")
-	a.emailChannel = make(emailChannel, a.MaxThreads)
-
-	go a.queue()
-	a.process()
+	cmd.process()
 
 	return nil
 }
 
-func (a *CmdAugur) queue() {
-	pending := a.get()
-	defer pending.Close()
-
-	for {
-		result := &email{}
-		if !pending.Next(result) {
-			break
+func (cmd *CmdAugur) process() {
+	for cmd.emailSource.Next() {
+		email, err := cmd.emailSource.Get()
+		if err != nil {
+			log15.Error("ResultSet.Get", "error", err)
+			continue
 		}
-
-		a.emailChannel <- result
-	}
-
-	close(a.emailChannel)
-}
-
-func (a *CmdAugur) get() *mgo.Iter {
-	q := bson.M{
-		"status": bson.M{
-			"$exists": 0,
-		},
-	}
-
-	if a.FilterBy != 0 {
-		q["status"] = a.FilterBy
-	}
-
-	return a.collection.Find(q).Sort(a.SortBy).Iter()
-}
-
-func (a *CmdAugur) process() {
-	for i := 0; i < a.MaxThreads; i++ {
-		a.Add(1)
-		go func(i int) {
-			defer a.Done()
-			for {
-				if !a.readFromChannel(i) {
-					break
-				}
-			}
-		}(i)
-	}
-
-	a.Wait()
-}
-
-func (a *CmdAugur) readFromChannel(i int) bool {
-	a.Lock()
-	email, ok := <-a.emailChannel
-	a.Unlock()
-
-	if ok {
-		if err := a.processEmail(email); err != nil {
-			fmt.Printf("ERROR: %s\n", err)
+		if err := cmd.processEmail(email); err != nil {
+			log15.Error("processEmail", "error", err)
 		}
 	}
-
-	return ok
 }
 
-func (a *CmdAugur) processEmail(e *email) error {
-	r, res, err := a.augur.SearchByEmail(e.Email)
-	if err != nil && res == nil {
+func (cmd *CmdAugur) processEmail(email string) error {
+	insight, resp, err := cmd.client.SearchByEmail(email)
+	if err != nil && resp == nil {
 		return err
 	}
 
-	a.setStatus(e, res.StatusCode)
-
-	if res.StatusCode == 200 {
-		a.saveAugurInsights(r)
-		return nil
+	if err := cmd.setStatus(email, resp.StatusCode); err != nil {
+		return err
 	}
 
+	if resp.StatusCode == 200 {
+		return err
+	}
+
+	if err := cmd.saveAugurInsights(insight); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (cmd *CmdAugur) setStatus(email string, status int) error {
+	doc := cmd.emailStore.New()
+	doc.Status = status
+	doc.Last = time.Now()
+
+	log15.Info("Done", "email", doc.Email, "status", status)
+	_, err := cmd.emailStore.Save(doc)
 	return err
 }
 
-func (a *CmdAugur) setStatus(e *email, status int) error {
-	q := bson.M{"_id": e.Email}
-	s := bson.M{
-		"$set": bson.M{
-			"status": status,
-			"last":   time.Now(),
-		},
-	}
-
-	fmt.Printf("DONE: %s, %d\n", e.Email, status)
-
-	return a.collection.Update(q, s)
-}
-
-func (a *CmdAugur) saveAugurInsights(i *readers.AugurInsights) error {
-	return a.storage.Insert(i)
+func (cmd *CmdAugur) saveAugurInsights(doc *social.AugurInsight) error {
+	return cmd.insightStore.Insert(doc)
 }

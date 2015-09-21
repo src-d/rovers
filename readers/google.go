@@ -5,7 +5,7 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/tyba/srcd-rovers/http"
+	"github.com/tyba/srcd-rovers/client"
 
 	"github.com/PuerkitoBio/goquery"
 )
@@ -13,16 +13,16 @@ import (
 const googleSearch = "http://www.google.com/search?hl=en&q=%s&ie=UTF-8&btnG=Google+Search&inurl=https"
 
 type GoogleSearchReader struct {
-	client *http.Client
+	client *client.Client
 }
 
-func NewGoogleSearchReader(client *http.Client) *GoogleSearchReader {
+func NewGoogleSearchReader(client *client.Client) *GoogleSearchReader {
 	return &GoogleSearchReader{client}
 }
 
 func (g *GoogleSearchReader) SearchByQuery(query string) (*GoogleSearchResult, error) {
 	query = strings.Replace(query, " ", "+", -1)
-	req, err := http.NewRequest(fmt.Sprintf(googleSearch, query))
+	req, err := client.NewRequest(fmt.Sprintf(googleSearch, query))
 	if err != nil {
 		return nil, err
 	}

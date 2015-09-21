@@ -12,14 +12,14 @@ import (
 type CmdGithubApiUsers struct {
 	MongoDBHost string `short:"m" long:"mongo" default:"localhost" description:"mongodb hostname"`
 
-	github  *readers.GithubAPIReader
+	github  *readers.GithubAPI
 	storage *mgo.Collection
 }
 
 func (l *CmdGithubApiUsers) Execute(args []string) error {
 	session, _ := mgo.Dial("mongodb://" + l.MongoDBHost)
 
-	l.github = readers.NewGithubAPIReader(nil)
+	l.github = readers.NewGithubAPI()
 	l.storage = session.DB("github").C("users.api")
 
 	since := l.getSince()
