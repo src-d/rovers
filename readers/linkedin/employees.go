@@ -3,6 +3,9 @@ package linkedin
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
+
+	"github.com/tyba/srcd-domain/models/company"
 
 	"github.com/PuerkitoBio/goquery"
 	"github.com/tyba/srcd-rovers/client"
@@ -26,13 +29,14 @@ func NewLinkedIn(client *client.Client) *LinkedIn {
 func (g *LinkedIn) GetEmployes(companyId int) (interface{}, error) {
 	url := fmt.Sprintf(EmployeesURL, companyId)
 
+	var err error
 	var people []person
 	for {
 		var more []person
-		var err error
 		fmt.Printf("Processing %q ...\n", url)
 		url, more, err = g.doGetEmployes(url)
 		people = append(people, more...)
+
 		if err != nil {
 			break
 		}
@@ -46,7 +50,7 @@ func (g *LinkedIn) GetEmployes(companyId int) (interface{}, error) {
 	fmt.Printf("Found %d employees\n", len(people))
 	fmt.Println(people)
 
-	return nil, nil
+	return nil, err
 }
 
 func (g *LinkedIn) doGetEmployes(url string) (
@@ -80,6 +84,10 @@ func (g *LinkedIn) parseContent(doc *goquery.Document) (
 		return
 	}
 
+	//fixing crappy JSON from linkedIn
+	//http://stackoverflow.com/questions/30270668/json-loads-giving-exception-that-it-expects-a-value-looks-like-value-is-there
+	content = strings.Replace(content, "\\u002d", "-", -1)
+
 	l := len(content)
 	js := content[4 : l-3]
 
@@ -93,11 +101,6 @@ func (g *LinkedIn) parseContent(doc *goquery.Document) (
 	people = v.getPersons()
 
 	return
-}
-
-type person struct {
-	FirstName string `json:"firstName"`
-	LastName  string `json:"lastName"`
 }
 
 type voltron struct {
@@ -146,4 +149,22 @@ func (v *voltron) getPersons() []person {
 	}
 
 	return o
+}
+
+type person struct {
+	FirstName  string `json:"firstName"`
+	LastName   string `json:"lastName"`
+	Position   string `json:"fmt_headline"`
+	LinkedInId int    `json:"id"`
+	Location   string `json:"fmt_location"`
+}
+
+func (p *person) castToDomain() *company.Employee {
+	return &company.Employee{
+		FirstName:  p.FirstName,
+		LastName:   p.LastName,
+		Position:   p.Position,
+		LinkedInId: p.LinkedInId,
+		Location:   p.Location,
+	}
 }
