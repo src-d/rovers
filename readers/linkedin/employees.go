@@ -4,11 +4,14 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
+	"time"
+
+	"gopkg.in/inconshreveable/log15.v2"
 
 	"github.com/tyba/srcd-domain/models/company"
+	"github.com/tyba/srcd-rovers/client"
 
 	"github.com/PuerkitoBio/goquery"
-	"github.com/tyba/srcd-rovers/client"
 )
 
 const (
@@ -16,94 +19,93 @@ const (
 	EmployeesURL = BaseURL + "/vsearch/p?f_CC=%d"
 )
 
-type LinkedIn struct {
-	Cookie string
-
+type LinkedInWebCrawler struct {
 	client *client.Client
+	cookie string
 }
 
-func NewLinkedIn(client *client.Client) *LinkedIn {
-	return &LinkedIn{client: client}
+func NewLinkedInWebCrawler(client *client.Client, cookie string) *LinkedInWebCrawler {
+	return &LinkedInWebCrawler{client: client, cookie: cookie}
 }
 
-func (g *LinkedIn) GetEmployes(companyId int) (interface{}, error) {
+func (li *LinkedInWebCrawler) GetEmployees(companyId int) (
+	people []company.Employee, err error,
+) {
+	start := time.Now()
 	url := fmt.Sprintf(EmployeesURL, companyId)
 
-	var err error
-	var people []person
 	for {
-		var more []person
-		fmt.Printf("Processing %q ...\n", url)
-		url, more, err = g.doGetEmployes(url)
-		people = append(people, more...)
+		var more []Person
+		log15.Info("Processing", "url", url)
+		url, more, err = li.doGetEmployes(url)
 
-		if err != nil {
-			break
+		for _, person := range more {
+			people = append(people, person.ToDomainCompanyEmployee())
 		}
 
-		if url == "" {
+		if err != nil || url == "" {
 			break
 		}
-
 	}
 
-	fmt.Printf("Found %d employees\n", len(people))
-	fmt.Println(people)
-
-	return nil, err
+	log15.Info("Done",
+		"elapsed", time.Since(start),
+		"found", len(people),
+	)
+	for idx, person := range people {
+		log15.Debug("Person", "idx", idx, "person", person)
+	}
+	return people, err
 }
 
-func (g *LinkedIn) doGetEmployes(url string) (
-	next string, people []person, err error,
+func (li *LinkedInWebCrawler) doGetEmployes(url string) (
+	next string, people []Person, err error,
 ) {
 	req, err := client.NewRequest(url)
 	if err != nil {
 		return
 	}
+	req.Header.Add("Cookie", li.cookie)
 
-	req.Header.Add("Cookie", g.Cookie)
-
-	doc, res, err := g.client.DoHTML(req)
+	doc, res, err := li.client.DoHTML(req)
 	if err != nil {
 		return
 	}
-
 	if res.StatusCode == 404 {
 		err = client.NotFound
 		return
 	}
-
-	return g.parseContent(doc)
+	return li.parseContent(doc)
 }
 
-func (g *LinkedIn) parseContent(doc *goquery.Document) (
-	next string, people []person, err error,
+func (li *LinkedInWebCrawler) parseContent(doc *goquery.Document) (
+	next string, people []Person, err error,
 ) {
 	content, err := doc.Find("#voltron_srp_main-content").Html()
 	if err != nil {
 		return
 	}
 
-	//fixing crappy JSON from linkedIn
-	//http://stackoverflow.com/questions/30270668/json-loads-giving-exception-that-it-expects-a-value-looks-like-value-is-there
+	// Fix encoding issues with LinkedIn's JSON:
+	// Source: http://stackoverflow.com/q/30270668
 	content = strings.Replace(content, "\\u002d", "-", -1)
 
-	l := len(content)
-	js := content[4 : l-3]
+	length := len(content)
+	jsonBlob := content[4 : length-3]
 
-	var v voltron
-	err = json.Unmarshal([]byte(js), &v)
+	var data LinkedInData
+	err = json.Unmarshal([]byte(jsonBlob), &data)
 	if err != nil {
 		return
 	}
 
-	next = v.getNextURL()
-	people = v.getPersons()
-
+	next = data.getNextURL()
+	people = data.getPeople()
 	return
 }
 
-type voltron struct {
+// fat ass LinkedIn format
+type LinkedInData struct {
 	Content struct {
 		Page struct {
 			V struct {
@@ -116,9 +118,8 @@ type voltron struct {
 							}
 						} `json:"resultPagination"`
 					} `json:"baseData"`
-
 					Results []struct {
-						Person person
+						Person Person
 					}
 				}
 			} `json:"voltron_unified_search_json"`
@@ -126,9 +127,9 @@ type voltron struct {
 	}
 }
 
-func (v *voltron) getNextURL() string {
+func (lid *LinkedInData) getNextURL() string {
 	next := false
-	for _, page := range v.Content.Page.V.Search.Data.Pagination.Pages {
+	for _, page := range lid.Content.Page.V.Search.Data.Pagination.Pages {
 		if page.Current {
 			next = true
 			continue
@@ -142,29 +143,28 @@ func (v *voltron) getNextURL() string {
 	return ""
 }
 
-func (v *voltron) getPersons() []person {
-	var o []person
-	for _, w := range v.Content.Page.V.Search.Results {
-		o = append(o, w.Person)
+func (lid *LinkedInData) getPeople() []Person {
+	var people []Person
+	for _, result := range lid.Content.Page.V.Search.Results {
+		people = append(people, result.Person)
 	}
-
-	return o
+	return people
 }
 
-type person struct {
+type Person struct {
 	FirstName  string `json:"firstName"`
 	LastName   string `json:"lastName"`
-	Position   string `json:"fmt_headline"`
 	LinkedInId int    `json:"id"`
 	Location   string `json:"fmt_location"`
+	Position   string `json:"fmt_headline"`
 }
 
-func (p *person) castToDomain() *company.Employee {
-	return &company.Employee{
+func (p *Person) ToDomainCompanyEmployee() company.Employee {
+	return company.Employee{
 		FirstName:  p.FirstName,
 		LastName:   p.LastName,
-		Position:   p.Position,
 		LinkedInId: p.LinkedInId,
 		Location:   p.Location,
+		Position:   p.Position,
 	}
 }
