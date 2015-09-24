@@ -38,18 +38,11 @@ func NewCachedClient(session *mgo.Session) *Client {
 }
 
 func NewClient(cacheEnforced bool) *Client {
-	session, _ := mgo.Dial("127.0.0.1:27017")
-	collection := session.DB(DatabaseName).C(CollectionName)
-
-	transport := httpcache.NewTransport(mgocache.New(collection))
-	transport.Transport = &responseModifier{}
-
-	cli := &Client{}
 	if cacheEnforced {
-		cli.Transport = transport
+		session, _ := mgo.Dial("127.0.0.1:27017")
+		return NewCachedClient(session)
 	}
-
-	return cli
+	return &Client{}
 }
 
 func (c *Client) DoJSON(req *http.Request, result interface{}) (*http.Response, error) {
