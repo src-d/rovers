@@ -22,14 +22,6 @@ PKG_ARCH = amd64
 PKG_CONTENT =
 PKG_TAG = build
 
-# Go parameters
-GOCMD = go
-GOBUILD = $(GOCMD) build
-GOCLEAN = $(GOCMD) clean
-GOGET = $(GOCMD) get -v -t
-GOTEST = $(GOCMD) test -v
-GHRELEASE = github-release
-
 # CircleCI
 ifneq ($(origin CI), undefined)
 	GITHUB_USER := $(CIRCLE_PROJECT_USERNAME)
@@ -38,6 +30,14 @@ ifneq ($(origin CI), undefined)
 	BRANCH := $(CIRCLE_BRANCH)
 	GOPATH = $(HOME)/.go/$(CIRCLE_BUILD_NUM)
 endif
+
+# Go parameters
+GOCMD = go
+GOBUILD = $(GOCMD) build
+GOCLEAN = $(GOCMD) clean
+GOGET = $(GOCMD) get
+GOTEST = $(GOCMD) test
+GHRELEASE = $(GOPATH)/bin/github-release
 
 # Exports
 export GITHUB_TOKEN
