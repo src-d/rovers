@@ -5,6 +5,8 @@ import (
 	"net/url"
 	"time"
 
+	"gopkg.in/inconshreveable/log15.v2"
+
 	"github.com/tyba/srcd-domain/models/social/bitbucket"
 	"github.com/tyba/srcd-rovers/client"
 )
@@ -40,7 +42,8 @@ func (a *BitbucketAPI) buildURL(q url.Values) *url.URL {
 }
 
 func (a *BitbucketAPI) doRequest(q url.Values, result interface{}) (*http.Response, error) {
-	req, err := client.NewRequest(a.buildURL(q).String())
+	requrl := a.buildURL(q).String()
+	req, err := client.NewRequest(requrl)
 	if err != nil {
 		return nil, err
 	}
@@ -50,6 +53,7 @@ func (a *BitbucketAPI) doRequest(q url.Values, result interface{}) (*http.Respon
 		return res, err
 	}
 
+	log15.Debug("doRequest", "url", requrl, "status", res.StatusCode)
 	switch res.StatusCode {
 	case 200:
 		return res, nil
