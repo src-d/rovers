@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"io/ioutil"
 	"log"
 	"os"
@@ -49,7 +50,11 @@ var companies = map[string]int{
 }
 
 func main() {
-	cookie := readCookieFile()
+	var filename string
+	flag.StringVar(&filename, "cookiefile", "utils/updateemployees/cookie.save", "path to cookie file")
+	flag.Parse()
+
+	cookie := readCookieFile(filename)
 
 	start := time.Now()
 
@@ -92,8 +97,7 @@ func RunScript(script pipe.Pipe) {
 	}
 }
 
-func readCookieFile() string {
-	filename := "cookie.save"
+func readCookieFile(filename string) string {
 	f, err := os.Open(filename)
 	if os.IsNotExist(err) {
 		log.Panicf("A %q file is required", filename)
