@@ -10,6 +10,7 @@ Source{d} rovers defines (sub)commands for retrieving different external service
 - `github`: web crawler for GitHub profiles. Requires `augur` data, GitHub profile URL.
 - `github-api`: GitHub API crawler for GitHub repositories.
 - `github-api-users`: GitHub API crawler for GitHub users.
+- `linkedin`: LinkedIn company employees importer.
 - `twitter`: Twitter web crawler for Twitter profiles (followers, following, tweets, location, bio, ...). Requires `augur` data, Twitter profile URL.
 
 ## Usage
@@ -17,3 +18,7 @@ Source{d} rovers defines (sub)commands for retrieving different external service
 - `augur` command requires `augur-emails` command to be run first.
 - `github` and `twitter` commands require `augur` command to be run first.
 - Both `github-api` and `github-api-users` require a local Mongo.
+
+## Utilities
+
+The `utils` directory contains scripts that **require having a Go toolchain installed** but simplify usage of a certain pipeline.
