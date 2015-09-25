@@ -1,10 +1,10 @@
 package commands
 
 import (
-	"errors"
 	"time"
 
 	"github.com/tyba/srcd-domain/container"
+	"github.com/tyba/srcd-domain/models"
 	"github.com/tyba/srcd-domain/models/social"
 	"github.com/tyba/srcd-rovers/client"
 	"github.com/tyba/srcd-rovers/readers"
@@ -12,50 +12,102 @@ import (
 	"gopkg.in/inconshreveable/log15.v2"
 )
 
-// Due to Augur having a rate limit of 1 req/s this is a single goroutine
-// process.
-type CmdAugur struct {
-	FilterBy int    `short:"f" long:"filter" description:"filter by status"`
-	Source   string `short:"" long:"source" default:"people" description:""`
-	File     string `short:"" long:"file" default:"" description:"requires source=file, path to file"`
+var Expired = (30 * 24 * time.Hour).Seconds()
 
-	emailSource  readers.AugurEmailSource
+// CmdAugur fetches info from Augur for all emails on sourced.people.
+//
+// NOTE: Augur rate limit is 1 req/s.
+type CmdAugur struct {
+	CmdBase
+
 	client       *readers.AugurInsightsAPI
+	personStore  *models.PersonStore
 	emailStore   *social.AugurEmailStore
 	insightStore *social.AugurInsightStore
+	emails       map[string]time.Time
+	now          time.Time
 }
 
 func (cmd *CmdAugur) Execute(args []string) error {
-	switch cmd.Source {
-	case "people":
-		cmd.emailSource = readers.NewAugurPeopleSource()
-	case "file":
-		if cmd.File != "" {
-			return errors.New("no file param provided")
-		}
-		cmd.emailSource = readers.NewAugurFileSource(cmd.File)
-	}
+	cmd.ChangeLogLevel()
 
 	cmd.client = readers.NewAugurInsightsAPI(client.NewClient(false))
+	cmd.personStore = container.GetDomainModelsPersonStore()
 	cmd.emailStore = container.GetDomainModelsSocialAugurEmailStore()
 	cmd.insightStore = container.GetDomainModelsSocialAugurInsightStore()
+	cmd.emails = make(map[string]time.Time)
 
-	cmd.process()
+	start := time.Now()
+	defer log15.Info("Done", "elapsed", time.Since(start))
 
+	return cmd.run()
+}
+
+func (cmd *CmdAugur) run() error {
+	var steps = []struct {
+		Name string
+		Fn   func() error
+	}{
+		{"populateEmailSet", cmd.populateEmailSet},
+		{"fetchAugurData", cmd.fetchAugurData},
+	}
+	for _, step := range steps {
+		start := time.Now()
+		err := step.Fn()
+		elapsed := time.Since(start)
+		if err != nil {
+			log15.Error("Done", "step", step.Name, "elapsed", elapsed)
+			return err
+		} else {
+			log15.Info("Done", "step", step.Name, "elapsed", elapsed)
+		}
+	}
 	return nil
 }
 
-func (cmd *CmdAugur) process() {
-	for cmd.emailSource.Next() {
-		email, err := cmd.emailSource.Get()
-		if err != nil {
-			log15.Error("ResultSet.Get", "error", err)
-			continue
-		}
-		if err := cmd.processEmail(email); err != nil {
-			log15.Error("processEmail", "error", err)
-		}
+func (cmd *CmdAugur) populateEmailSet() error {
+	q := cmd.emailStore.Query()
+	set, err := cmd.emailStore.Find(q)
+	if err != nil {
+		return err
 	}
+
+	defer log15.Info("Set populated", "total_emails", len(cmd.emails))
+	return set.ForEach(func(email *social.AugurEmail) error {
+		cmd.emails[email.Email] = email.Last
+		return nil
+	})
+}
+
+func (cmd *CmdAugur) isUpToDate(email string) bool {
+	last, ok := cmd.emails[email]
+	return ok && time.Since(last).Seconds() < Expired
+}
+
+func (cmd *CmdAugur) fetchAugurData() error {
+	cmd.now = time.Now()
+	q := cmd.personStore.Query()
+	set, err := cmd.personStore.Find(q)
+	if err != nil {
+		return err
+	}
+
+	return set.ForEach(func(person *models.Person) error {
+		for _, email := range person.Email {
+			if cmd.isUpToDate(email) {
+				log15.Info("Already up to date",
+					"email", email,
+					"last_update", cmd.emails[email],
+				)
+				continue
+			}
+
+			if err := cmd.processEmail(email); err != nil {
+				return err
+			}
+		}
+		return nil
+	})
 }
 
 func (cmd *CmdAugur) processEmail(email string) error {
@@ -67,11 +119,9 @@ func (cmd *CmdAugur) processEmail(email string) error {
 	if err := cmd.setStatus(email, resp.StatusCode); err != nil {
 		return err
 	}
-
-	if resp.StatusCode == 200 {
+	if resp.StatusCode != 200 {
 		return err
 	}
-
 	if err := cmd.saveAugurInsights(insight); err != nil {
 		return err
 	}
@@ -81,10 +131,12 @@ func (cmd *CmdAugur) processEmail(email string) error {
 
 func (cmd *CmdAugur) setStatus(email string, status int) error {
 	doc := cmd.emailStore.New()
+	doc.Email = email
 	doc.Status = status
 	doc.Last = time.Now()
+	cmd.emails[email] = doc.Last
 
-	log15.Info("Done", "email", doc.Email, "status", status)
+	log15.Debug("setStatus", "email", doc.Email, "status", status)
 	_, err := cmd.emailStore.Save(doc)
 	return err
 }

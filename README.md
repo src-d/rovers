@@ -4,8 +4,7 @@ Source{d} rovers defines (sub)commands for retrieving different external service
 
 ## Services
 
-- `augur`: Augur API crawler, given a list of emails it fetches information about them.
-- `augur-emails`: Inserts email address from either a Mongo database or a file for later processing via the `augur` command.
+- `augur`: Augur API crawler, takes all emails from sourced.people collection and fetches whatever info Augur may have about them. It works incrementally. For every email we save when was the last time we fetched its info. **WARNING:** This is a very very long process, it should take about 44 days.
 - `bitbucket`: Bitbucket API crawler for Bitbucket repositories.
 - `github`: web crawler for GitHub profiles. Requires `augur` data, GitHub profile URL.
 - `github-api`: GitHub API crawler for GitHub repositories.
@@ -15,7 +14,6 @@ Source{d} rovers defines (sub)commands for retrieving different external service
 
 ## Usage
 
-- `augur` command requires `augur-emails` command to be run first.
 - `github` and `twitter` commands require `augur` command to be run first.
 - Both `github-api` and `github-api-users` require a local Mongo.
 
