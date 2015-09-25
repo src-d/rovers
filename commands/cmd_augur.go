@@ -16,7 +16,7 @@ var Expired = (30 * 24 * time.Hour).Seconds()
 
 // CmdAugur fetches info from Augur for all emails on sourced.people.
 //
-// NOTE: Augur rate limit is 1 req/s.
+// NOTE: Augur limits us to 1_000_000 req/month (that's 1 req every 2.6s)
 type CmdAugur struct {
 	CmdBase
 
@@ -24,22 +24,20 @@ type CmdAugur struct {
 	personStore  *models.PersonStore
 	emailStore   *social.AugurEmailStore
 	insightStore *social.AugurInsightStore
-	emails       map[string]time.Time
-	now          time.Time
+	emails       map[string]bool // Set of all emails + Up to date status
 }
 
 func (cmd *CmdAugur) Execute(args []string) error {
-	cmd.ChangeLogLevel()
+	start := time.Now()
 
+	cmd.ChangeLogLevel()
 	cmd.client = readers.NewAugurInsightsAPI(client.NewClient(false))
 	cmd.personStore = container.GetDomainModelsPersonStore()
 	cmd.emailStore = container.GetDomainModelsSocialAugurEmailStore()
 	cmd.insightStore = container.GetDomainModelsSocialAugurInsightStore()
-	cmd.emails = make(map[string]time.Time)
+	cmd.emails = make(map[string]bool)
 
-	start := time.Now()
 	defer log15.Info("Done", "elapsed", time.Since(start))
-
 	return cmd.run()
 }
 
@@ -72,20 +70,23 @@ func (cmd *CmdAugur) populateEmailSet() error {
 		return err
 	}
 
+	start := time.Now()
+
 	defer log15.Info("Set populated", "total_emails", len(cmd.emails))
 	return set.ForEach(func(email *social.AugurEmail) error {
-		cmd.emails[email.Email] = email.Last
+		status := email.Status == 200
+		last := time.Since(start).Seconds() < Expired
+		cmd.emails[email.Email] = status && last
 		return nil
 	})
 }
 
 func (cmd *CmdAugur) isUpToDate(email string) bool {
-	last, ok := cmd.emails[email]
-	return ok && time.Since(last).Seconds() < Expired
+	upToDate, ok := cmd.emails[email]
+	return ok && upToDate
 }
 
 func (cmd *CmdAugur) fetchAugurData() error {
-	cmd.now = time.Now()
 	q := cmd.personStore.Query()
 	set, err := cmd.personStore.Find(q)
 	if err != nil {
@@ -119,9 +120,19 @@ func (cmd *CmdAugur) processEmail(email string) error {
 	if err != nil && err != readers.ErrPartialResponse {
 		return err
 	}
-
+	if resp == nil {
+		return err
+	}
 	if err := cmd.setStatus(email, resp.StatusCode); err != nil {
 		return err
+	}
+	if insight == nil {
+		log15.Info("Empty insight",
+			"email", email,
+			"status_code", resp.StatusCode,
+			"error", err,
+		)
+		return nil
 	}
 	return cmd.saveAugurInsights(insight)
 }
@@ -131,7 +142,7 @@ func (cmd *CmdAugur) setStatus(email string, status int) error {
 	doc.Email = email
 	doc.Status = status
 	doc.Last = time.Now()
-	cmd.emails[email] = doc.Last
+	cmd.emails[email] = true
 
 	log15.Debug("setStatus", "email", doc.Email, "status", status)
 	_, err := cmd.emailStore.Save(doc)

@@ -89,10 +89,10 @@ func getFirstValue(values []Value) string {
 func (a *AugurInsightsAPI) buildURL(q *url.Values) *url.URL {
 	q.Add("key", augurKey)
 
-	url, _ := url.Parse(augurInsightsURL)
-	url.RawQuery = q.Encode()
+	u, _ := url.Parse(augurInsightsURL)
+	u.RawQuery = q.Encode()
 
-	return url
+	return u
 }
 
 func (a *AugurInsightsAPI) doRequest(q *url.Values, result interface{}) (*http.Response, error) {
