@@ -40,7 +40,7 @@ func (cmd *CmdAugur) Execute(args []string) error {
 	start := time.Now()
 	defer log15.Info("Done", "elapsed", time.Since(start))
 
-	return cmd.Run()
+	return cmd.run()
 }
 
 func (cmd *CmdAugur) run() error {
