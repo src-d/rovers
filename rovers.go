@@ -20,8 +20,6 @@ func main() {
 	var err error
 	_, err = parser.AddCommand("augur", "Augur Insights API crawler", "", &commands.CmdAugur{})
 	PanicIf(err)
-	_, err = parser.AddCommand("augur-emails", "Populates social.augur.emails", "", &commands.CmdAugurEmails{})
-	PanicIf(err)
 	_, err = parser.AddCommand("github", "Github web crawler", "", &commands.CmdGithub{})
 	PanicIf(err)
 	_, err = parser.AddCommand("github-api", "Github API repository crawler", "", &commands.CmdGithubApi{})
