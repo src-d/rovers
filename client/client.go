@@ -7,6 +7,8 @@ import (
 	"io"
 	"net/http"
 
+	"github.com/tyba/srcd-domain/container"
+
 	"github.com/PuerkitoBio/goquery"
 	"github.com/gregjones/httpcache"
 	"github.com/mcuadros/go-mgo-cache"
@@ -39,7 +41,7 @@ func NewCachedClient(session *mgo.Session) *Client {
 
 func NewClient(cacheEnforced bool) *Client {
 	if cacheEnforced {
-		session, _ := mgo.Dial("127.0.0.1:27017")
+		session := container.GetMgoSession()
 		return NewCachedClient(session)
 	}
 	return &Client{}
