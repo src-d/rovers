@@ -103,7 +103,11 @@ func (cmd *CmdAugur) fetchAugurData() error {
 			}
 
 			if err := cmd.processEmail(email); err != nil {
-				return err
+				log15.Error("Process email failed",
+					"email", email,
+					"error", err,
+				)
+				continue
 			}
 		}
 		return nil
@@ -112,21 +116,14 @@ func (cmd *CmdAugur) fetchAugurData() error {
 
 func (cmd *CmdAugur) processEmail(email string) error {
 	insight, resp, err := cmd.client.SearchByEmail(email)
-	if err != nil && resp == nil {
+	if err != nil && err != readers.ErrPartialResponse {
 		return err
 	}
 
 	if err := cmd.setStatus(email, resp.StatusCode); err != nil {
 		return err
 	}
-	if resp.StatusCode != 200 {
-		return err
-	}
-	if err := cmd.saveAugurInsights(insight); err != nil {
-		return err
-	}
-
-	return nil
+	return cmd.saveAugurInsights(insight)
 }
 
 func (cmd *CmdAugur) setStatus(email string, status int) error {
