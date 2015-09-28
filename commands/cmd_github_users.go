@@ -79,6 +79,6 @@ func (cmd *CmdGithubApiUsers) save(users []github.User) {
 		}
 	}
 
-	metrics.GitHubUsersProcessed.Inc()
+	metrics.GitHubUsersProcessed.Add(float64(len(users)))
 	log15.Info(fmt.Sprintf("Saved %d users", len(users)))
 }
