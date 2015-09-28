@@ -3,7 +3,7 @@ package metrics
 import "github.com/prometheus/client_golang/prometheus"
 
 var (
-	subsystemGitHubUsers = subsystem + "_github-users"
+	subsystemGitHubUsers = subsystem + "_github_users"
 
 	GitHubUsersProcessed = prometheus.NewCounter(
 		prometheus.CounterOpts{
