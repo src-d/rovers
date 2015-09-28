@@ -13,7 +13,7 @@ const subsystem = "rovers"
 
 func init() {
 	go func() {
-		for _ = range time.After(container.Config.Prometheus.PushFrequency) {
+		for _ = range time.Tick(container.Config.Prometheus.PushFrequency) {
 			Push()
 		}
 	}()
