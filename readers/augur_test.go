@@ -17,6 +17,7 @@ func (s *SourcesSuite) TestAugurReader_SearchByEmail(c *C) {
 	c.Assert(err, IsNil)
 	c.Assert(res.StatusCode, Equals, 200)
 	c.Assert(r.Status, Equals, 200)
+	c.Assert(r.Private.Name, Equals, "Noir Alsafar")
 }
 
 func (s *SourcesSuite) TestAugurReader_SearchByEmailBadRequest(c *C) {
