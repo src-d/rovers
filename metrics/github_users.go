@@ -20,11 +20,18 @@ var (
 		},
 		[]string{"reason"},
 	)
-	GitHubUsersTotalDur = prometheus.NewSummary(
+	GitHubUsersRequested = prometheus.NewCounter(
+		prometheus.CounterOpts{
+			Subsystem: subsystemGitHubUsers,
+			Name:      "requested",
+			Help:      "number of requests made to GitHub Users API.",
+		},
+	)
+	GitHubUsersRequestDur = prometheus.NewSummary(
 		prometheus.SummaryOpts{
 			Subsystem: subsystemGitHubUsers,
-			Name:      "total_duration_microseconds",
-			Help:      "The time spent by the command to process all GitHub users in microseconds.",
+			Name:      "request_duration_microseconds",
+			Help:      "The GitHub API request latency in microseconds.",
 		},
 	)
 )
@@ -32,5 +39,6 @@ var (
 func init() {
 	prometheus.MustRegister(GitHubUsersProcessed)
 	prometheus.MustRegister(GitHubUsersFailed)
-	prometheus.MustRegister(GitHubUsersTotalDur)
+	prometheus.MustRegister(GitHubUsersRequested)
+	prometheus.MustRegister(GitHubUsersRequestDur)
 }
