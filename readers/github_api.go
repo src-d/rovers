@@ -30,7 +30,7 @@ func (g *GithubAPI) GetAllRepositories(since int) ([]api.Repository, *api.Respon
 	defer func() {
 		needsWait := MinRequestDuration - time.Since(start)
 		if needsWait > 0 {
-			log15.Info("Waiting", "duration", needsWait)
+			log15.Debug("Waiting", "duration", needsWait)
 			time.Sleep(needsWait)
 		}
 	}()
@@ -42,7 +42,7 @@ func (g *GithubAPI) GetAllRepositories(since int) ([]api.Repository, *api.Respon
 	}
 
 	if resp.Remaining < 100 {
-		log15.Info("Low remaining", "value", resp.Remaining)
+		log15.Warn("Low remaining", "value", resp.Remaining)
 	}
 
 	return repos, resp, nil
@@ -53,7 +53,7 @@ func (g *GithubAPI) GetAllUsers(since int) ([]api.User, *api.Response, error) {
 	defer func() {
 		needsWait := MinRequestDuration - time.Since(start)
 		if needsWait > 0 {
-			log15.Info("Waiting", "duration", needsWait)
+			log15.Debug("Waiting", "duration", needsWait)
 			time.Sleep(needsWait)
 		}
 	}()
@@ -65,7 +65,7 @@ func (g *GithubAPI) GetAllUsers(since int) ([]api.User, *api.Response, error) {
 	}
 
 	if resp.Remaining < 100 {
-		log15.Info("Low remaining", "value", resp.Remaining)
+		log15.Warn("Low remaining", "value", resp.Remaining)
 	}
 
 	return users, resp, nil
