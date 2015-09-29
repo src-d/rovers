@@ -100,6 +100,11 @@ func (c *CmdGithubApiUsers) save(users []github.User) {
 
 func (c *CmdGithubApiUsers) createNewDocument(user github.User) *social.GithubUser {
 	doc := c.storage.New()
+	processGithubUser(doc, user)
+	return doc
+}
+
+func processGithubUser(doc *social.GithubUser, user github.User) {
 	if user.ID != nil {
 		doc.GithubID = *user.ID
 	}
@@ -112,5 +117,4 @@ func (c *CmdGithubApiUsers) createNewDocument(user github.User) *social.GithubUs
 	if user.Type != nil {
 		doc.Type = *user.Type
 	}
-	return doc
 }
