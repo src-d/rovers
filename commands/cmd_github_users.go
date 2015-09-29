@@ -1,48 +1,42 @@
 package commands
 
 import (
-	"fmt"
 	"time"
 
 	"github.com/tyba/srcd-domain/container"
+	"github.com/tyba/srcd-domain/models/social"
 	"github.com/tyba/srcd-rovers/metrics"
 	"github.com/tyba/srcd-rovers/readers"
 
 	"github.com/mcuadros/go-github/github"
 	"gopkg.in/inconshreveable/log15.v2"
-	"gopkg.in/mgo.v2"
+	"gopkg.in/tyba/storable.v1"
 )
 
 type CmdGithubApiUsers struct {
 	github  *readers.GithubAPI
-	storage *mgo.Collection
+	storage *social.GithubUserStore
 }
 
-func (cmd *CmdGithubApiUsers) Execute(args []string) error {
+func (c *CmdGithubApiUsers) Execute(args []string) error {
 	defer metrics.Push()
 
-	session := container.GetMgoSession()
-	defer session.Close()
-	cmd.github = readers.NewGithubAPI()
-	cmd.storage = session.DB("github").C("users.api")
+	c.github = readers.NewGithubAPI()
+	c.storage = container.GetDomainModelsSocialGithubUserStore()
 
 	start := time.Now()
-	defer func() {
-		elapsed := time.Since(start)
-		seconds := float64(elapsed) / float64(time.Microsecond)
-		metrics.GitHubUsersTotalDur.Observe(seconds)
-		log15.Info("Done", "elapsed", elapsed)
-	}()
+	defer log15.Info("Done", "elapsed", time.Since(start))
 
-	since := cmd.getSince()
+	since := c.getSince()
 	for {
-		fmt.Printf("Requesting since %d ...", since)
-		users, resp, err := cmd.github.GetAllUsers(since)
+		log15.Info("Requesting users...", "since", since)
+
+		users, resp, err := c.getUsers(since)
 		if err != nil {
 			return err
 		}
+		c.save(users)
 
-		cmd.save(users)
 		if resp.NextPage == 0 && resp.NextPage == since {
 			break
 		}
@@ -53,32 +47,70 @@ func (cmd *CmdGithubApiUsers) Execute(args []string) error {
 	return nil
 }
 
-func (cmd *CmdGithubApiUsers) getSince() int {
-	var user *github.User
-	cmd.storage.Find(nil).Sort("-id").One(&user)
-
-	if user == nil {
+func (c *CmdGithubApiUsers) getSince() int {
+	q := c.storage.Query()
+	q.Sort(storable.Sort{{social.Schema.GithubUser.GithubID, storable.Desc}})
+	user, err := c.storage.FindOne(q)
+	if err != nil {
+		log15.Error("getSince query failed")
 		return 0
 	}
 
-	return *user.ID
+	return user.GithubID
 }
 
-func (cmd *CmdGithubApiUsers) save(users []github.User) {
+func (c *CmdGithubApiUsers) getUsers(since int) (
+	users []github.User, resp *github.Response, err error,
+) {
+	metrics.GitHubUsersRequested.Inc()
+
+	start := time.Now()
+	users, resp, err = c.github.GetAllUsers(since)
+	if err != nil {
+		log15.Error("GetAllUsers failed",
+			"since", since,
+			"error", err,
+		)
+		metrics.GitHubUsersFailed.WithLabelValues("ghapi_request").Inc()
+		return
+	}
+
+	elapsed := time.Since(start)
+	microseconds := float64(elapsed) / float64(time.Microsecond)
+	metrics.GitHubUsersRequestDur.Observe(microseconds)
+	return
+}
+
+func (c *CmdGithubApiUsers) save(users []github.User) {
 	for _, user := range users {
-		if err := cmd.storage.Insert(user); err != nil {
+		doc := c.createNewDocument(user)
+		if _, err := c.storage.Save(doc); err != nil {
 			log15.Error("User save failed",
-				"user", *user.Name,
+				"user", doc.Login,
 				"error", err,
 			)
-			labels := []string{"error", err.Error()}
-			if user.Name != nil {
-				labels = append(labels, []string{"user", *user.Name}...)
-			}
-			metrics.GitHubUsersFailed.WithLabelValues(labels...).Inc()
+			metrics.GitHubUsersFailed.WithLabelValues("db_insert").Inc()
 		}
 	}
 
-	metrics.GitHubUsersProcessed.Add(float64(len(users)))
-	log15.Info(fmt.Sprintf("Saved %d users", len(users)))
+	numUsers := len(users)
+	metrics.GitHubUsersProcessed.Add(float64(numUsers))
+	log15.Info("Users saved", "num_users", numUsers)
+}
+
+func (c *CmdGithubApiUsers) createNewDocument(user github.User) *social.GithubUser {
+	doc := c.storage.New()
+	if user.ID != nil {
+		doc.GithubID = *user.ID
+	}
+	if user.Login != nil {
+		doc.Login = *user.Login
+	}
+	if user.AvatarURL != nil {
+		doc.Avatar = *user.AvatarURL
+	}
+	if user.Type != nil {
+		doc.Type = *user.Type
+	}
+	return doc
 }
