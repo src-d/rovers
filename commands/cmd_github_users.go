@@ -25,8 +25,6 @@ func (c *CmdGithubApiUsers) Execute(args []string) error {
 	c.storage = container.GetDomainModelsSocialGithubUserStore()
 
 	start := time.Now()
-	defer log15.Info("Done", "elapsed", time.Since(start))
-
 	since := c.getSince()
 	for {
 		log15.Info("Requesting users...", "since", since)
@@ -44,6 +42,7 @@ func (c *CmdGithubApiUsers) Execute(args []string) error {
 		since = resp.NextPage
 	}
 
+	log15.Info("Done", "elapsed", time.Since(start))
 	return nil
 }
 
