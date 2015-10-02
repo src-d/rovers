@@ -33,6 +33,12 @@ func (c *CmdGithubApiUsers) Execute(args []string) error {
 		if err != nil {
 			return err
 		}
+
+		if len(users) == 0 {
+			log15.Info("No more users. Stopping crawl...")
+			break
+		}
+
 		c.save(users)
 
 		if resp.NextPage == 0 && resp.NextPage == since {
