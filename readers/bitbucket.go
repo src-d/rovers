@@ -14,8 +14,8 @@ import (
 // API rate limit source:
 // https://confluence.atlassian.com/bitbucket/rate-limits-668173227.html
 const (
-	bitbucketURL       = "https://api.bitbucket.org/2.0/repositories"
-	MinRequestDuration = time.Hour / 1000
+	bitbucketURL                = "https://api.bitbucket.org/2.0/repositories"
+	BitbucketMinRequestDuration = time.Hour / 1000
 )
 
 type BitbucketAPI struct {
@@ -29,7 +29,7 @@ func NewBitbucketAPI(client *client.Client) *BitbucketAPI {
 func (a *BitbucketAPI) GetRepositories(q url.Values) (*BitbucketPagedResult, error) {
 	start := time.Now()
 	defer func() {
-		needsWait := MinRequestDuration - time.Since(start)
+		needsWait := BitbucketMinRequestDuration - time.Since(start)
 		if needsWait > 0 {
 			log15.Debug("Waiting", "duration", needsWait)
 			time.Sleep(needsWait)
