@@ -14,11 +14,15 @@ import (
 )
 
 type CmdGithubApiUsers struct {
+	CmdBase
+
 	github  *readers.GithubAPI
 	storage *social.GithubUserStore
 }
 
 func (c *CmdGithubApiUsers) Execute(args []string) error {
+	c.CmdBase.ChangeLogLevel()
+
 	defer metrics.Push()
 
 	c.github = readers.NewGithubAPI()
@@ -33,6 +37,11 @@ func (c *CmdGithubApiUsers) Execute(args []string) error {
 		if err != nil {
 			return err
 		}
+		log15.Debug("Got users...",
+			"count", len(users),
+			"status", resp.StatusCode,
+			"next_page", resp.NextPage,
+		)
 
 		if len(users) == 0 {
 			log15.Info("No more users. Stopping crawl...")
@@ -57,7 +66,7 @@ func (c *CmdGithubApiUsers) getSince() int {
 	q.Sort(storable.Sort{{social.Schema.GithubUser.GithubID, storable.Desc}})
 	user, err := c.storage.FindOne(q)
 	if err != nil {
-		log15.Error("getSince query failed")
+		log15.Crit("getSince query failed")
 		return 0
 	}
 
@@ -87,6 +96,7 @@ func (c *CmdGithubApiUsers) getUsers(since int) (
 }
 
 func (c *CmdGithubApiUsers) save(users []github.User) {
+	saved := 0
 	for _, user := range users {
 		doc := c.createNewDocument(user)
 		if _, err := c.storage.Save(doc); err != nil {
@@ -95,12 +105,17 @@ func (c *CmdGithubApiUsers) save(users []github.User) {
 				"error", err,
 			)
 			metrics.GitHubUsersFailed.WithLabelValues("db_insert").Inc()
+			continue
 		}
+		saved++
 	}
 
 	numUsers := len(users)
 	metrics.GitHubUsersProcessed.Add(float64(numUsers))
-	log15.Info("Users saved", "num_users", numUsers)
+	log15.Info("Users saved",
+		"num_input", numUsers,
+		"num_saved", saved,
+	)
 }
 
 func (c *CmdGithubApiUsers) createNewDocument(user github.User) *social.GithubUser {
