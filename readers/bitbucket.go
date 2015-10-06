@@ -71,6 +71,8 @@ func (a *BitbucketAPI) doRequest(q url.Values, result interface{}) (*http.Respon
 	switch res.StatusCode {
 	case 200:
 		return res, nil
+	case 429:
+		return res, ErrRateLimitExceeded
 	default:
 		return res, ErrUnexpectedStatusCode
 	}

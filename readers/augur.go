@@ -2,7 +2,6 @@ package readers
 
 import (
 	"encoding/json"
-	"errors"
 	"net/http"
 	"net/url"
 	"time"
@@ -10,11 +9,6 @@ import (
 	"github.com/tyba/srcd-domain/container"
 	"github.com/tyba/srcd-domain/models/social"
 	"github.com/tyba/srcd-rovers/client"
-)
-
-var (
-	ErrUnexpectedStatusCode = errors.New("unexpected status code")
-	ErrPartialResponse      = errors.New("received partial data")
 )
 
 const (
