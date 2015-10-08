@@ -6,10 +6,6 @@ import (
 	. "gopkg.in/check.v1"
 )
 
-type SourcesSuite struct{}
-
-var _ = Suite(&SourcesSuite{})
-
 func (s *SourcesSuite) TestAugurReader_SearchByEmail(c *C) {
 	a := NewAugurInsightsAPI(client.NewClient(true))
 	r, res, err := a.SearchByEmail("nawar.alsafar126@gmail.com")
