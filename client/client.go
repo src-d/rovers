@@ -17,7 +17,7 @@ import (
 )
 
 const (
-	DatabaseName   = "rovers"
+	DatabaseName   = "sources"
 	CollectionName = "cache"
 )
 

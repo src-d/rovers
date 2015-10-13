@@ -1,37 +1,38 @@
 package commands
 
 import (
-	"fmt"
+	"time"
 
+	"github.com/tyba/srcd-domain/container"
+	"github.com/tyba/srcd-domain/models/social"
+	"github.com/tyba/srcd-rovers/metrics"
 	"github.com/tyba/srcd-rovers/readers"
 
 	"github.com/mcuadros/go-github/github"
-
-	"gopkg.in/mgo.v2"
+	"gopkg.in/inconshreveable/log15.v2"
+	"gopkg.in/tyba/storable.v1"
 )
 
 type CmdGithubApi struct {
-	MongoDBHost string `short:"m" long:"mongo" default:"localhost" description:"mongodb hostname"`
-
 	github  *readers.GithubAPI
-	storage *mgo.Collection
+	storage *social.GithubRepositoryStore
 }
 
-func (l *CmdGithubApi) Execute(args []string) error {
-	session, _ := mgo.Dial("mongodb://" + l.MongoDBHost)
+func (c *CmdGithubApi) Execute(args []string) error {
+	c.github = readers.NewGithubAPI()
+	c.storage = container.GetDomainModelsSocialGithubRepositoryStore()
 
-	l.github = readers.NewGithubAPI()
-	l.storage = session.DB("github").C("repositories")
-
-	since := l.getSince()
+	start := time.Now()
+	since := c.getSince()
 	for {
-		fmt.Printf("Requesting since %d ...", since)
-		repos, resp, err := l.github.GetAllRepositories(since)
+		log15.Info("Requesting repositories...", "since", since)
+
+		repos, resp, err := c.github.GetAllRepositories(since)
 		if err != nil {
 			return err
 		}
 
-		l.save(repos)
+		c.save(repos)
 		if resp.NextPage == 0 && resp.NextPage == since {
 			break
 		}
@@ -39,22 +40,84 @@ func (l *CmdGithubApi) Execute(args []string) error {
 		since = resp.NextPage
 	}
 
+	log15.Info("Done", "elapsed", time.Since(start))
 	return nil
 }
 
-func (l *CmdGithubApi) getSince() int {
-	var r github.Repository
-	l.storage.Find(nil).Sort("-id").One(&r)
+func (c *CmdGithubApi) getSince() int {
+	q := c.storage.Query()
 
-	return *r.ID
+	q.Sort(storable.Sort{{social.Schema.GithubRepository.GithubID, storable.Desc}})
+	repo, err := c.storage.FindOne(q)
+	if err != nil {
+		return 0
+	}
+
+	return repo.GithubID
 }
 
-func (l *CmdGithubApi) save(repos []github.Repository) {
-	for _, r := range repos {
-		if err := l.storage.Insert(r); err != nil {
-			fmt.Println("error", err)
+func (c *CmdGithubApi) getRepositories(since int) (
+	repos []github.Repository, resp *github.Response, err error,
+) {
+	metrics.GitHubReposRequested.Inc()
+
+	start := time.Now()
+	repos, resp, err = c.github.GetAllRepositories(since)
+	if err != nil {
+		log15.Error("GetAllRepositories failed",
+			"since", since,
+			"error", err,
+		)
+		metrics.GitHubReposFailed.WithLabelValues("ghapi_request").Inc()
+		return
+	}
+
+	elapsed := time.Since(start)
+	microseconds := float64(elapsed) / float64(time.Microsecond)
+	metrics.GitHubReposRequestDur.Observe(microseconds)
+	return
+}
+
+func (c *CmdGithubApi) save(repos []github.Repository) {
+	for _, repo := range repos {
+		doc := c.createNewDocument(repo)
+		if _, err := c.storage.Save(doc); err != nil {
+			log15.Error("Repository save failed",
+				"repo", doc.FullName,
+				"error", err,
+			)
+			metrics.GitHubReposFailed.WithLabelValues("db_insert").Inc()
 		}
 	}
 
-	fmt.Printf("saved %d repositories\n", len(repos))
+	numRepos := len(repos)
+	metrics.GitHubReposProcessed.Add(float64(numRepos))
+	log15.Info("Repositories saved", "num_repos", numRepos)
+}
+
+func (c *CmdGithubApi) createNewDocument(repo github.Repository) *social.GithubRepository {
+	doc := c.storage.New()
+	processGithubRepository(doc, repo)
+	return doc
+}
+
+func processGithubRepository(doc *social.GithubRepository, repo github.Repository) {
+	if repo.ID != nil {
+		doc.GithubID = *repo.ID
+	}
+	if repo.Name != nil {
+		doc.Name = *repo.Name
+	}
+	if repo.FullName != nil {
+		doc.FullName = *repo.FullName
+	}
+	if repo.Description != nil {
+		doc.Description = *repo.Description
+	}
+	if repo.Owner != nil {
+		processGithubUser(&doc.Owner, *repo.Owner)
+	}
+	if repo.Fork != nil {
+		doc.Fork = *repo.Fork
+	}
 }
