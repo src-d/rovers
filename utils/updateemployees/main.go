@@ -12,7 +12,7 @@ import (
 	"gopkg.in/pipe.v2"
 )
 
-var companies = map[string]int{
+var companies = map[string][]int{
 	// "aim":   0, // 1aim
 	// "dixie": 0, // Dixie
 
