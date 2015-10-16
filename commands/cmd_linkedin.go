@@ -35,11 +35,7 @@ func (cmd *CmdLinkedIn) Execute(args []string) error {
 	cmd.companyStore = container.GetDomainModelsCompanyStore()
 	cmd.linkedinWebCrawler = linkedin.NewLinkedInWebCrawler(cli, cmd.Cookie)
 
-	companiesInfo, err := cmd.GetCompaniesLinkedInInfo()
-	if err != nil {
-		return err
-	}
-
+	companiesInfo := cmd.GetCompaniesLinkedInInfo()
 	for _, info := range companiesInfo {
 		cmd.GetCompanyEmployees(info)
 	}
@@ -103,7 +99,7 @@ func (cmd *CmdLinkedIn) UpdateCompanyEmployees(info CompanyInfo, employees []com
 		cmd.PrintEmployees(employees)
 	} else {
 		log15.Info("Updating database employees", "company", info.CodeName)
-		err := cmd.DoUpdateCompanyEmployees(employees)
+		err := cmd.DoUpdateCompanyEmployees(info.CodeName, employees)
 		if err != nil {
 			log15.Error("Couldn't update company employees",
 				"company", info.CodeName,
@@ -122,9 +118,9 @@ func (cmd *CmdLinkedIn) PrintEmployees(employees []company.Employee) {
 	}
 }
 
-func (cmd *CmdLinkedIn) DoUpdateCompanyEmployees(employees []company.Employee) error {
+func (cmd *CmdLinkedIn) DoUpdateCompanyEmployees(codeName string, employees []company.Employee) error {
 	q := cmd.companyStore.Query()
-	q.FindByCodeName(cmd.CompanyCodeName)
+	q.FindByCodeName(codeName)
 
 	company, err := cmd.companyStore.FindOne(q)
 	if err != nil {
