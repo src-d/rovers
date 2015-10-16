@@ -24,7 +24,7 @@ func (s *SourcesSuite) TestGithub_GetProfileByURL_Company(c *C) {
 	c.Assert(g.Location, Equals, "Madrid, Spain")
 	c.Assert(g.Email, Equals, "hello@tyba.com")
 	c.Assert(g.Url, Equals, "https://github.com/tyba")
-	members := []string{"curratore", "dripolles", "eiso", "filiptc", "mcuadros", "mvader", "toqueteos"}
+	members := []string{"curratore", "dripolles", "eiso", "filiptc", "klaidliadon", "mcuadros", "mvader", "toqueteos"}
 	sort.Strings(g.Members)
 	c.Assert(g.Members, DeepEquals, members)
 }
@@ -40,7 +40,7 @@ func (s *SourcesSuite) TestGithub_SearchByEmail(c *C) {
 	c.Assert(g.Email, Equals, "mcuadros@gmail.com")
 	c.Assert(g.Description, Not(Equals), "")
 	c.Assert(g.JoinDate.Unix(), Equals, int64(1332676111))
-	c.Assert(g.Organizations, HasLen, 4)
+	c.Assert(g.Organizations, HasLen, 5)
 	c.Assert(g.Organizations[0], Equals, "/sourcegraph")
 	c.Assert(g.Repositories, HasLen, 5)
 
