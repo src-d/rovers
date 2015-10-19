@@ -6,9 +6,9 @@ import (
 	"time"
 
 	"github.com/PuerkitoBio/goquery"
-	"github.com/tyba/srcd-domain/models/social"
-	"github.com/tyba/srcd-domain/models/social/github"
-	"github.com/tyba/srcd-rovers/client"
+	"github.com/src-d/domain/models/social"
+	"github.com/src-d/domain/models/social/github"
+	"github.com/src-d/rovers/client"
 )
 
 type GithubWebCrawler struct {

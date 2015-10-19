@@ -76,14 +76,14 @@ func main() {
 
 	log15.Info("Building binary...")
 	binaryStart := time.Now()
-	pipe.Run(pipe.Exec("go", "build", "-o", "srcd-rovers", "rovers.go"))
+	pipe.Run(pipe.Exec("go", "build", "-o", "rovers", "rovers.go"))
 	log15.Info("Done", "elapsed", time.Since(binaryStart))
 
 	for codename, ids := range companies {
 		for _, id := range ids {
 			scriptStart := time.Now()
 			script := pipe.Script(
-				pipe.Exec("./srcd-rovers", "linkedin",
+				pipe.Exec("./rovers", "linkedin",
 					"--companyCodename", codename,
 					"--companyId", strconv.Itoa(id),
 					"--cookie", cookie,

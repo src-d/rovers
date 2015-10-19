@@ -7,7 +7,7 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/tyba/srcd-domain/container"
+	"github.com/src-d/domain/container"
 
 	"github.com/PuerkitoBio/goquery"
 	"github.com/gregjones/httpcache"

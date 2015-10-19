@@ -3,7 +3,7 @@ package main
 import (
 	"os"
 
-	"github.com/tyba/srcd-rovers/commands"
+	"github.com/src-d/rovers/commands"
 
 	"github.com/jessevdk/go-flags"
 )

@@ -1,11 +1,11 @@
 # Package configuration
-PROJECT = srcd-rovers
+PROJECT = rovers
 COMMANDS = rovers
 DEPENDENCIES = github.com/aktau/github-release
-INTERNAL = srcd-domain
+INTERNAL = domain
 
 # Github configuration
-GITHUB_USER := tyba
+GITHUB_USER := src-d
 GITHUB_REPO := $(PROJECT)
 GITHUB_TOKEN := 08763897c930b3ff7f7cebf8da45935350a96b7d
 
@@ -51,10 +51,10 @@ dependencies:
 	for i in $(DEPENDENCIES); do $(GOGET) $$i; done
 
 	for pkg in $(INTERNAL); do \
-		$(GOGET) github.com/tyba/$${pkg}/...; \
-		cd $(GOPATH)/src/github.com/tyba/$${pkg} && git checkout $(BRANCH); \
+		$(GOGET) github.com/src-d/$${pkg}/...; \
+		cd $(GOPATH)/src/github.com/src-d/$${pkg} && git checkout $(BRANCH); \
 	done; \
-	cd $(GOPATH)/src/github.com/tyba/$(PROJECT); $(GOGET) ./...
+	cd $(GOPATH)/src/github.com/src-d/$(PROJECT); $(GOGET) ./...
 
 test:
 	$(GOTEST) ./...
