@@ -13,12 +13,12 @@ import (
 	"gopkg.in/src-d/storable.v1"
 )
 
-type CmdGithubApi struct {
+type CmdGitHubAPIRepos struct {
 	github  *readers.GithubAPI
 	storage *social.GithubRepositoryStore
 }
 
-func (c *CmdGithubApi) Execute(args []string) error {
+func (c *CmdGitHubAPIRepos) Execute(args []string) error {
 	c.github = readers.NewGithubAPI()
 	c.storage = container.GetDomainModelsSocialGithubRepositoryStore()
 
@@ -44,7 +44,7 @@ func (c *CmdGithubApi) Execute(args []string) error {
 	return nil
 }
 
-func (c *CmdGithubApi) getSince() int {
+func (c *CmdGitHubAPIRepos) getSince() int {
 	q := c.storage.Query()
 
 	q.Sort(storable.Sort{{social.Schema.GithubRepository.GithubID, storable.Desc}})
@@ -56,7 +56,7 @@ func (c *CmdGithubApi) getSince() int {
 	return repo.GithubID
 }
 
-func (c *CmdGithubApi) getRepositories(since int) (
+func (c *CmdGitHubAPIRepos) getRepositories(since int) (
 	repos []github.Repository, resp *github.Response, err error,
 ) {
 	metrics.GitHubReposRequested.Inc()
@@ -78,7 +78,7 @@ func (c *CmdGithubApi) getRepositories(since int) (
 	return
 }
 
-func (c *CmdGithubApi) save(repos []github.Repository) {
+func (c *CmdGitHubAPIRepos) save(repos []github.Repository) {
 	for _, repo := range repos {
 		doc := c.createNewDocument(repo)
 		if _, err := c.storage.Save(doc); err != nil {
@@ -95,7 +95,7 @@ func (c *CmdGithubApi) save(repos []github.Repository) {
 	log15.Info("Repositories saved", "num_repos", numRepos)
 }
 
-func (c *CmdGithubApi) createNewDocument(repo github.Repository) *social.GithubRepository {
+func (c *CmdGitHubAPIRepos) createNewDocument(repo github.Repository) *social.GithubRepository {
 	doc := c.storage.New()
 	processGithubRepository(doc, repo)
 	return doc
