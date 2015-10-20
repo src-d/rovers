@@ -26,16 +26,16 @@ type CmdAugur struct {
 	emailSet     map[string]bool // Set of all emails + Done status
 }
 
-func (cmd *CmdAugur) Execute(args []string) error {
+func (c *CmdAugur) Execute(args []string) error {
 	start := time.Now()
 
-	cmd.ChangeLogLevel()
-	cmd.client = readers.NewAugurInsightsAPI(client.NewClient(true))
-	cmd.personStore = container.GetDomainModelsPersonStore()
-	cmd.insightStore = container.GetDomainModelsSocialAugurInsightStore()
-	cmd.emailSet = make(map[string]bool)
+	c.ChangeLogLevel()
+	c.client = readers.NewAugurInsightsAPI(client.NewClient(true))
+	c.personStore = container.GetDomainModelsPersonStore()
+	c.insightStore = container.GetDomainModelsSocialAugurInsightStore()
+	c.emailSet = make(map[string]bool)
 
-	err := cmd.run()
+	err := c.run()
 	log15.Info("Done", "elapsed", time.Since(start))
 
 	return err
@@ -50,14 +50,14 @@ func (cmd *CmdAugur) Execute(args []string) error {
 // 3. Prune `email-set` by removing all emails from `sources.augur` with `done=true`.
 //
 // 4. Fetch Augur data for all remaining emails in `email-set`.
-func (cmd *CmdAugur) run() error {
+func (c *CmdAugur) run() error {
 	var steps = []struct {
 		Name string
 		Fn   func() error
 	}{
-		{"populateEmailSet", cmd.populateEmailSet},
-		{"pruneEmailSet", cmd.pruneEmailSet},
-		{"fetchAugurData", cmd.fetchAugurData},
+		{"populateEmailSet", c.populateEmailSet},
+		{"pruneEmailSet", c.pruneEmailSet},
+		{"fetchAugurData", c.fetchAugurData},
 	}
 	for _, step := range steps {
 		start := time.Now()
@@ -73,28 +73,28 @@ func (cmd *CmdAugur) run() error {
 	return nil
 }
 
-func (cmd *CmdAugur) populateEmailSet() error {
-	q := cmd.personStore.Query()
-	set, err := cmd.personStore.Find(q)
+func (c *CmdAugur) populateEmailSet() error {
+	q := c.personStore.Query()
+	set, err := c.personStore.Find(q)
 	if err != nil {
 		return err
 	}
 
 	err = set.ForEach(func(person *models.Person) error {
 		for _, email := range person.Email {
-			cmd.emailSet[email] = false
+			c.emailSet[email] = false
 		}
 		return nil
 	})
 
-	log15.Info("Set populated", "total_emails", len(cmd.emailSet))
+	log15.Info("Set populated", "total_emails", len(c.emailSet))
 	return err
 }
 
-func (cmd *CmdAugur) pruneEmailSet() error {
-	q := cmd.insightStore.Query()
+func (c *CmdAugur) pruneEmailSet() error {
+	q := c.insightStore.Query()
 	q.FindDone()
-	set, err := cmd.insightStore.Find(q)
+	set, err := c.insightStore.Find(q)
 	if err != nil {
 		return err
 	}
@@ -103,7 +103,7 @@ func (cmd *CmdAugur) pruneEmailSet() error {
 	err = set.ForEach(func(insight *social.AugurInsight) error {
 		if insight.Done {
 			deleted++
-			delete(cmd.emailSet, insight.InputEmail)
+			delete(c.emailSet, insight.InputEmail)
 		}
 		return nil
 	})
@@ -112,22 +112,22 @@ func (cmd *CmdAugur) pruneEmailSet() error {
 	return nil
 }
 
-func (cmd *CmdAugur) fetchAugurData() error {
-	for email, done := range cmd.emailSet {
+func (c *CmdAugur) fetchAugurData() error {
+	for email, done := range c.emailSet {
 		if done {
 			continue
 		}
-		cmd.emailSet[email] = true
+		c.emailSet[email] = true
 
-		// if cmd.isUpToDate(email) {
+		// if c.isUpToDate(email) {
 		// 	log15.Info("Already up to date",
 		// 		"email", email,
-		// 		"last_update", cmd.emailSet[email],
+		// 		"last_update", c.emailSet[email],
 		// 	)
 		// 	continue
 		// }
 
-		err := cmd.processEmail(email)
+		err := c.processEmail(email)
 		if err == readers.ErrRateLimitExceeded {
 			log15.Warn("Rate limit reached. Stopping...")
 			return storable.ErrStop
@@ -143,13 +143,13 @@ func (cmd *CmdAugur) fetchAugurData() error {
 	return nil
 }
 
-func (cmd *CmdAugur) isUpToDate(email string) bool {
-	upToDate, ok := cmd.emailSet[email]
+func (c *CmdAugur) isUpToDate(email string) bool {
+	upToDate, ok := c.emailSet[email]
 	return ok && upToDate
 }
 
-func (cmd *CmdAugur) processEmail(email string) error {
-	insight, resp, err := cmd.client.SearchByEmail(email)
+func (c *CmdAugur) processEmail(email string) error {
+	insight, resp, err := c.client.SearchByEmail(email)
 	if err != nil && err != readers.ErrPartialResponse {
 		return err
 	}
@@ -164,9 +164,9 @@ func (cmd *CmdAugur) processEmail(email string) error {
 		)
 		return nil
 	}
-	return cmd.saveAugurInsights(insight)
+	return c.saveAugurInsights(insight)
 }
 
-func (cmd *CmdAugur) saveAugurInsights(doc *social.AugurInsight) error {
-	return cmd.insightStore.Insert(doc)
+func (c *CmdAugur) saveAugurInsights(doc *social.AugurInsight) error {
+	return c.insightStore.Insert(doc)
 }
