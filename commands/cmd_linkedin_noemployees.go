@@ -1,12 +1,10 @@
 package commands
 
 import (
-	"gopkg.in/mgo.v2/bson"
-
 	"github.com/src-d/domain/models"
 
 	"gopkg.in/inconshreveable/log15.v2"
-	. "gopkg.in/src-d/storable.v1/operators"
+	"gopkg.in/mgo.v2/bson"
 )
 
 type CmdLinkedInNoEmployees struct {
