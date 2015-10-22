@@ -30,7 +30,9 @@ func main() {
 	PanicIf(err)
 	_, err = parser.AddCommand("bitbucket", "Bitbucket API repository crawler", "", &commands.CmdBitbucket{})
 	PanicIf(err)
-	_, err = parser.AddCommand("linkedin", "LinkedIn Company Employees crawler", "", &commands.CmdLinkedIn{})
+	cmd, err := parser.AddCommand("linkedin", "LinkedIn Company Employees crawler", "", &commands.CmdLinkedIn{})
+	PanicIf(err)
+	_, err = cmd.AddCommand("no-employees", "Ofelia job: Run 'linkedin' command for just added companies", "", &commands.CmdLinkedInNoEmployees{})
 	PanicIf(err)
 
 	_, err = parser.Parse()
