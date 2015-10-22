@@ -111,10 +111,6 @@ func (a *AugurInsightsAPI) processResponse(body []byte) (*social.AugurInsight, e
 	doc.GithubURL = getValues(ri.GithubURL)
 	doc.LinkedinURL = getValues(ri.LinkedinURL)
 	doc.Location = getValues(ri.Location)
-	doc.LocationCity = getValues(ri.LocationCity)
-	doc.LocationCountry = getValues(ri.LocationCountry)
-	doc.LocationFormatted = getValues(ri.LocationFormatted)
-	doc.LocationState = getValues(ri.LocationState)
 	doc.Name = getValues(ri.Name)
 	doc.TwitterURL = getValues(ri.TwitterURL)
 
@@ -146,10 +142,6 @@ func hasData(doc *social.AugurInsight) bool {
 		len(doc.GithubURL),
 		len(doc.LinkedinURL),
 		len(doc.Location),
-		len(doc.LocationCity),
-		len(doc.LocationCountry),
-		len(doc.LocationFormatted),
-		len(doc.LocationState),
 		len(doc.Name),
 		len(doc.TwitterURL),
 	}
@@ -178,17 +170,13 @@ func twitterHandles(doc *social.AugurInsight) (handles []string) {
 }
 
 type RawInsight struct {
-	Email             []RawValue `json:"email" bson:"email"`
-	GithubURL         []RawValue `json:"github-url" bson:"github_url"`
-	LinkedinURL       []RawValue `json:"linkedin-url" bson:"linkedin_url"`
-	Location          []RawValue `json:"location" bson:"location_formatted"`
-	LocationCity      []RawValue `json:"location-city" bson:"location_city"`
-	LocationCountry   []RawValue `json:"location-country" bson:"location_country"`
-	LocationFormatted []RawValue `json:"location-formatted" bson:"location_formatted"`
-	LocationState     []RawValue `json:"location-state" bson:"location_state"`
-	Name              []RawValue `json:"name" bson:"name"`
-	TwitterURL        []RawValue `json:"twitter-url" bson:"twitter_url"`
-	LastStatus        int        `json:"status" bson:"status"`
+	Email       []RawValue `json:"email" bson:"email"`
+	GithubURL   []RawValue `json:"github-url" bson:"github_url"`
+	LinkedinURL []RawValue `json:"linkedin-url" bson:"linkedin_url"`
+	Location    []RawValue `json:"location" bson:"location_formatted"`
+	Name        []RawValue `json:"name" bson:"name"`
+	TwitterURL  []RawValue `json:"twitter-url" bson:"twitter_url"`
+	LastStatus  int        `json:"status" bson:"status"`
 }
 
 type RawValue struct {
