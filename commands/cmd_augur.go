@@ -7,6 +7,7 @@ import (
 	"github.com/src-d/domain/models"
 	"github.com/src-d/domain/models/social"
 	"github.com/src-d/rovers/client"
+	"github.com/src-d/rovers/metrics"
 	"github.com/src-d/rovers/readers"
 
 	"gopkg.in/inconshreveable/log15.v2"
@@ -119,14 +120,6 @@ func (c *CmdAugur) fetchAugurData() error {
 		}
 		c.emailSet[email] = true
 
-		// if c.isUpToDate(email) {
-		// 	log15.Info("Already up to date",
-		// 		"email", email,
-		// 		"last_update", c.emailSet[email],
-		// 	)
-		// 	continue
-		// }
-
 		err := c.processEmail(email)
 		if err == readers.ErrRateLimitExceeded {
 			log15.Warn("Rate limit reached. Stopping...")
@@ -139,13 +132,9 @@ func (c *CmdAugur) fetchAugurData() error {
 			)
 			continue
 		}
+		metrics.AugurProcessed.Inc()
 	}
 	return nil
-}
-
-func (c *CmdAugur) isUpToDate(email string) bool {
-	upToDate, ok := c.emailSet[email]
-	return ok && upToDate
 }
 
 func (c *CmdAugur) processEmail(email string) error {
@@ -157,7 +146,7 @@ func (c *CmdAugur) processEmail(email string) error {
 		return err
 	}
 	if insight == nil {
-		log15.Info("Empty insight",
+		log15.Debug("Empty insight",
 			"email", email,
 			"status_code", resp.StatusCode,
 			"error", err,

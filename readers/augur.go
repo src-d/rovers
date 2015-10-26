@@ -7,11 +7,10 @@ import (
 	"net/url"
 	"time"
 
-	"gopkg.in/inconshreveable/log15.v2"
-
 	"github.com/src-d/domain/container"
 	"github.com/src-d/domain/models/social"
 	"github.com/src-d/rovers/client"
+	"github.com/src-d/rovers/metrics"
 )
 
 const (
@@ -36,20 +35,25 @@ func NewAugurInsightsAPI(client *client.Client) *AugurInsightsAPI {
 }
 
 func (a *AugurInsightsAPI) SearchByEmail(email string) (*social.AugurInsight, *http.Response, error) {
+	metrics.AugurRequested.Inc()
+
 	q := &url.Values{}
 	q.Add("email", email)
 
 	body, res, err := a.doRequest(q)
 	if err == ErrRateLimitExceeded {
 		a.reachedLimit = true
+		metrics.AugurFailed.WithLabelValues("api_rate_limit").Inc()
 		return nil, res, err
 	}
 	if err != nil {
+		metrics.AugurFailed.WithLabelValues("request_err").Inc()
 		return nil, res, err
 	}
 
 	insight, err := a.processResponse(body)
 	if err != nil {
+		metrics.AugurFailed.WithLabelValues("process_response_err").Inc()
 		return nil, res, err
 	}
 	insight.InputEmail = email
@@ -66,16 +70,24 @@ func (a *AugurInsightsAPI) buildURL(q *url.Values) *url.URL {
 }
 
 func (a *AugurInsightsAPI) doRequest(q *url.Values) ([]byte, *http.Response, error) {
+
 	req, err := client.NewRequest(a.buildURL(q).String())
 	if err != nil {
 		return nil, nil, err
 	}
 
+	start := time.Now()
 	res, err := a.client.Do(req)
 	if err != nil {
 		return nil, res, err
 	}
 	defer res.Body.Close()
+
+	defer func() {
+		elapsed := time.Since(start)
+		microseconds := float64(elapsed) / float64(time.Microsecond)
+		metrics.AugurRequestDur.Observe(microseconds)
+	}()
 
 	body, err := ioutil.ReadAll(res.Body)
 	if err != nil {
@@ -120,7 +132,6 @@ func (a *AugurInsightsAPI) processResponse(body []byte) (*social.AugurInsight, e
 	doc.Done = true
 	doc.TwitterDone = false
 	doc.GitHubDone = false
-	doc.TwitterHandles = twitterHandles(doc)
 
 	return doc, nil
 }
@@ -152,21 +163,6 @@ func hasData(doc *social.AugurInsight) bool {
 		}
 	}
 	return false
-}
-
-func twitterHandles(doc *social.AugurInsight) (handles []string) {
-	for _, URL := range doc.TwitterURL {
-		handle, err := social.HandleFromTwitterURL(URL)
-		if err != nil {
-			log15.Error("Invalid Twitter URL",
-				"email", doc.Email,
-				"url", URL,
-			)
-			continue
-		}
-		handles = append(handles, handle)
-	}
-	return
 }
 
 type RawInsight struct {
