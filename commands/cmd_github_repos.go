@@ -10,6 +10,7 @@ import (
 
 	"github.com/mcuadros/go-github/github"
 	"gopkg.in/inconshreveable/log15.v2"
+	"gopkg.in/mgo.v2/bson"
 	"gopkg.in/src-d/storable.v1"
 )
 
@@ -116,6 +117,7 @@ func processGithubRepository(doc *social.GithubRepository, repo github.Repositor
 	}
 	if repo.Owner != nil {
 		processGithubUser(&doc.Owner, *repo.Owner)
+		doc.Owner.SetId(bson.NewObjectId())
 	}
 	if repo.Fork != nil {
 		doc.Fork = *repo.Fork
