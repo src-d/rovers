@@ -3,11 +3,11 @@ package commands
 import (
 	"time"
 
-	"github.com/tyba/srcd-domain/container"
-	"github.com/tyba/srcd-domain/models"
-	"github.com/tyba/srcd-domain/models/social"
-	"github.com/tyba/srcd-rovers/client"
-	"github.com/tyba/srcd-rovers/readers"
+	"github.com/src-d/domain/container"
+	"github.com/src-d/domain/models"
+	"github.com/src-d/domain/models/social"
+	"github.com/src-d/rovers/client"
+	"github.com/src-d/rovers/readers"
 
 	"gopkg.in/inconshreveable/log15.v2"
 )

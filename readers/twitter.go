@@ -4,9 +4,9 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/tyba/srcd-domain/container"
-	"github.com/tyba/srcd-domain/models/social"
-	"github.com/tyba/srcd-rovers/client"
+	"github.com/src-d/domain/container"
+	"github.com/src-d/domain/models/social"
+	"github.com/src-d/rovers/client"
 
 	"github.com/PuerkitoBio/goquery"
 )

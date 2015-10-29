@@ -3,14 +3,15 @@ package commands
 import (
 	"time"
 
-	"github.com/tyba/srcd-domain/container"
-	"github.com/tyba/srcd-domain/models/social"
-	"github.com/tyba/srcd-rovers/metrics"
-	"github.com/tyba/srcd-rovers/readers"
+	"github.com/src-d/domain/container"
+	"github.com/src-d/domain/models/social"
+	"github.com/src-d/rovers/metrics"
+	"github.com/src-d/rovers/readers"
 
 	"github.com/mcuadros/go-github/github"
 	"gopkg.in/inconshreveable/log15.v2"
-	"gopkg.in/tyba/storable.v1"
+	"gopkg.in/mgo.v2/bson"
+	"gopkg.in/src-d/storable.v1"
 )
 
 type CmdGithubApi struct {
@@ -116,6 +117,7 @@ func processGithubRepository(doc *social.GithubRepository, repo github.Repositor
 	}
 	if repo.Owner != nil {
 		processGithubUser(&doc.Owner, *repo.Owner)
+		doc.Owner.SetId(bson.NewObjectId())
 	}
 	if repo.Fork != nil {
 		doc.Fork = *repo.Fork

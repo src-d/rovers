@@ -5,7 +5,7 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/tyba/srcd-rovers/client"
+	"github.com/src-d/rovers/client"
 
 	"github.com/PuerkitoBio/goquery"
 )

@@ -5,9 +5,9 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/tyba/srcd-domain/models/social"
-	"github.com/tyba/srcd-rovers/client"
-	"github.com/tyba/srcd-rovers/readers"
+	"github.com/src-d/domain/models/social"
+	"github.com/src-d/rovers/client"
+	"github.com/src-d/rovers/readers"
 
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"

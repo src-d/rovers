@@ -1,7 +1,7 @@
 package readers
 
 import (
-	"github.com/tyba/srcd-rovers/client"
+	"github.com/src-d/rovers/client"
 
 	. "gopkg.in/check.v1"
 )
