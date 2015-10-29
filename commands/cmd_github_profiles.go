@@ -5,6 +5,7 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/src-d/domain/container"
 	"github.com/src-d/domain/models/social"
 	"github.com/src-d/rovers/client"
 	"github.com/src-d/rovers/readers"
@@ -13,9 +14,10 @@ import (
 	"gopkg.in/mgo.v2/bson"
 )
 
-type CmdGithub struct {
-	MongoDBHost string `short:"m" long:"mongo" default:"localhost" description:"mongodb hostname"`
-	MaxThreads  int    `short:"t" long:"threads" default:"4" description:"number of t"`
+type CmdGitHubProfiles struct {
+	CmdBase
+
+	MaxThreads int `short:"t" long:"threads" default:"4" description:"number of t"`
 
 	github  *readers.GithubWebCrawler
 	augur   *mgo.Collection
@@ -30,23 +32,23 @@ type githubUrlData struct {
 	Url string
 }
 
-func (l *CmdGithub) Execute(args []string) error {
-	l.c = make(chan *githubUrlData, l.MaxThreads)
+func (c *CmdGitHubProfiles) Execute(args []string) error {
+	c.c = make(chan *githubUrlData, c.MaxThreads)
 
-	session, _ := mgo.Dial("mongodb://" + l.MongoDBHost)
+	session := container.GetMgoSession()
+	defer session.Close()
+	c.github = readers.NewGithubWebCrawler(client.NewClient(true))
+	c.storage = session.DB("github").C("profiles")
+	c.augur = session.DB("github").C("urls")
 
-	l.github = readers.NewGithubWebCrawler(client.NewCachedClient(session))
-	l.storage = session.DB("github").C("profiles")
-	l.augur = session.DB("github").C("urls")
-
-	go l.queue()
-	l.process()
+	go c.queue()
+	c.process()
 
 	return nil
 }
 
-func (l *CmdGithub) queue() {
-	pending := l.get()
+func (c *CmdGitHubProfiles) queue() {
+	pending := c.get()
 	defer pending.Close()
 
 	for {
@@ -60,84 +62,81 @@ func (l *CmdGithub) queue() {
 			break
 		}
 
-		l.c <- result
+		c.c <- result
 	}
 
-	close(l.c)
+	close(c.c)
 }
 
-func (l *CmdGithub) get() *mgo.Iter {
+func (c *CmdGitHubProfiles) get() *mgo.Iter {
 	q := bson.M{
-		"done": bson.M{
-			"$exists": 0,
-		},
+		"done": bson.M{"$exists": 0},
 	}
-
-	return l.augur.Find(q).Iter()
+	return c.augur.Find(q).Iter()
 }
 
-func (l *CmdGithub) process() {
-	for i := 0; i < l.MaxThreads; i++ {
-		l.Add(1)
+func (c *CmdGitHubProfiles) process() {
+	c.Add(c.MaxThreads)
+	for i := 0; i < c.MaxThreads; i++ {
 		go func() {
-			defer l.Done()
+			defer c.Done()
 			for {
-				url, _ := <-l.c
-				l.processData(url)
+				url, _ := <-c.c
+				c.processData(url)
 			}
 		}()
 	}
 
-	l.Wait()
+	c.Wait()
 }
 
-func (l *CmdGithub) processData(d *githubUrlData) {
+func (c *CmdGitHubProfiles) processData(d *githubUrlData) {
 	if d == nil {
 		fmt.Println("Empty")
 		return
 	}
 
 	url := strings.Replace(d.Url, "https:", "http:", 1)
-	if l.has(url) {
+	if c.has(url) {
 		fmt.Printf("SKIP: %q\n", url)
-		l.done(url, 200)
+		c.done(url, 200)
 		return
 	}
 
-	p, err := l.github.GetProfileByURL(url)
+	p, err := c.github.GetProfileByURL(url)
 	if err != nil {
 		if err == client.NotFound {
-			l.done(url, 404)
+			c.done(url, 404)
 		} else {
-			l.done(url, 500)
+			c.done(url, 500)
 		}
 
 		fmt.Printf("ERROR: %q, %s\n", url, err)
 		return
 	}
 
-	if err := l.saveGithubProfile(p); err != nil {
+	if err := c.saveGithubProfile(p); err != nil {
 		fmt.Printf("ERROR saving: %q, %s\n", url, err)
 		return
 	}
 
 	fmt.Printf("DONE: Organization: %b Username: %s\n", p.Organization, p.Username)
-	l.done(url, 200)
+	c.done(url, 200)
 
 	return
 }
 
-func (l *CmdGithub) has(url string) bool {
+func (c *CmdGitHubProfiles) has(url string) bool {
 	q := bson.M{"url": url}
 
-	if c, _ := l.storage.Find(q).Count(); c == 0 {
+	if c, _ := c.storage.Find(q).Count(); c == 0 {
 		return false
 	}
 
 	return true
 }
 
-func (l *CmdGithub) done(url string, status int) {
+func (c *CmdGitHubProfiles) done(url string, status int) {
 	q := bson.M{"url": url}
 	s := bson.M{
 		"$set": bson.M{
@@ -145,13 +144,13 @@ func (l *CmdGithub) done(url string, status int) {
 		},
 	}
 
-	_, err := l.augur.UpdateAll(q, s)
+	_, err := c.augur.UpdateAll(q, s)
 	if err != nil {
 		panic(err)
 	}
 }
 
-func (l *CmdGithub) saveGithubProfile(p *social.GithubProfile) error {
+func (c *CmdGitHubProfiles) saveGithubProfile(p *social.GithubProfile) error {
 	p.SetId(bson.NewObjectId())
-	return l.storage.Insert(p)
+	return c.storage.Insert(p)
 }

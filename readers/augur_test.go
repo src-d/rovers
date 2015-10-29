@@ -1,6 +1,8 @@
 package readers
 
 import (
+	"sort"
+
 	"github.com/src-d/rovers/client"
 
 	. "gopkg.in/check.v1"
@@ -12,11 +14,12 @@ func (s *SourcesSuite) TestAugurReader_SearchByEmail(c *C) {
 
 	c.Assert(err, IsNil)
 	c.Assert(res.StatusCode, Equals, 200)
-	c.Assert(r.Status, Equals, 200)
-	c.Assert(r.Private.Name, Equals, "Noir Alsafar")
+	c.Assert(r.LastStatus, Equals, 200)
+	sort.Strings(r.Name)
+	c.Assert(r.Name, DeepEquals, []string{"Nawar Alsafar", "Noir Alsafar"})
 }
 
-func (s *SourcesSuite) TestAugurReader_SearchByEmailBadRequest(c *C) {
+func (s *SourcesSuite) TestAugurReader_SearchByEmail_BadRequest(c *C) {
 	a := NewAugurInsightsAPI(client.NewClient(true))
 	r, res, err := a.SearchByEmail("foo")
 

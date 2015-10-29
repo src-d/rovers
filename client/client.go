@@ -47,8 +47,25 @@ func NewClient(cacheEnforced bool) *Client {
 	return &Client{}
 }
 
+func (c *Client) Do(req *http.Request) (*http.Response, error) {
+	res, err := c.Client.Do(req)
+	if err != nil {
+		return res, err
+	}
+	if res.StatusCode >= 400 {
+		return res, nil
+	}
+
+	body, err := getResponseBodyReader(res)
+	if err != nil {
+		return nil, err
+	}
+	res.Body = body
+	return res, nil
+}
+
 func (c *Client) DoJSON(req *http.Request, result interface{}) (*http.Response, error) {
-	res, err := c.Do(req)
+	res, err := c.Client.Do(req)
 	if err != nil {
 		return res, err
 	}
@@ -71,7 +88,7 @@ func (c *Client) DoJSON(req *http.Request, result interface{}) (*http.Response, 
 }
 
 func (c *Client) DoHTML(req *http.Request) (*goquery.Document, *http.Response, error) {
-	res, err := c.Do(req)
+	res, err := c.Client.Do(req)
 	if err != nil {
 		return nil, res, err
 	}
