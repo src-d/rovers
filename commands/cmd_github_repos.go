@@ -116,7 +116,7 @@ func processGithubRepository(doc *social.GithubRepository, repo github.Repositor
 		doc.Description = *repo.Description
 	}
 	if repo.Owner != nil {
-		processGithubUser(&doc.Owner, *repo.Owner)
+		processGithubUser(doc.Owner, *repo.Owner)
 		doc.Owner.SetId(bson.NewObjectId())
 	}
 	if repo.Fork != nil {
