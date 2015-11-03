@@ -7,9 +7,9 @@ import (
 
 	"gopkg.in/inconshreveable/log15.v2"
 
-	"github.com/tyba/srcd-domain/models/social/bitbucket"
-	"github.com/tyba/srcd-rovers/client"
-	"github.com/tyba/srcd-rovers/metrics"
+	"github.com/src-d/domain/models/social/bitbucket"
+	"github.com/src-d/rovers/client"
+	"github.com/src-d/rovers/metrics"
 )
 
 // API rate limit source:

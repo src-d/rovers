@@ -2,189 +2,180 @@ package readers
 
 import (
 	"encoding/json"
+	"io/ioutil"
 	"net/http"
 	"net/url"
 	"time"
 
-	"github.com/tyba/srcd-domain/container"
-	"github.com/tyba/srcd-domain/models/social"
-	"github.com/tyba/srcd-rovers/client"
+	"github.com/src-d/domain/container"
+	"github.com/src-d/domain/models/social"
+	"github.com/src-d/rovers/client"
+	"github.com/src-d/rovers/metrics"
 )
 
 const (
-	augurInsightsURL = "https://api.augur.io/v2/insights"
-	augurKey         = "2bwn2e88g9dbva8pjolgxeid0nz9m4ne"
-	augurRateLimit   = 1 * time.Second
+	AugurInsightsURL = "https://api.augur.io/v1/insights"
+	AugurKey         = "2bwn2e88g9dbva8pjolgxeid0nz9m4ne"
 )
 
+// AugurInsightsAPI works as a "fire and forget" service, it'll run as fast as
+// it can for as long as it can until your API token reaches its monthly rate
+// limit.
 type AugurInsightsAPI struct {
 	client       *client.Client
-	next         time.Time
 	insightStore *social.AugurInsightStore
+	reachedLimit bool
 }
 
 func NewAugurInsightsAPI(client *client.Client) *AugurInsightsAPI {
 	return &AugurInsightsAPI{
 		client:       client,
-		next:         time.Now(),
 		insightStore: container.GetDomainModelsSocialAugurInsightStore(),
 	}
 }
 
 func (a *AugurInsightsAPI) SearchByEmail(email string) (*social.AugurInsight, *http.Response, error) {
-	if time.Now().Before(a.next) {
-		time.Sleep(time.Now().Sub(a.next))
-	}
-	a.next = time.Now().Add(augurRateLimit)
+	metrics.AugurRequested.Inc()
 
 	q := &url.Values{}
 	q.Add("email", email)
 
-	var (
-		i = a.insightStore.New()
-		r RawInsight
-	)
-
-	res, err := a.doRequest(q, &r)
+	body, res, err := a.doRequest(q)
+	if err == ErrRateLimitExceeded {
+		a.reachedLimit = true
+		metrics.AugurFailed.WithLabelValues("api_rate_limit").Inc()
+		return nil, res, err
+	}
 	if err != nil {
+		metrics.AugurFailed.WithLabelValues("request_err").Inc()
 		return nil, res, err
 	}
 
-	i.Demographics.Gender = getFirstValue(r.Demographics.Gender)
-	i.Demographics.Language = getFirstValue(r.Demographics.Language)
-	i.Geographics.Locale = getFirstValue(r.Geographics.Locale)
-	i.Geographics.Location = getFirstValue(r.Geographics.Location)
-	i.Private.Bio = getFirstValue(r.Private.Bio)
-	i.Private.Description = getFirstValue(r.Private.Description)
-	i.Private.Email = getFirstValue(r.Private.Email)
-	i.Private.Homepage = getFirstValue(r.Private.Homepage)
-	i.Private.Name = getFirstValue(r.Private.Name)
-	i.Private.Phone = getFirstValue(r.Private.Phone)
-	i.Private.Photo = getFirstValue(r.Private.Photo)
-	i.Profiles.Handle = getFirstValue(r.Profiles.Handle)
-	i.Profiles.Post = getFirstValue(r.Profiles.Post)
-	i.Profiles.Service = getFirstValue(r.Profiles.Service)
-	i.Profiles.URL = getFirstValue(r.Profiles.URL)
-	i.Psychographics.Color = getFirstValue(r.Psychographics.Color)
-	i.Psychographics.Keyword = getFirstValue(r.Psychographics.Keyword)
-	i.Misc = r.Misc
-	i.Status = r.Status
-
-	return i, res, nil
-}
-
-func getFirstValue(values []Value) string {
-	if len(values) == 0 {
-		return ""
+	insight, err := a.processResponse(body)
+	if err != nil {
+		metrics.AugurFailed.WithLabelValues("process_response_err").Inc()
+		return nil, res, err
 	}
-	return values[0].Value
+	insight.InputEmail = email
+	return insight, res, nil
 }
 
 func (a *AugurInsightsAPI) buildURL(q *url.Values) *url.URL {
-	q.Add("key", augurKey)
+	q.Add("key", AugurKey)
 
-	u, _ := url.Parse(augurInsightsURL)
+	u, _ := url.Parse(AugurInsightsURL)
 	u.RawQuery = q.Encode()
 
 	return u
 }
 
-func (a *AugurInsightsAPI) doRequest(q *url.Values, result interface{}) (*http.Response, error) {
+func (a *AugurInsightsAPI) doRequest(q *url.Values) ([]byte, *http.Response, error) {
+
 	req, err := client.NewRequest(a.buildURL(q).String())
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
-	res, err := a.client.DoJSON(req, result)
+	start := time.Now()
+	res, err := a.client.Do(req)
 	if err != nil {
-		return res, err
+		return nil, res, err
+	}
+	defer res.Body.Close()
+
+	defer func() {
+		elapsed := time.Since(start)
+		microseconds := float64(elapsed) / float64(time.Microsecond)
+		metrics.AugurRequestDur.Observe(microseconds)
+	}()
+
+	body, err := ioutil.ReadAll(res.Body)
+	if err != nil {
+		return nil, res, err
 	}
 
 	switch res.StatusCode {
-	case 200:
-		return res, nil
-	case 202:
-		return res, ErrPartialResponse
+	case 200, 202:
+		return body, res, nil
+	case 420, 429:
+		return body, res, ErrRateLimitExceeded
 	default:
-		return res, ErrUnexpectedStatusCode
+		return body, res, ErrUnexpectedStatusCode
 	}
 }
 
-type RawInsight struct {
-	Demographics struct {
-		Gender   []Value `json:"gender"`
-		Language []Value `json:"language"`
-	} `json:"DEMOGRAPHICS"`
-	Geographics struct {
-		Locale   []Value `json:"locale"`
-		Location []Value `json:"location"`
-	} `json:"GEOGRAPHICS"`
-	Private struct {
-		Bio         []Value `json:"bio"`
-		Description []Value `json:"description"`
-		Email       []Value `json:"email"`
-		Homepage    []Value `json:"homepage"`
-		Name        []Value `json:"name"`
-		Phone       []Value `json:"phone"`
-		Photo       []Value `json:"photo"`
-	} `json:"PRIVATE"`
-	Profiles struct {
-		Handle  []Value `json:"handle"`
-		Post    []Value `json:"post"`
-		Service []Value `json:"service"`
-		URL     []Value `json:"url"`
-	} `json:"PROFILES"`
-	Psychographics struct {
-		Color   []Value `json:"color"`
-		Keyword []Value `json:"keyword"`
-	} `json:"PSYCHOGRAPHICS"`
-	Misc struct {
-		BackgroundImage       []Value `json:"background_image"`
-		ColorBackground       []Value `json:"color_background"`
-		ColorForeground       []Value `json:"color_foreground"`
-		FacebookHandle        []Value `json:"facebook_handle"`
-		FacebookID            []Value `json:"facebook_id"`
-		FacebookURL           []Value `json:"facebook_url"`
-		FirstName             []Value `json:"first_name"`
-		KloutHandle           []Value `json:"klout_handle"`
-		KloutURL              []Value `json:"klout_url"`
-		LastName              []Value `json:"last_name"`
-		LinkedinHandle        []Value `json:"linkedin_handle"`
-		LinkedinURL           []Value `json:"linkedin_url"`
-		LocationCity          []Value `json:"location_city"`
-		LocationCountry       []Value `json:"location_country"`
-		LocationFormatted     []Value `json:"location_formatted"`
-		LocationState         []Value `json:"location_state"`
-		MentionName           []Value `json:"mention_name"`
-		MentionTwitterHandle  []Value `json:"mention_twitter_handle"`
-		MentionTwitterID      []Value `json:"mention_twitter_id"`
-		PersonUid             string  `json:"person_uid"`
-		PostHashtag           []Value `json:"post_hashtag"`
-		PostLink              []Value `json:"post_link"`
-		PostPhoto             []Value `json:"post_photo"`
-		RecentRetweetedCount  []Value `json:"recent_retweeted_count"`
-		ReplyToTwitterHandle  []Value `json:"reply_to_twitter_handle"`
-		ReplyToTwitterID      []Value `json:"reply_to_twitter_id"`
-		RepostedCount         []Value `json:"reposted_count"`
-		SingleFollowingCount  []Value `json:"single_following_count"`
-		SingleFolowersCount   []Value `json:"single_folowers_count"`
-		SinglePostsCount      []Value `json:"single_posts_count"`
-		Timestamp             float64 `json:"timestamp"` // 1378273006.96988
-		TimeZone              []Value `json:"time_zone"`
-		TweetPostSource       []Value `json:"tweet_post_source"`
-		TwitterFollowingCount []Value `json:"twitter_following_count"`
-		TwitterFolowersCount  []Value `json:"twitter_folowers_count"`
-		TwitterHandle         []Value `json:"twitter_handle"`
-		TwitterID             []Value `json:"twitter_id"`
-		TwitterListedCount    []Value `json:"twitter_listed_count"`
-		TwitterPostsCount     []Value `json:"twitter_posts_count"`
-		TwitterURL            []Value `json:"twitter_url"`
-		UrlDomain             []Value `json:"url_domain"`
-	} `json:"MISC"`
-	Status int `json:"status"`
+func (a *AugurInsightsAPI) processResponse(body []byte) (*social.AugurInsight, error) {
+	doc := a.insightStore.New()
+
+	var raw interface{}
+	if err := json.Unmarshal(body, &raw); err != nil {
+		return nil, err
+	}
+
+	var ri RawInsight
+	if err := json.Unmarshal(body, &ri); err != nil {
+		return nil, err
+	}
+
+	doc.Raw = raw
+
+	doc.Email = getValues(ri.Email)
+	doc.GithubURL = getValues(ri.GithubURL)
+	doc.LinkedinURL = getValues(ri.LinkedinURL)
+	doc.Location = getValues(ri.Location)
+	doc.Name = getValues(ri.Name)
+	doc.TwitterURL = getValues(ri.TwitterURL)
+
+	doc.HasData = hasData(doc)
+	doc.Last = time.Now()
+	doc.LastStatus = ri.LastStatus
+	doc.Done = true
+	doc.TwitterDone = false
+	doc.GitHubDone = false
+
+	return doc, nil
 }
 
-type Value struct {
+func getValues(values []RawValue) []string {
+	var s []string
+	for _, value := range values {
+		s = append(s, value.Value)
+	}
+	return s
+}
+
+func hasData(doc *social.AugurInsight) bool {
+	if doc.LastStatus == 200 {
+		return true
+	}
+
+	dataLengths := []int{
+		len(doc.GithubURL),
+		len(doc.LinkedinURL),
+		len(doc.Location),
+		len(doc.Name),
+		len(doc.TwitterURL),
+	}
+
+	for _, length := range dataLengths {
+		if length > 0 {
+			return true
+		}
+	}
+	return false
+}
+
+type RawInsight struct {
+	Email       []RawValue `json:"email" bson:"email"`
+	GithubURL   []RawValue `json:"github-url" bson:"github_url"`
+	LinkedinURL []RawValue `json:"linkedin-url" bson:"linkedin_url"`
+	Location    []RawValue `json:"location" bson:"location_formatted"`
+	Name        []RawValue `json:"name" bson:"name"`
+	TwitterURL  []RawValue `json:"twitter-url" bson:"twitter_url"`
+	LastStatus  int        `json:"status" bson:"status"`
+}
+
+type RawValue struct {
 	Score json.Number `json:"score"`
 	Value string      `json:"value"`
 }

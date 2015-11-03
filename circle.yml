@@ -16,8 +16,8 @@ dependencies:
 
     - if [[ ! -d go ]]; then wget https://storage.googleapis.com/golang/go1.5.linux-amd64.tar.gz -O go.tar.gz && tar -xvzf go.tar.gz && rm -rf go.tar.gz && mv go $HOME/;  fi
     - rm -rf $GOPATH
-    - mkdir -p $GOPATH/src/github.com/tyba/
-    - ln -s $HOME/$CIRCLE_PROJECT_REPONAME $GOPATH/src/github.com/tyba/$CIRCLE_PROJECT_REPONAME
+    - mkdir -p $GOPATH/src/github.com/src-d/
+    - ln -s $HOME/$CIRCLE_PROJECT_REPONAME $GOPATH/src/github.com/src-d/$CIRCLE_PROJECT_REPONAME
   override:
     - make dependencies
 

@@ -3,24 +3,24 @@ package commands
 import (
 	"time"
 
-	"github.com/tyba/srcd-domain/container"
-	"github.com/tyba/srcd-domain/models/social"
-	"github.com/tyba/srcd-rovers/metrics"
-	"github.com/tyba/srcd-rovers/readers"
+	"github.com/src-d/domain/container"
+	"github.com/src-d/domain/models/social"
+	"github.com/src-d/rovers/metrics"
+	"github.com/src-d/rovers/readers"
 
 	"github.com/mcuadros/go-github/github"
 	"gopkg.in/inconshreveable/log15.v2"
-	"gopkg.in/tyba/storable.v1"
+	"gopkg.in/src-d/storable.v1"
 )
 
-type CmdGithubApiUsers struct {
+type CmdGitHubAPIUsers struct {
 	CmdBase
 
 	github  *readers.GithubAPI
 	storage *social.GithubUserStore
 }
 
-func (c *CmdGithubApiUsers) Execute(args []string) error {
+func (c *CmdGitHubAPIUsers) Execute(args []string) error {
 	c.CmdBase.ChangeLogLevel()
 
 	defer metrics.Push()
@@ -61,7 +61,7 @@ func (c *CmdGithubApiUsers) Execute(args []string) error {
 	return nil
 }
 
-func (c *CmdGithubApiUsers) getSince() int {
+func (c *CmdGitHubAPIUsers) getSince() int {
 	q := c.storage.Query()
 	q.Sort(storable.Sort{{social.Schema.GithubUser.GithubID, storable.Desc}})
 	user, err := c.storage.FindOne(q)
@@ -73,7 +73,7 @@ func (c *CmdGithubApiUsers) getSince() int {
 	return user.GithubID
 }
 
-func (c *CmdGithubApiUsers) getUsers(since int) (
+func (c *CmdGitHubAPIUsers) getUsers(since int) (
 	users []github.User, resp *github.Response, err error,
 ) {
 	metrics.GitHubUsersRequested.Inc()
@@ -95,7 +95,7 @@ func (c *CmdGithubApiUsers) getUsers(since int) (
 	return
 }
 
-func (c *CmdGithubApiUsers) save(users []github.User) {
+func (c *CmdGitHubAPIUsers) save(users []github.User) {
 	saved := 0
 	for _, user := range users {
 		doc := c.createNewDocument(user)
@@ -118,7 +118,7 @@ func (c *CmdGithubApiUsers) save(users []github.User) {
 	)
 }
 
-func (c *CmdGithubApiUsers) createNewDocument(user github.User) *social.GithubUser {
+func (c *CmdGitHubAPIUsers) createNewDocument(user github.User) *social.GithubUser {
 	doc := c.storage.New()
 	processGithubUser(doc, user)
 	return doc

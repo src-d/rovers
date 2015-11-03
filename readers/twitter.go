@@ -4,9 +4,9 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/tyba/srcd-domain/container"
-	"github.com/tyba/srcd-domain/models/social"
-	"github.com/tyba/srcd-rovers/client"
+	"github.com/src-d/domain/container"
+	"github.com/src-d/domain/models/social"
+	"github.com/src-d/rovers/client"
 
 	"github.com/PuerkitoBio/goquery"
 )
@@ -15,10 +15,14 @@ const TwitterBaseURL = "https://twitter.com/%s"
 
 type TwitterReader struct {
 	client *client.Client
+	store  *social.TwitterProfileStore
 }
 
 func NewTwitterReader(client *client.Client) *TwitterReader {
-	return &TwitterReader{client}
+	return &TwitterReader{
+		client: client,
+		store:  container.GetDomainModelsSocialTwitterProfileStore(),
+	}
 }
 
 func (t *TwitterReader) GetProfileByURL(url string) (*social.TwitterProfile, error) {
@@ -32,8 +36,7 @@ func (t *TwitterReader) GetProfileByURL(url string) (*social.TwitterProfile, err
 		return nil, err
 	}
 
-	store := container.GetDomainModelsSocialTwitterProfileStore()
-	profile, err := store.New(url)
+	profile, err := t.store.New(url)
 	if err != nil {
 		return nil, err
 	}
@@ -46,7 +49,7 @@ func (t *TwitterReader) GetProfileByURL(url string) (*social.TwitterProfile, err
 func (t *TwitterReader) fillBasicInfo(doc *goquery.Document, p *social.TwitterProfile) {
 	p.Handle = doc.Find(".ProfileHeaderCard-screenname span").Text()
 	p.FullName = doc.Find(".ProfileHeaderCard-name a").Text()
-	p.Location = strings.Trim(doc.Find(".ProfileHeaderCard-locationText").Text(), "\n\r\t ")
+	p.Location = strings.TrimSpace(doc.Find(".ProfileHeaderCard-locationText").Text())
 	p.Bio = doc.Find(".ProfileHeaderCard-bio").Text()
 	p.Web, _ = doc.Find(".ProfileHeaderCard-url a").Attr("title")
 }

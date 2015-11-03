@@ -8,8 +8,8 @@ import (
 
 	"gopkg.in/inconshreveable/log15.v2"
 
-	"github.com/tyba/srcd-domain/models/company"
-	"github.com/tyba/srcd-rovers/client"
+	"github.com/src-d/domain/models/company"
+	"github.com/src-d/rovers/client"
 
 	"github.com/PuerkitoBio/goquery"
 )

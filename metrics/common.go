@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/tyba/srcd-domain/container"
+	"github.com/src-d/domain/container"
 )
 
 const subsystem = "rovers"
