@@ -5,14 +5,14 @@ import "github.com/prometheus/client_golang/prometheus"
 var (
 	subsystemBitbucket = subsystem + "_bitbucket"
 
-	BitbucketProcessed = prometheus.NewCounter(
+	BitbucketProcessed = prometheus.NewGauge(
 		prometheus.CounterOpts{
 			Subsystem: subsystemBitbucket,
 			Name:      "processed",
 			Help:      "Number of Bitbucket repositories processed.",
 		},
 	)
-	BitbucketFailed = prometheus.NewCounterVec(
+	BitbucketFailed = prometheus.NewGaugeVec(
 		prometheus.CounterOpts{
 			Subsystem: subsystemBitbucket,
 			Name:      "failed",
@@ -20,7 +20,7 @@ var (
 		},
 		[]string{"reason"},
 	)
-	BitbucketRequested = prometheus.NewCounter(
+	BitbucketRequested = prometheus.NewGauge(
 		prometheus.CounterOpts{
 			Subsystem: subsystemBitbucket,
 			Name:      "requested",
