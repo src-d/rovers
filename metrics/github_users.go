@@ -6,14 +6,14 @@ var (
 	subsystemGitHubUsers = subsystem + "_github_users"
 
 	GitHubUsersProcessed = prometheus.NewGauge(
-		prometheus.CounterOpts{
+		prometheus.GaugeOpts{
 			Subsystem: subsystemGitHubUsers,
 			Name:      "processed",
 			Help:      "Number of GitHub users processed.",
 		},
 	)
 	GitHubUsersFailed = prometheus.NewGaugeVec(
-		prometheus.CounterOpts{
+		prometheus.GaugeOpts{
 			Subsystem: subsystemGitHubUsers,
 			Name:      "failed",
 			Help:      "Number of GitHub users failed.",
@@ -21,7 +21,7 @@ var (
 		[]string{"reason"},
 	)
 	GitHubUsersRequested = prometheus.NewGauge(
-		prometheus.CounterOpts{
+		prometheus.GaugeOpts{
 			Subsystem: subsystemGitHubUsers,
 			Name:      "requested",
 			Help:      "number of requests made to GitHub Users API.",

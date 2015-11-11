@@ -6,14 +6,14 @@ var (
 	subsystemBitbucket = subsystem + "_bitbucket"
 
 	BitbucketProcessed = prometheus.NewGauge(
-		prometheus.CounterOpts{
+		prometheus.GaugeOpts{
 			Subsystem: subsystemBitbucket,
 			Name:      "processed",
 			Help:      "Number of Bitbucket repositories processed.",
 		},
 	)
 	BitbucketFailed = prometheus.NewGaugeVec(
-		prometheus.CounterOpts{
+		prometheus.GaugeOpts{
 			Subsystem: subsystemBitbucket,
 			Name:      "failed",
 			Help:      "Number of Bitbucket repositories failed.",
@@ -21,7 +21,7 @@ var (
 		[]string{"reason"},
 	)
 	BitbucketRequested = prometheus.NewGauge(
-		prometheus.CounterOpts{
+		prometheus.GaugeOpts{
 			Subsystem: subsystemBitbucket,
 			Name:      "requested",
 			Help:      "number of requests made to Bitbucket API.",

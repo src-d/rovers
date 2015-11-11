@@ -6,14 +6,14 @@ var (
 	subsystemTwitter = subsystem + "_twitter"
 
 	TwitterProcessed = prometheus.NewGauge(
-		prometheus.CounterOpts{
+		prometheus.GaugeOpts{
 			Subsystem: subsystemTwitter,
 			Name:      "processed",
 			Help:      "Number of Twitter profiles processed.",
 		},
 	)
 	TwitterFailed = prometheus.NewGaugeVec(
-		prometheus.CounterOpts{
+		prometheus.GaugeOpts{
 			Subsystem: subsystemTwitter,
 			Name:      "failed",
 			Help:      "Number of Twitter profiles failed.",
@@ -21,7 +21,7 @@ var (
 		[]string{"reason"},
 	)
 	TwitterRequested = prometheus.NewGauge(
-		prometheus.CounterOpts{
+		prometheus.GaugeOpts{
 			Subsystem: subsystemTwitter,
 			Name:      "requested",
 			Help:      "Number of requests made to Twitter web.",

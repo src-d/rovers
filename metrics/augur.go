@@ -6,14 +6,14 @@ var (
 	subsystemAugur = subsystem + "_augur"
 
 	AugurProcessed = prometheus.NewGauge(
-		prometheus.CounterOpts{
+		prometheus.GaugeOpts{
 			Subsystem: subsystemAugur,
 			Name:      "processed",
 			Help:      "Number of Augur Insights processed.",
 		},
 	)
 	AugurFailed = prometheus.NewGaugeVec(
-		prometheus.CounterOpts{
+		prometheus.GaugeOpts{
 			Subsystem: subsystemAugur,
 			Name:      "failed",
 			Help:      "Number of Augur Insights failed.",
@@ -21,7 +21,7 @@ var (
 		[]string{"reason"},
 	)
 	AugurRequested = prometheus.NewGauge(
-		prometheus.CounterOpts{
+		prometheus.GaugeOpts{
 			Subsystem: subsystemAugur,
 			Name:      "requested",
 			Help:      "number of requests made to Augur API.",
