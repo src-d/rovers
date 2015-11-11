@@ -11,7 +11,7 @@ import (
 	"github.com/src-d/rovers/readers"
 
 	"gopkg.in/inconshreveable/log15.v2"
-	"gopkg.in/tyba/storable.v1"
+	"gopkg.in/src-d/storable.v1"
 )
 
 var Expired = (30 * 24 * time.Hour).Seconds()
