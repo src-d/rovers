@@ -5,14 +5,14 @@ import "github.com/prometheus/client_golang/prometheus"
 var (
 	subsystemGitHubRepos = subsystem + "_github_repos"
 
-	GitHubReposProcessed = prometheus.NewCounter(
+	GitHubReposProcessed = prometheus.NewGauge(
 		prometheus.CounterOpts{
 			Subsystem: subsystemGitHubRepos,
 			Name:      "processed",
 			Help:      "Number of GitHub repositories processed.",
 		},
 	)
-	GitHubReposFailed = prometheus.NewCounterVec(
+	GitHubReposFailed = prometheus.NewGaugeVec(
 		prometheus.CounterOpts{
 			Subsystem: subsystemGitHubRepos,
 			Name:      "failed",
@@ -20,7 +20,7 @@ var (
 		},
 		[]string{"reason"},
 	)
-	GitHubReposRequested = prometheus.NewCounter(
+	GitHubReposRequested = prometheus.NewGauge(
 		prometheus.CounterOpts{
 			Subsystem: subsystemGitHubRepos,
 			Name:      "requested",

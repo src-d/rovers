@@ -5,14 +5,14 @@ import "github.com/prometheus/client_golang/prometheus"
 var (
 	subsystemAugur = subsystem + "_augur"
 
-	AugurProcessed = prometheus.NewCounter(
+	AugurProcessed = prometheus.NewGauge(
 		prometheus.CounterOpts{
 			Subsystem: subsystemAugur,
 			Name:      "processed",
 			Help:      "Number of Augur Insights processed.",
 		},
 	)
-	AugurFailed = prometheus.NewCounterVec(
+	AugurFailed = prometheus.NewGaugeVec(
 		prometheus.CounterOpts{
 			Subsystem: subsystemAugur,
 			Name:      "failed",
@@ -20,7 +20,7 @@ var (
 		},
 		[]string{"reason"},
 	)
-	AugurRequested = prometheus.NewCounter(
+	AugurRequested = prometheus.NewGauge(
 		prometheus.CounterOpts{
 			Subsystem: subsystemAugur,
 			Name:      "requested",
