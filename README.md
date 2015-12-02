@@ -1,4 +1,4 @@
-# source{d} rovers [![Build Status](https://travis-ci.com/src-d/rovers.svg?token=SwSByatYdngkAQQHs7LC&branch=dev)](https://travis-ci.com/src-d/rovers) [![codecov.io](https://codecov.io/github/src-d/rovers/coverage.svg?branch=master&token=ObiptJsBpW)](https://codecov.io/github/src-d/rovers?branch=master)
+# source{d} rovers [![Build Status](https://travis-ci.com/src-d/rovers.svg?token=SwSByatYdngkAQQHs7LC&branch=master)](https://travis-ci.com/src-d/rovers) [![Build Status](https://travis-ci.com/src-d/rovers.svg?token=SwSByatYdngkAQQHs7LC&branch=dev)](https://travis-ci.com/src-d/rovers) [![codecov.io](https://codecov.io/github/src-d/rovers/coverage.svg?branch=master&token=ObiptJsBpW)](https://codecov.io/github/src-d/rovers?branch=master)
 
 Source{d} rovers defines (sub)commands for retrieving different external services.
 
