@@ -41,3 +41,6 @@ deploy:
   skip_cleanup: true
   on:
     tags: true
+
+notifications:
+  slack: src-d:w7Mo0sRek0S5MUYR0Du57Q3K
