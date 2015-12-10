@@ -33,7 +33,13 @@ func (c *CmdGitHubAPIRepos) Execute(args []string) error {
 			return err
 		}
 
+		if len(repos) == 0 {
+			log15.Info("No more repos. Stopping crawl...")
+			break
+		}
+
 		c.save(repos)
+
 		if resp.NextPage == 0 && resp.NextPage == since {
 			break
 		}
