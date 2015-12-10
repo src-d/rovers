@@ -83,7 +83,7 @@ func (c *CmdAugur) populateEmailSet() error {
 
 	err = set.ForEach(func(person *models.Person) error {
 		for _, email := range person.Email {
-			c.emailSet[email] = false
+			c.emailSet[email.Address] = false
 		}
 		return nil
 	})
