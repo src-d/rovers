@@ -32,7 +32,9 @@ func main() {
 	PanicIf(err)
 	cmd, err = parser.AddCommand("linkedin", "LinkedIn Company Employees crawler", "", &commands.CmdLinkedIn{})
 	PanicIf(err)
-	_, err = cmd.AddCommand("no-employees", "Ofelia job: Run 'linkedin' command for just added companies", "", &commands.CmdLinkedInNoEmployees{})
+	_, err = cmd.AddCommand("update",
+		"Updates one or more company employee lists, see --mode", "",
+		&commands.CmdLinkedInUpdate{})
 	PanicIf(err)
 	_, err = parser.AddCommand("twitter", "Twitter web crawler", "", &commands.CmdTwitter{})
 	PanicIf(err)
