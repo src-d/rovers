@@ -5,23 +5,23 @@ import "github.com/prometheus/client_golang/prometheus"
 var (
 	subsystemGitHubUsers = subsystem + "_github_users"
 
-	GitHubUsersProcessed = prometheus.NewCounter(
-		prometheus.CounterOpts{
+	GitHubUsersProcessed = prometheus.NewGauge(
+		prometheus.GaugeOpts{
 			Subsystem: subsystemGitHubUsers,
 			Name:      "processed",
 			Help:      "Number of GitHub users processed.",
 		},
 	)
-	GitHubUsersFailed = prometheus.NewCounterVec(
-		prometheus.CounterOpts{
+	GitHubUsersFailed = prometheus.NewGaugeVec(
+		prometheus.GaugeOpts{
 			Subsystem: subsystemGitHubUsers,
 			Name:      "failed",
 			Help:      "Number of GitHub users failed.",
 		},
 		[]string{"reason"},
 	)
-	GitHubUsersRequested = prometheus.NewCounter(
-		prometheus.CounterOpts{
+	GitHubUsersRequested = prometheus.NewGauge(
+		prometheus.GaugeOpts{
 			Subsystem: subsystemGitHubUsers,
 			Name:      "requested",
 			Help:      "number of requests made to GitHub Users API.",

@@ -5,23 +5,23 @@ import "github.com/prometheus/client_golang/prometheus"
 var (
 	subsystemTwitter = subsystem + "_twitter"
 
-	TwitterProcessed = prometheus.NewCounter(
-		prometheus.CounterOpts{
+	TwitterProcessed = prometheus.NewGauge(
+		prometheus.GaugeOpts{
 			Subsystem: subsystemTwitter,
 			Name:      "processed",
 			Help:      "Number of Twitter profiles processed.",
 		},
 	)
-	TwitterFailed = prometheus.NewCounterVec(
-		prometheus.CounterOpts{
+	TwitterFailed = prometheus.NewGaugeVec(
+		prometheus.GaugeOpts{
 			Subsystem: subsystemTwitter,
 			Name:      "failed",
 			Help:      "Number of Twitter profiles failed.",
 		},
 		[]string{"reason"},
 	)
-	TwitterRequested = prometheus.NewCounter(
-		prometheus.CounterOpts{
+	TwitterRequested = prometheus.NewGauge(
+		prometheus.GaugeOpts{
 			Subsystem: subsystemTwitter,
 			Name:      "requested",
 			Help:      "Number of requests made to Twitter web.",

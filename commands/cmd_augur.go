@@ -11,7 +11,7 @@ import (
 	"github.com/src-d/rovers/readers"
 
 	"gopkg.in/inconshreveable/log15.v2"
-	"gopkg.in/tyba/storable.v1"
+	"gopkg.in/src-d/storable.v1"
 )
 
 var Expired = (30 * 24 * time.Hour).Seconds()
@@ -83,7 +83,7 @@ func (c *CmdAugur) populateEmailSet() error {
 
 	err = set.ForEach(func(person *models.Person) error {
 		for _, email := range person.Email {
-			c.emailSet[email] = false
+			c.emailSet[email.Address] = false
 		}
 		return nil
 	})
