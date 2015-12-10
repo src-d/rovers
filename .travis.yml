@@ -43,4 +43,8 @@ deploy:
     tags: true
 
 notifications:
-  slack: src-d:w7Mo0sRek0S5MUYR0Du57Q3K
+  slack:
+    rooms:
+      - 'src-d:w7Mo0sRek0S5MUYR0Du57Q3K#dev-team'
+    on_success: change
+    on_start: never
