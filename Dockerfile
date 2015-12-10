@@ -15,11 +15,11 @@ ENV GITHUB_USER=src-d
 ENV GITHUB_REPO=rovers
 
 RUN TAG=`/opt/bin/linux/amd64/github-release info | sed -n 2p | cut -d " " -f 2` \
-    && /opt/bin/linux/amd64/github-release download -t $TAG -n hermes_${TAG}_linux_amd64.tar.gz \
+    && /opt/bin/linux/amd64/github-release download -t $TAG -n rovers_${TAG}_linux_amd64.tar.gz \
     && echo $DOCKERSHIP_REV
 
-RUN tar -xvzf rovers_linux_amd64.tar.gz && \
-	rm -f rovers_linux_amd64.tar.gz && \
+RUN tar -xvzf rovers_v*_linux_amd64.tar.gz && \
+	rm -f rovers_v*_linux_amd64.tar.gz && \
 	chown root:root -R rovers_linux_amd64
 
 CMD ["bash", "-c"]
