@@ -3,12 +3,11 @@ package commands
 import (
 	"time"
 
-	"github.com/src-d/domain/container"
-
-	"github.com/src-d/domain/models"
-	"github.com/src-d/domain/models/company"
 	"github.com/src-d/rovers/client"
 	"github.com/src-d/rovers/readers/linkedin"
+	"gop.kg/src-d/domain@v2.1/container"
+	"gop.kg/src-d/domain@v2.1/models"
+	"gop.kg/src-d/domain@v2.1/models/company"
 
 	"gopkg.in/inconshreveable/log15.v2"
 )

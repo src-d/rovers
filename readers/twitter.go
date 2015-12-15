@@ -4,9 +4,9 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/src-d/domain/container"
-	"github.com/src-d/domain/models/social"
 	"github.com/src-d/rovers/client"
+	"gop.kg/src-d/domain@v2.1/container"
+	"gop.kg/src-d/domain@v2.1/models/social"
 
 	"github.com/PuerkitoBio/goquery"
 )
