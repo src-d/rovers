@@ -1,7 +1,7 @@
 package commands
 
 import (
-	"github.com/src-d/domain/models"
+	"gop.kg/src-d/domain@v2.1/models"
 
 	"gopkg.in/inconshreveable/log15.v2"
 	"gopkg.in/mgo.v2/bson"

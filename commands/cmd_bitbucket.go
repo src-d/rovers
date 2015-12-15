@@ -4,11 +4,11 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/src-d/domain/container"
-	"github.com/src-d/domain/models/social"
 	"github.com/src-d/rovers/client"
 	"github.com/src-d/rovers/metrics"
 	"github.com/src-d/rovers/readers"
+	"gop.kg/src-d/domain@v2.1/container"
+	"gop.kg/src-d/domain@v2.1/models/social"
 
 	"gopkg.in/inconshreveable/log15.v2"
 )
