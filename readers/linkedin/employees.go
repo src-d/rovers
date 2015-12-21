@@ -6,12 +6,11 @@ import (
 	"strings"
 	"time"
 
-	"gopkg.in/inconshreveable/log15.v2"
-
-	"github.com/src-d/domain/models/company"
 	"github.com/src-d/rovers/client"
+	"gop.kg/src-d/domain@v2.1/models/company"
 
 	"github.com/PuerkitoBio/goquery"
+	"gopkg.in/inconshreveable/log15.v2"
 )
 
 const (
