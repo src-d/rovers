@@ -5,10 +5,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/PuerkitoBio/goquery"
-	"github.com/src-d/domain/models/social"
-	"github.com/src-d/domain/models/social/github"
 	"github.com/src-d/rovers/client"
+	"gop.kg/src-d/domain@v2.1/models/social"
+	"gop.kg/src-d/domain@v2.1/models/social/github"
+
+	"github.com/PuerkitoBio/goquery"
 )
 
 type GithubWebCrawler struct {

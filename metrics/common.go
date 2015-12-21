@@ -5,8 +5,9 @@ import (
 	"os"
 	"time"
 
+	"gop.kg/src-d/domain@v2.1/container"
+
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/src-d/domain/container"
 )
 
 const subsystem = "rovers"

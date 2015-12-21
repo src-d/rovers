@@ -5,11 +5,11 @@ import (
 	"net/url"
 	"time"
 
-	"gopkg.in/inconshreveable/log15.v2"
-
-	"github.com/src-d/domain/models/social/bitbucket"
 	"github.com/src-d/rovers/client"
 	"github.com/src-d/rovers/metrics"
+	"gop.kg/src-d/domain@v2.1/models/social/bitbucket"
+
+	"gopkg.in/inconshreveable/log15.v2"
 )
 
 // API rate limit source:
