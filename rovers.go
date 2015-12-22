@@ -30,7 +30,7 @@ func main() {
 	PanicIf(err)
 	_, err = cmd.AddCommand("users", "GitHub API users crawler", "", &commands.CmdGitHubAPIUsers{})
 	PanicIf(err)
-	cmd, err = parser.AddCommand("linkedin", "LinkedIn Company Employees crawler", "", &commands.CmdLinkedIn{})
+	cmd, err = parser.AddCommand("linkedin", "LinkedIn Company Employees crawler", "", &commands.CmdNoop{})
 	PanicIf(err)
 	_, err = cmd.AddCommand("update",
 		"Updates one or more company employee lists, see --mode", "",

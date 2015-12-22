@@ -13,7 +13,7 @@ import (
 )
 
 type CmdLinkedIn struct {
-	Cookie      string `short:"" long:"cookie" description:"session cookie to use" required:"true"`
+	Cookie      string `short:"" long:"cookie" description:"session cookie to use"`
 	UseCache    bool   `short:"" long:"cacheUse" description:"wether or not to use the request cache" default:"true"`
 	DeleteCache bool   `short:"" long:"cacheDelete" description:"delete cache before running" default:"true"`
 	DryRun      bool   `short:"" long:"dry" description:"show employees found, but don't save them" default:"false"`
