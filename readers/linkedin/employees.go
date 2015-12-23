@@ -1,8 +1,12 @@
 package linkedin
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
+	"log"
+	"net/http"
 	"strings"
 	"time"
 
@@ -45,7 +49,11 @@ func (li *LinkedInWebCrawler) GetEmployees(companyId int) (
 			people = append(people, person.ToDomainCompanyEmployee())
 		}
 
-		if err != nil || url == "" {
+		if err != nil {
+			log15.Error("GetEmployees", "error", err)
+			break
+		}
+		if url == "" {
 			break
 		}
 	}
@@ -71,23 +79,53 @@ func (li *LinkedInWebCrawler) doGetEmployes(url string) (
 			time.Sleep(needsWait)
 		}
 	}()
+
 	req, err := client.NewRequest(url)
 	if err != nil {
 		return
 	}
-	req.Header.Add("User-Agent", UserAgent)
-	req.Header.Add("Cookie", li.cookie)
 
-	doc, res, err := li.client.DoHTML(req)
+	req.Header.Set("Cookie", li.cookie)
+
+	res, err := li.client.Do(req)
 	if err != nil {
 		return
 	}
-	log15.Debug("DoHTML", "url", req.URL, "status", res.StatusCode)
+	log15.Debug("Do", "url", req.URL, "status", res.StatusCode)
 	if res.StatusCode == 404 {
 		err = client.NotFound
 		return
 	}
+
+	doc, err := li.preprocessContent(res)
+	if err != nil {
+		return
+	}
+
 	return li.parseContent(doc)
+}
+
+// goquery will transform `&quot;` into `"` even if it's inside a HTML comment
+// so we need to replace all of those first by some non-harming character first,
+// like `'`, so we can JSON decode the `Voltron` payload succesfully
+func (l *LinkedInWebCrawler) preprocessContent(res *http.Response) (*goquery.Document, error) {
+	body, err := ioutil.ReadAll(res.Body)
+	if err != nil {
+		return nil, err
+	}
+	defer res.Body.Close()
+
+	idx := bytes.Index(body, []byte("voltron_srp_main-content"))
+	if idx > -1 {
+		log15.Info("FOUND voltron payload")
+	} else {
+		log15.Info("NOT FOUND voltron payload")
+	}
+
+	body = bytes.Replace(body, []byte("&quot;"), []byte(`\"`), -1)
+
+	reader := bytes.NewBuffer(body)
+	return goquery.NewDocumentFromReader(reader)
 }
 
 func (li *LinkedInWebCrawler) parseContent(doc *goquery.Document) (
@@ -99,15 +137,26 @@ func (li *LinkedInWebCrawler) parseContent(doc *goquery.Document) (
 	}
 
 	// Fix encoding issues with LinkedIn's JSON:
-	// Source: http://stackoverflow.com/q/30270668
-	content = strings.Replace(content, "\\u002d", "-", -1)
+	content = strings.TrimPrefix(content, "<!--")
+	content = strings.TrimSuffix(content, "-->")
+	content = strings.Replace(content, `\u003c`, "<", -1)
+	content = strings.Replace(content, `\u003e`, ">", -1)
+	content = strings.Replace(content, `\u002d`, "-", -1)
 
-	length := len(content)
-	jsonBlob := content[4 : length-3]
+	if len(content) == 0 {
+		log15.Warn("No JSON found for page")
+		return
+	}
 
 	var data LinkedInData
-	err = json.Unmarshal([]byte(jsonBlob), &data)
+	contentBytes := []byte(content)
+	err = json.Unmarshal(contentBytes, &data)
 	if err != nil {
+		log15.Error("json.Unmarshal", "error", err)
+		if serr, ok := err.(*json.SyntaxError); ok {
+			log.Println("SyntaxError at offset:", serr.Offset)
+			log.Printf("%s\n", contentBytes[serr.Offset-20:serr.Offset+20])
+		}
 		return
 	}
 
