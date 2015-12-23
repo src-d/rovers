@@ -15,13 +15,15 @@ import (
 )
 
 type CmdGitHubAPIRepos struct {
-	github  *readers.GithubAPI
-	storage *social.GithubRepositoryStore
+	github    *readers.GithubAPI
+	repoStore *social.GithubRepositoryStore
+	userStore *social.GithubUserStore
 }
 
 func (c *CmdGitHubAPIRepos) Execute(args []string) error {
 	c.github = readers.NewGithubAPI()
-	c.storage = container.GetDomainModelsSocialGithubRepositoryStore()
+	c.repoStore = container.GetDomainModelsSocialGithubRepositoryStore()
+	c.userStore = container.GetDomainModelsSocialGithubUserStore()
 
 	start := time.Now()
 	since := c.getSince()
@@ -52,10 +54,10 @@ func (c *CmdGitHubAPIRepos) Execute(args []string) error {
 }
 
 func (c *CmdGitHubAPIRepos) getSince() int {
-	q := c.storage.Query()
+	q := c.repoStore.Query()
 
 	q.Sort(storable.Sort{{social.Schema.GithubRepository.GithubID, storable.Desc}})
-	repo, err := c.storage.FindOne(q)
+	repo, err := c.repoStore.FindOne(q)
 	if err != nil {
 		return 0
 	}
@@ -88,7 +90,7 @@ func (c *CmdGitHubAPIRepos) getRepositories(since int) (
 func (c *CmdGitHubAPIRepos) save(repos []github.Repository) {
 	for _, repo := range repos {
 		doc := c.createNewDocument(repo)
-		if _, err := c.storage.Save(doc); err != nil {
+		if _, err := c.repoStore.Save(doc); err != nil {
 			log15.Error("Repository save failed",
 				"repo", doc.FullName,
 				"error", err,
@@ -103,7 +105,8 @@ func (c *CmdGitHubAPIRepos) save(repos []github.Repository) {
 }
 
 func (c *CmdGitHubAPIRepos) createNewDocument(repo github.Repository) *social.GithubRepository {
-	doc := c.storage.New()
+	doc := c.repoStore.New()
+	doc.Owner = c.userStore.New()
 	processGithubRepository(doc, repo)
 	return doc
 }
