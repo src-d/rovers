@@ -112,8 +112,8 @@ func (imp *LinkedInImporter) getCompaniesLinkedInInfo() []CompanyInfo {
 
 	var companiesInfo []CompanyInfo
 	set.ForEach(func(company *models.Company) error {
-		if len(company.LinkedInCompanyIds) == 0 {
-			log15.Warn("No LinkedInCompanyIds", "company", company.CodeName)
+		if len(company.LinkedInCompanyIds) == 0 && len(company.AssociateCompanyIds) == 0 {
+			log15.Warn("No company IDs", "company", company.CodeName)
 			return nil
 		}
 
