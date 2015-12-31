@@ -1,25 +1,18 @@
-FROM tyba/base
+FROM quay.io/srcd/basic:latest
+MAINTAINER source{d}
 
-MAINTAINER Tyba
-
-WORKDIR /opt
-
-RUN apt-get update -y && apt-get install wget bzip2 -y
-RUN wget https://github.com/aktau/github-release/releases/download/v0.5.3/linux-amd64-github-release.tar.bz2
-RUN bunzip2 linux-amd64-github-release.tar.bz2 && tar -xf linux-amd64-github-release.tar
+ADD bin /bin
 
 ENV ENVIRONMENT=production
 ENV ETCD_SERVERS=http://etcd.oss.tyba.cc:4001
-ENV GITHUB_TOKEN=08763897c930b3ff7f7cebf8da45935350a96b7d
-ENV GITHUB_USER=src-d
-ENV GITHUB_REPO=rovers
 
-RUN TAG=`/opt/bin/linux/amd64/github-release info | sed -n 2p | cut -d " " -f 2` \
-    && /opt/bin/linux/amd64/github-release download -t $TAG -n rovers_${TAG}_linux_amd64.tar.gz \
-    && echo $DOCKERSHIP_REV
+WORKDIR /opt
 
-RUN tar -xvzf rovers_v*_linux_amd64.tar.gz && \
-	rm -f rovers_v*_linux_amd64.tar.gz && \
-	chown root:root -R rovers_linux_amd64
+RUN apt-get install -y wget \
+  && wget https://github.com/mcuadros/ofelia/releases/download/v0.2.0/ofelia_v0.2.0_linux_amd64.tar.gz -O ofelia.tar.gz && tar -xvzf ofelia.tar.gz \
+  && rm -rf /var/lib/apt/lists/*
 
-CMD ["bash", "-c"]
+ADD ofelia.ini /etc/ofelia.ini
+VOLUME /var/log/sync/
+
+CMD ["/opt/ofelia_linux_amd64/ofelia", "daemon", "--config", "/etc/ofelia.ini"]
