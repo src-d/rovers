@@ -3,6 +3,7 @@ package linkedin
 import (
 	"errors"
 	"fmt"
+	"os"
 	"time"
 
 	"github.com/src-d/rovers/client"
@@ -14,15 +15,16 @@ import (
 	"gopkg.in/mgo.v2/bson"
 )
 
+const LinkedInCookieEnv = "LINKEDIN_COOKIE"
+
 var (
-	ErrNoCodeName = errors.New("--mode=single requires --codename to be set")
-	ErrNoCookie   = errors.New("--cookie not set")
+	ErrNoCodeName      = errors.New("--mode=single requires --codename to be set")
+	ErrCookieEnvNotSet = fmt.Errorf("%q env var not set", LinkedInCookieEnv)
 )
 
 type LinkedInImporterOptions struct {
 	Mode        string
 	CodeName    string
-	Cookie      string
 	UseCache    bool
 	DeleteCache bool
 	DryRun      bool
@@ -57,11 +59,9 @@ func NewLinkedInImporter(options LinkedInImporterOptions) (*LinkedInImporter, er
 		return nil, fmt.Errorf("invalid mode %q", options.Mode)
 	}
 
-	// Future-proof: we may end up using Jorge's or Ivan's cookie too
-	// --cookie is not required anymore
-	switch options.Cookie {
-	case "", "eiso":
-		options.Cookie = CookieFixtureEiso
+	cookie := os.Getenv(LinkedInCookieEnv)
+	if cookie == "" {
+		return nil, ErrCookieEnvNotSet
 	}
 
 	cli := client.NewClient(false)
@@ -73,7 +73,7 @@ func NewLinkedInImporter(options LinkedInImporterOptions) (*LinkedInImporter, er
 		query:              query,
 		options:            options,
 		companyStore:       container.GetDomainModelsCompanyStore(),
-		linkedinWebCrawler: NewLinkedInWebCrawler(cli, options.Cookie),
+		linkedinWebCrawler: NewLinkedInWebCrawler(cli, cookie),
 	}, nil
 }
 

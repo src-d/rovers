@@ -7,12 +7,17 @@ import (
 )
 
 const (
+	CookieFixture = ""
 	TybaCompanyId = 924688
 )
 
 func (s *linkedInSuite) TestLinkedIn_GetEmployees(c *C) {
+	// NOTE: LinkedIn cookie is set via an environment variable. We test by
+	// manually commenting this `Skip` or on production.
+	c.Skip("Run this locally to test it works")
+
 	cli := client.NewClient(false)
-	wc := NewLinkedInWebCrawler(cli, CookieFixtureEiso)
+	wc := NewLinkedInWebCrawler(cli, CookieFixture)
 	employees, err := wc.GetEmployees(TybaCompanyId)
 	c.Assert(err, IsNil)
 	// NOTE(toqueteos): I'm not sure if checking this value is *that* useful, of
