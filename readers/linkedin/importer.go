@@ -166,7 +166,11 @@ func (imp *LinkedInImporter) updateCompanyEmployees(
 		log15.Debug("Associate company employees")
 		imp.printEmployees(associateEmployees)
 	} else {
-		log15.Info("Updating database employees", "company", info.CodeName)
+		log15.Info("Updating database employees",
+			"company", info.CodeName,
+			"company_employees", len(employees),
+			"associate_employees", len(associateEmployees),
+		)
 		err := imp.saveCompanyEmployees(info.CodeName, employees, associateEmployees)
 		if err != nil {
 			log15.Error("Couldn't update company employees",
@@ -200,9 +204,27 @@ func (imp *LinkedInImporter) saveCompanyEmployees(
 		return err
 	}
 
+	var save = false
 	if len(employees) > len(company.Employees) {
+		log15.Warn("Found less employees",
+			"before", len(employees),
+			"now", len(company.Employees),
+		)
+	} else {
 		company.Employees = employees
+		save = true
+	}
+	if len(associateEmployees) > len(company.AssociateEmployees) {
+		log15.Warn("Found less associate employees",
+			"before", len(associateEmployees),
+			"now", len(company.AssociateEmployees),
+		)
+	} else {
 		company.AssociateEmployees = associateEmployees
+		save = true
+	}
+
+	if save {
 		_, err = imp.companyStore.Save(company)
 		return err
 	}
