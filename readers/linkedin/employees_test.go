@@ -10,7 +10,7 @@ const (
 	TybaCompanyId = 924688
 )
 
-func (s *S) TestLinkedIn_GetEmployees(c *C) {
+func (s *linkedInSuite) TestLinkedIn_GetEmployees(c *C) {
 	cli := client.NewClient(false)
 	wc := NewLinkedInWebCrawler(cli, CookieFixtureEiso)
 	employees, err := wc.GetEmployees(TybaCompanyId)

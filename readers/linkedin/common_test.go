@@ -9,6 +9,6 @@ import (
 // Hook up gocheck into the "go test" runner.
 func Test(t *testing.T) { TestingT(t) }
 
-type S struct{}
+type linkedInSuite struct{}
 
-var _ = Suite(&S{})
+var _ = Suite(&linkedInSuite{})
