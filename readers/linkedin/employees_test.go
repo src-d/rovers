@@ -12,7 +12,7 @@ const (
 	TybaCompanyId = 924688
 )
 
-func (s *linkedInSuite) TestLinkedIn_GetEmployees(c *C) {
+func (s *linkedInSuite) TestNewLinkedInWebCrawler(c *C) {
 	if os.Getenv("TRAVIS_COMMIT") != "" {
 		c.Skip("not running on Travis")
 	}

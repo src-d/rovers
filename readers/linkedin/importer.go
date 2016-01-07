@@ -205,19 +205,19 @@ func (imp *LinkedInImporter) saveCompanyEmployees(
 	}
 
 	var save = false
-	if len(employees) > len(company.Employees) {
+	if len(employees) < len(company.Employees) {
 		log15.Warn("Found less employees",
-			"before", len(employees),
-			"now", len(company.Employees),
+			"before", len(company.Employees),
+			"now", len(employees),
 		)
 	} else {
 		company.Employees = employees
 		save = true
 	}
-	if len(associateEmployees) > len(company.AssociateEmployees) {
+	if len(associateEmployees) < len(company.AssociateEmployees) {
 		log15.Warn("Found less associate employees",
-			"before", len(associateEmployees),
-			"now", len(company.AssociateEmployees),
+			"before", len(company.AssociateEmployees),
+			"now", len(associateEmployees),
 		)
 	} else {
 		company.AssociateEmployees = associateEmployees
