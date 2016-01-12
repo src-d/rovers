@@ -1,6 +1,8 @@
 package linkedin
 
 import (
+	"os"
+
 	"github.com/src-d/rovers/client"
 
 	. "gopkg.in/check.v1"
@@ -11,6 +13,10 @@ const (
 )
 
 func (s *linkedInSuite) TestLinkedIn_GetEmployees(c *C) {
+	if os.Getenv("TRAVIS_COMMIT") != "" {
+		c.Skip("not running on Travis")
+	}
+
 	cli := client.NewClient(false)
 	wc := NewLinkedInWebCrawler(cli, CookieFixtureEiso)
 	employees, err := wc.GetEmployees(TybaCompanyId)

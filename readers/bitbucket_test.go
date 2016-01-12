@@ -2,6 +2,7 @@ package readers
 
 import (
 	"net/url"
+	"os"
 
 	"github.com/src-d/rovers/client"
 
@@ -9,6 +10,13 @@ import (
 )
 
 func (s *SourcesSuite) TestBitbucket_GetRepositories(c *C) {
+	if os.Getenv("TRAVIS_COMMIT") != "" {
+		// NOTE: We are not using any auth for Bitbucket so running this on Travis
+		// almost always fails to run because someone else has already exhausted the
+		// number of requests from a Travis IP.
+		c.Skip("not running on Travis")
+	}
+
 	api := NewBitbucketAPI(client.NewClient(true))
 
 	result, err := api.GetRepositories(url.Values{})
