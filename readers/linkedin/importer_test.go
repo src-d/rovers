@@ -1,10 +1,12 @@
 package linkedin
 
 import (
+	"gop.kg/src-d/domain@v2.1/models/company"
+
 	. "gopkg.in/check.v1"
 )
 
-func (s *linkedInSuite) TestLinkedIn_NewImporter(c *C) {
+func (s *linkedInSuite) TestNewLinkedInImporter(c *C) {
 	var tests = [...]struct {
 		options      LinkedInImporterOptions
 		isError      bool
@@ -80,5 +82,63 @@ func (s *linkedInSuite) TestLinkedIn_NewImporter(c *C) {
 			c.Assert(imp, NotNil)
 			c.Assert(err, IsNil)
 		}
+	}
+}
+
+func (s *linkedInSuite) TestNewLinkedInImporter_Save(c *C) {
+	var tests = []struct {
+		CodeName       string
+		Employees      []company.Employee
+		AssocEmployees []company.Employee
+		IsError        bool
+	}{
+		{
+			CodeName:       "foo",
+			Employees:      []company.Employee{employee("John")},
+			AssocEmployees: []company.Employee{employee("Mary")},
+			IsError:        false,
+		},
+		{
+			CodeName:       "not-exists",
+			Employees:      nil,
+			AssocEmployees: nil,
+			IsError:        true,
+		},
+	}
+
+	for _, tt := range tests {
+		imp, err := NewLinkedInImporter(LinkedInImporterOptions{
+			Mode:     "single",
+			CodeName: tt.CodeName,
+		})
+		c.Assert(err, IsNil)
+
+		imp.companyStore = s.store
+
+		err = imp.saveCompanyEmployees(tt.CodeName, tt.Employees, tt.AssocEmployees)
+		if tt.IsError {
+			c.Assert(err, NotNil)
+		} else {
+			c.Assert(err, IsNil)
+
+			query := s.store.Query()
+			query.FindByCodeName(tt.CodeName)
+
+			doc, err := s.store.FindOne(query)
+			c.Assert(err, IsNil)
+
+			c.Assert(doc.Employees, DeepEquals, tt.Employees)
+			c.Assert(doc.AssociateEmployees, DeepEquals, tt.AssocEmployees)
+		}
+	}
+}
+
+func employee(name string) company.Employee {
+	return company.Employee{
+		FirstName:  name,
+		LastName:   "Foo",
+		Position:   "fooer",
+		LinkedInId: 0,
+		Location:   "Fooland",
 	}
 }
