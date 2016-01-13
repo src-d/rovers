@@ -7,8 +7,8 @@ import (
 
 	"github.com/src-d/rovers/client"
 	"github.com/src-d/rovers/readers"
-	"gop.kg/src-d/domain@v2.1/container"
-	"gop.kg/src-d/domain@v2.1/models/social"
+	"gop.kg/src-d/domain@v3.0/container"
+	"gop.kg/src-d/domain@v3.0/models/social"
 
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"

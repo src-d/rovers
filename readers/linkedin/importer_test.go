@@ -1,7 +1,7 @@
 package linkedin
 
 import (
-	"gop.kg/src-d/domain@v2.1/models/company"
+	"gop.kg/src-d/domain@v2.4/models/company"
 
 	. "gopkg.in/check.v1"
 )

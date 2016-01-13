@@ -5,7 +5,7 @@ import (
 
 	"gopkg.in/mgo.v2/bson"
 
-	"gop.kg/src-d/domain@v2.1/models"
+	"gop.kg/src-d/domain@v2.4/models"
 
 	. "gopkg.in/check.v1"
 	"gopkg.in/mgo.v2"

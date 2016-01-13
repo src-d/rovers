@@ -6,9 +6,9 @@ import (
 	"time"
 
 	"github.com/src-d/rovers/client"
-	"gop.kg/src-d/domain@v2.1/container"
-	"gop.kg/src-d/domain@v2.1/models"
-	"gop.kg/src-d/domain@v2.1/models/company"
+	"gop.kg/src-d/domain@v2.4/container"
+	"gop.kg/src-d/domain@v2.4/models"
+	"gop.kg/src-d/domain@v2.4/models/company"
 
 	"gopkg.in/inconshreveable/log15.v2"
 	"gopkg.in/mgo.v2/bson"
