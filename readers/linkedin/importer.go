@@ -6,53 +6,72 @@ import (
 	"time"
 
 	"github.com/src-d/rovers/client"
-	"gop.kg/src-d/domain@v2.4/container"
-	"gop.kg/src-d/domain@v2.4/models"
-	"gop.kg/src-d/domain@v2.4/models/company"
+	"gop.kg/src-d/domain@v3.0/models"
+	"gop.kg/src-d/domain@v3.0/models/company"
 
 	"gopkg.in/inconshreveable/log15.v2"
 	"gopkg.in/mgo.v2/bson"
 )
 
 var (
-	ErrNoCodeName = errors.New("--mode=single requires --codename to be set")
-	ErrNoCookie   = errors.New("--cookie not set")
+	ErrBadArguments = errors.New("no LinkedIn Ids provided")
+	ErrSingleParam  = errors.New("--mode=single requires --codename or --linkedinid to be set")
+	ErrNoCodeName   = errors.New("--mode=single requires --codename to be set")
+	ErrNoLinkedInId = errors.New("--mode=single requires --linkedinid to be set")
+	ErrNoCookie     = errors.New("--cookie not set")
 )
 
 type LinkedInImporterOptions struct {
 	Mode        string
 	CodeName    string
+	LinkedInId  int
 	Cookie      string
 	UseCache    bool
 	DeleteCache bool
 	DryRun      bool
+
+	CompanyStore     *models.CompanyStore
+	CompanyInfoStore *models.CompanyInfoStore
 }
 
 type LinkedInImporter struct {
-	query              bson.M
+	ids                []int
 	options            LinkedInImporterOptions
-	companyStore       *models.CompanyStore
 	linkedinWebCrawler *LinkedInWebCrawler
 }
 
 func NewLinkedInImporter(options LinkedInImporterOptions) (*LinkedInImporter, error) {
-	var query bson.M
+	var ids []int
+
 	switch options.Mode {
 	case "all":
 		if options.CodeName != "" {
 			return nil, fmt.Errorf("supplied codename with --mode=%q", options.Mode)
 		}
-		query = bson.M{}
+		if options.LinkedInId != 0 {
+			return nil, fmt.Errorf("supplied linkedinid with --mode=%q", options.Mode)
+		}
+
+		ids = getIdsFromQuery(options.CompanyInfoStore, bson.M{})
 	case "empty":
 		if options.CodeName != "" {
 			return nil, fmt.Errorf("supplied codename with --mode=%q", options.Mode)
 		}
-		query = bson.M{"employees": bson.M{"$size": 0}}
-	case "single":
-		if options.CodeName == "" {
-			return nil, ErrNoCodeName
+		if options.LinkedInId != 0 {
+			return nil, fmt.Errorf("supplied linkedinid with --mode=%q", options.Mode)
 		}
-		query = bson.M{"codename": options.CodeName}
+
+		ids = getIdsFromQuery(options.CompanyInfoStore, bson.M{"employees": bson.M{"$size": 0}})
+	case "single":
+		if options.CodeName == "" && options.LinkedInId == 0 {
+			return nil, ErrSingleParam
+		}
+
+		if options.CodeName != "" {
+			ids = getIdsFromCodeName(options.CompanyStore, options.CodeName)
+		} else if options.LinkedInId != 0 {
+			ids = append(ids, options.LinkedInId)
+		}
 	default:
 		return nil, fmt.Errorf("invalid mode %q", options.Mode)
 	}
@@ -64,15 +83,15 @@ func NewLinkedInImporter(options LinkedInImporterOptions) (*LinkedInImporter, er
 		options.Cookie = CookieFixtureEiso
 	}
 
-	cli := client.NewClient(false)
+	cli := client.NewClient(options.UseCache)
 	// if imp.DeleteCache {
 	// 	// TODO: Cache as a storable model?
 	// 	deleteCache()
 	// }
+
 	return &LinkedInImporter{
-		query:              query,
+		ids:                ids,
 		options:            options,
-		companyStore:       container.GetDomainModelsCompanyStore(),
 		linkedinWebCrawler: NewLinkedInWebCrawler(cli, options.Cookie),
 	}, nil
 }
@@ -80,154 +99,147 @@ func NewLinkedInImporter(options LinkedInImporterOptions) (*LinkedInImporter, er
 func (imp *LinkedInImporter) Import() error {
 	start := time.Now()
 
-	companiesInfo := imp.getCompaniesLinkedInInfo()
-	for _, info := range companiesInfo {
-		companyEmployees := imp.getCompanyEmployees(info)
-		associateCompanyEmployees := imp.getAssociateCompanyEmployees(info)
+	if imp.ids == nil || len(imp.ids) == 0 {
+		return ErrBadArguments
+	}
 
-		err := imp.updateCompanyEmployees(info, companyEmployees, associateCompanyEmployees)
+	for _, id := range imp.ids {
+		employees, err := imp.getEmployees(id)
 		if err != nil {
-			log15.Error("Failed to update company employees", "error", err)
-			return err
+			log15.Error("Failed to get company employees",
+				"id", id,
+				"error", err,
+			)
+
+			continue
+		}
+
+		if err := imp.saveEmployees(id, employees); err != nil {
+			log15.Error("Failed to save company employees",
+				"id", id,
+				"employees", len(employees),
+				"error", err,
+			)
+
+			continue
 		}
 	}
 
-	log15.Info("Done", "elapsed", time.Since(start))
+	log15.Info("Import done", "elapsed", time.Since(start))
+
 	return nil
 }
 
-type CompanyInfo struct {
-	CodeName            string
-	CompanyIds          []int
-	AssociateCompanyIds []int
+func (imp *LinkedInImporter) getEmployees(linkedInId int) ([]company.Employee, error) {
+	return imp.linkedinWebCrawler.GetEmployees(linkedInId)
 }
 
-func (imp *LinkedInImporter) getCompaniesLinkedInInfo() []CompanyInfo {
-	q := imp.companyStore.Query()
-	q.AddCriteria(imp.query)
-	set, err := imp.companyStore.Find(q)
-	if err != nil {
+func (imp *LinkedInImporter) saveEmployees(
+	linkedInId int,
+	employees []company.Employee,
+) error {
+	log15.Info("Saving employees",
+		"id", linkedInId,
+		"employees", len(employees),
+	)
+
+	if imp.options.DryRun {
+		log15.Warn("--dry supplied, not actually saving")
 		return nil
 	}
 
-	var companiesInfo []CompanyInfo
-	set.ForEach(func(company *models.Company) error {
-		if len(company.LinkedInCompanyIds) == 0 && len(company.AssociateCompanyIds) == 0 {
-			log15.Warn("No company IDs", "company", company.CodeName)
-			return nil
-		}
+	return imp.save(linkedInId, employees)
+}
 
-		info := CompanyInfo{
-			CodeName:            company.CodeName,
-			CompanyIds:          company.LinkedInCompanyIds,
-			AssociateCompanyIds: company.AssociateCompanyIds,
-		}
-		companiesInfo = append(companiesInfo, info)
+func (imp *LinkedInImporter) save(linkedInId int, employees []company.Employee) error {
+	query := imp.options.CompanyInfoStore.Query()
+	query.FindByLinkedInId(linkedInId)
+
+	info, err := imp.options.CompanyInfoStore.FindOne(query)
+	if err != nil {
+		return err
+	}
+
+	oldNumber := len(info.Employees)
+	newNumber := len(employees)
+	if newNumber < (oldNumber / 2) {
+		log15.Crit("Safeguard triggered",
+			"id", linkedInId,
+			"old", oldNumber,
+			"new", newNumber,
+		)
+
+		return fmt.Errorf("Found %d employees for company #%d, it had %d",
+			newNumber, linkedInId, oldNumber)
+	}
+
+	info.Employees = employees
+	_, err = imp.options.CompanyInfoStore.Save(info)
+
+	return err
+}
+
+func getIdsFromQuery(
+	store *models.CompanyInfoStore,
+	criteria bson.M,
+) (ids []int) {
+	query := store.Query()
+	query.AddCriteria(criteria)
+
+	set, err := store.Find(query)
+	if err != nil {
+		log15.Error("Can't find companies",
+			"query", criteria,
+			"error", err,
+		)
+		return nil
+	}
+
+	err = set.ForEach(func(doc *models.CompanyInfo) error {
+		ids = append(ids, doc.LinkedInId)
 
 		return nil
 	})
-
-	return companiesInfo
-}
-
-func (imp *LinkedInImporter) getCompanyEmployees(info CompanyInfo) []company.Employee {
-	return imp.getEmployees(info.CodeName, info.CompanyIds)
-}
-
-func (imp *LinkedInImporter) getAssociateCompanyEmployees(info CompanyInfo) []company.Employee {
-	return imp.getEmployees(info.CodeName, info.AssociateCompanyIds)
-}
-
-func (imp *LinkedInImporter) getEmployees(codeName string, ids []int) []company.Employee {
-	var employees []company.Employee
-	for _, companyId := range ids {
-		companyEmployees, err := imp.linkedinWebCrawler.GetEmployees(companyId)
-		if err != nil {
-			log15.Error("Failed to fetch all employees",
-				"company", codeName,
-				"employees", len(companyEmployees),
-				"error", err,
-			)
-			continue
-		}
-		employees = append(employees, companyEmployees...)
-	}
-
-	return employees
-}
-
-func (imp *LinkedInImporter) updateCompanyEmployees(
-	info CompanyInfo,
-	employees, associateEmployees []company.Employee,
-) error {
-	if imp.options.DryRun {
-		log15.Debug("Company employees")
-		imp.printEmployees(employees)
-		log15.Debug("Associate company employees")
-		imp.printEmployees(associateEmployees)
-	} else {
-		log15.Info("Updating database employees",
-			"company", info.CodeName,
-			"company_employees", len(employees),
-			"associate_employees", len(associateEmployees),
-		)
-		err := imp.saveCompanyEmployees(info.CodeName, employees, associateEmployees)
-		if err != nil {
-			log15.Error("Couldn't update company employees",
-				"company", info.CodeName,
-				"error", err,
-			)
-			return err
-		}
-	}
-	return nil
-}
-
-func (imp *LinkedInImporter) printEmployees(employees []company.Employee) {
-	for idx, employee := range employees {
-		log15.Debug("Employee",
-			"idx", idx,
-			"data", employee,
-		)
-	}
-}
-
-func (imp *LinkedInImporter) saveCompanyEmployees(
-	codeName string,
-	employees, associateEmployees []company.Employee,
-) error {
-	q := imp.companyStore.Query()
-	q.FindByCodeName(codeName)
-
-	company, err := imp.companyStore.FindOne(q)
 	if err != nil {
-		return err
-	}
-
-	var save = false
-	if len(employees) < len(company.Employees) {
-		log15.Warn("Found less employees",
-			"before", len(company.Employees),
-			"now", len(employees),
+		log15.Error("Error iterating companies",
+			"query", criteria,
+			"error", err,
 		)
-	} else {
-		company.Employees = employees
-		save = true
+		return nil
 	}
-	if len(associateEmployees) < len(company.AssociateEmployees) {
-		log15.Warn("Found less associate employees",
-			"before", len(company.AssociateEmployees),
-			"now", len(associateEmployees),
+
+	return ids
+}
+
+func getIdsFromCodeName(
+	store *models.CompanyStore,
+	codeName string,
+) (ids []int) {
+	query := store.Query()
+	query.FindByCodeName(codeName)
+
+	set, err := store.Find(query)
+	if err != nil {
+		log15.Error("Can't find companies",
+			"codename", codeName,
+			"error", err,
 		)
-	} else {
-		company.AssociateEmployees = associateEmployees
-		save = true
+		return nil
 	}
 
-	if save {
-		_, err = imp.companyStore.Save(company)
-		return err
+	err = set.ForEach(func(doc *models.Company) error {
+		ids = append(ids, doc.LinkedInCompanyIds...)
+		ids = append(ids, doc.AssociateCompanyIds...)
+
+		return nil
+	})
+	if err != nil {
+		log15.Error("Error iterating companies",
+			"codename", codeName,
+			"error", err,
+		)
+		return nil
 	}
 
-	return nil
+	return ids
 }
