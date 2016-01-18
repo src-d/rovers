@@ -11,6 +11,7 @@ import (
 
 	"gopkg.in/inconshreveable/log15.v2"
 	"gopkg.in/mgo.v2/bson"
+	"gopkg.in/src-d/storable.v1"
 )
 
 var (
@@ -156,7 +157,9 @@ func (imp *LinkedInImporter) save(linkedInId int, employees []company.Employee) 
 	query.FindByLinkedInId(linkedInId)
 
 	info, err := imp.options.CompanyInfoStore.FindOne(query)
-	if err != nil {
+	if err == storable.ErrNotFound {
+		info = imp.options.CompanyInfoStore.New(linkedInId)
+	} else if err != nil {
 		return err
 	}
 
