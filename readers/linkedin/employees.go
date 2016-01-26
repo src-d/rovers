@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"github.com/src-d/rovers/client"
-	"gop.kg/src-d/domain@v3.0/models/company"
+	"gop.kg/src-d/domain@v3/models/company"
 
 	"github.com/PuerkitoBio/goquery"
 	"gopkg.in/inconshreveable/log15.v2"

@@ -7,7 +7,7 @@ import (
 	"io"
 	"net/http"
 
-	"gop.kg/src-d/domain@v3.0/container"
+	"gop.kg/src-d/domain@v3/container"
 
 	"github.com/PuerkitoBio/goquery"
 	"github.com/gregjones/httpcache"

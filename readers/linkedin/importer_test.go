@@ -3,7 +3,7 @@ package linkedin
 import (
 	"sort"
 
-	"gop.kg/src-d/domain@v3.0/models/company"
+	"gop.kg/src-d/domain@v3/models/company"
 
 	. "gopkg.in/check.v1"
 )
