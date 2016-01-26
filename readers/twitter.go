@@ -5,8 +5,8 @@ import (
 	"strings"
 
 	"github.com/src-d/rovers/client"
-	"gop.kg/src-d/domain@v2.1/container"
-	"gop.kg/src-d/domain@v2.1/models/social"
+	"gop.kg/src-d/domain@v3/container"
+	"gop.kg/src-d/domain@v3/models/social"
 
 	"github.com/PuerkitoBio/goquery"
 )
