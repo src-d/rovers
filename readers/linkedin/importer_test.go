@@ -156,9 +156,9 @@ func (s *linkedInSuite) TestNewLinkedInImporter_Save(c *C) {
 		{
 			LinkedInId: 0,
 			CodeName:   "not-exists",
-			Employees:  nil,
+			Employees:  []company.Employee{},
 			DryRun:     false,
-			IsError:    true,
+			IsError:    false,
 		},
 	}
 
@@ -185,10 +185,10 @@ func (s *linkedInSuite) TestNewLinkedInImporter_Save(c *C) {
 			doc, err := s.infoStore.FindOne(query)
 			c.Assert(err, IsNil)
 
-			c.Assert(doc.LinkedInId, Equals, tt.LinkedInId)
-			c.Assert(doc.Employees, DeepEquals, tt.Employees)
+			c.Assert(doc.LinkedInId, Equals, tt.LinkedInId, Commentf("test case #%d", idx))
+			c.Assert(doc.Employees, DeepEquals, tt.Employees, Commentf("test case #%d", idx))
 		} else {
-			c.Assert(err, NotNil)
+			c.Assert(err, NotNil, Commentf("test case #%d expected non nil error, got %q", idx, err))
 		}
 	}
 }
