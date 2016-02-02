@@ -21,7 +21,9 @@ const (
 	UserAgent                  = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.10; rv:41.0) Gecko/20100101 Firefox/41.0"
 	CookieFixtureEiso          = `lang="v=2&lang=es-es"; JSESSIONID="ajax:5335384159868706385"; bcookie="v=2&218745a2-cbc6-4f08-8df4-0cc5d2b0976c"; bscookie="v=1&201512311104317c180102-8323-4bdb-8b7f-9fd80921cbfcAQGzhhIp-GjVkYW2VfxGD7UEuciz37On"; lidc="b=TB30:g=320:u=307:i=1451559886:t=1451577033:s=AQFVJFdrWGI6Doro7fEhWyW7kDOl5Z8-"; sl="v=1&DlL5p"; visit="v=1&G"; liap=true; li_at=AQEDAQB8ujIEjFe8AAABUfe2GucAAAFR-CP3504AON-8fdCTGA2SmKVdx9GNEzti8mp8Yrqhd9AhYrdUq-YZ5kJa72-ylIVkYjYCoEdnsd7acIzsABH7Xc6774K0VPPgcwZFOzpduTY1h2-JlSAguoaP; oz_props_fetch_size1_8174130=15; wutan=c1DeZf8jcgESBxFHtzh9AjYydzryE66s5Xmg7caMwZs=; share_setting=PUBLIC; _lipt=0_6Y2YMwAcAPLi2pqIJ3KivaKqW8R0GSzU-1ibPUlEe99b12fq1cTiLEGaAjBOsTL2hG_oTs75skJpZ3Xtb-Hvas1zA5rfxvsaci-f3DO8c3wJXVVMwnnFrfb0KZC7M-TLRhWSRIYLbhPFwKC65Wfk28w6i_yU7kIeb5P9bwf3-7KY27SWB5mtUllB2aDfI7XDRoPdw-QVGzvz5DgsRDI1gLTG6Q6pIDis0z2WvqvSlUHcQVHJvwlv8ozEBGI4Apo-dj2zxXuq10ZuGZgZXIW-MBhL-vaxNHO_3fUHDmkLoLypluRyrIa4qjjL2p0hZpn8Sxv7ZQ5Eqri6dh4aWRvSMepYnY3QzqsrLcHJphtSjia6eQtIt313hKiRyrB3sMn_S_OCBSbwDtc1Vwi3NncuhvlJCd7weCShFpjj1NEJGs8; L1c=65dcdf5d`
 	BaseURL                    = "https://www.linkedin.com"
-	EmployeesURL               = BaseURL + "/vsearch/p?f_CC=%d"
+	EmployeesURL               = BaseURL + "/vsearch/p"
+	IdFilter                   = "?f_CC=%d"
+	TitleFilter                = "&title=architect%20OR%20coder%20OR%20desarrollador%20OR%20developer%20OR%20devops%20OR%20engineer%20OR%20engineering%20OR%20programador%20OR%20programmer%20OR%20software%20OR%20system%20OR%20systems&titleScope=C"
 	LinkedInEmployeesRateLimit = 5 * time.Second
 )
 
@@ -38,11 +40,12 @@ func (li *LinkedInWebCrawler) GetEmployees(companyId int) (
 	people []company.Employee, err error,
 ) {
 	start := time.Now()
-	url := fmt.Sprintf(EmployeesURL, companyId)
+
+	url := EmployeesURL + fmt.Sprintf(IdFilter, companyId) + TitleFilter
 
 	for {
 		var more []Person
-		log15.Info("Processing", "url", url)
+		// log15.Info("Processing", "url", url)
 		url, more, err = li.doGetEmployes(url)
 
 		for _, person := range more {
@@ -117,9 +120,9 @@ func (l *LinkedInWebCrawler) preprocessContent(res *http.Response) (*goquery.Doc
 
 	idx := bytes.Index(body, []byte("voltron_srp_main-content"))
 	if idx > -1 {
-		log15.Info("FOUND voltron payload")
+		log15.Info("FOUND voltron payload", "url", res.Request.URL)
 	} else {
-		log15.Info("NOT FOUND voltron payload")
+		log15.Info("NOT FOUND voltron payload", "url", res.Request.URL)
 	}
 
 	body = bytes.Replace(body, []byte("&quot;"), []byte(`\"`), -1)
