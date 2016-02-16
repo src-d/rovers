@@ -23,7 +23,7 @@ const (
 	BaseURL                    = "https://www.linkedin.com"
 	EmployeesURL               = BaseURL + "/vsearch/p"
 	IdFilter                   = "?f_CC=%d"
-	TitleFilter                = "&title=architect%20OR%20coder%20OR%20desarrollador%20OR%20developer%20OR%20devops%20OR%20engineer%20OR%20engineering%20OR%20programador%20OR%20programmer%20OR%20software%20OR%20system%20OR%20systems&titleScope=CP"
+	TitleFilter                = "&title=architect%20OR%20coder%20OR%20cto%20OR%20dataops%20OR%20desarrollador%20OR%20developer%20OR%20devops%20OR%20engineer%20OR%20engineering%20OR%20programador%20OR%20programmer%20OR%20software%20OR%20system%20OR%20systems&titleScope=CP"
 	LinkedInEmployeesRateLimit = 5 * time.Second
 )
 
