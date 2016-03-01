@@ -23,8 +23,31 @@ const (
 	BaseURL                    = "https://www.linkedin.com"
 	EmployeesURL               = BaseURL + "/vsearch/p"
 	IdFilter                   = "?f_CC=%d"
-	TitleFilter                = "&title=architect%20OR%20coder%20OR%20cto%20OR%20dataops%20OR%20desarrollador%20OR%20developer%20OR%20devops%20OR%20engineer%20OR%20engineering%20OR%20programador%20OR%20programmer%20OR%20software%20OR%20system%20OR%20systems&titleScope=CP"
+	TitleFilter                = "&title=%s&titleScope=CP"
+	KeywordJoiner              = "%20OR%20"
 	LinkedInEmployeesRateLimit = 5 * time.Second
+)
+
+var (
+	Keywords = []string{
+		"architect",
+		"chief",
+		"coder",
+		"cto",
+		"dataops",
+		"desarrollador",
+		"developer",
+		"devops",
+		"engineer",
+		"engineering",
+		"programador",
+		"programmer",
+		"software",
+		"system",
+		"systems",
+	}
+	JoinedTitles = strings.Join(Keywords, KeywordJoiner)
+	Titles       = fmt.Sprintf(TitleFilter, JoinedTitles)
 )
 
 type LinkedInWebCrawler struct {
@@ -41,7 +64,7 @@ func (li *LinkedInWebCrawler) GetEmployees(companyId int) (
 ) {
 	start := time.Now()
 
-	url := EmployeesURL + fmt.Sprintf(IdFilter, companyId) + TitleFilter
+	url := EmployeesURL + fmt.Sprintf(IdFilter, companyId) + Titles
 
 	for {
 		var more []Person

@@ -30,6 +30,7 @@ type LinkedInImporterOptions struct {
 	UseCache    bool
 	DeleteCache bool
 	DryRun      bool
+	Force       bool
 
 	CompanyStore     *models.CompanyStore
 	CompanyInfoStore *models.CompanyInfoStore
@@ -165,15 +166,19 @@ func (imp *LinkedInImporter) save(linkedInId int, employees []company.Employee) 
 
 	oldNumber := len(info.Employees)
 	newNumber := len(employees)
-	if newNumber < (oldNumber / 2) {
-		log15.Crit("Safeguard triggered",
-			"id", linkedInId,
-			"old", oldNumber,
-			"new", newNumber,
-		)
+	if imp.options.Force {
+		log15.Info("--force was provided, ignoring safeguards")
+	} else {
+		if newNumber < (oldNumber / 2) {
+			log15.Crit("Safeguard triggered",
+				"id", linkedInId,
+				"old", oldNumber,
+				"new", newNumber,
+			)
 
-		return fmt.Errorf("Found %d employees for company #%d, it had %d",
-			newNumber, linkedInId, oldNumber)
+			return fmt.Errorf("Found %d employees for company #%d, it had %d",
+				newNumber, linkedInId, oldNumber)
+		}
 	}
 
 	info.Employees = employees
