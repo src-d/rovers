@@ -10,11 +10,11 @@ import (
 )
 
 func (s *SourcesSuite) TestBitbucket_GetRepositories(c *C) {
-	if os.Getenv("TRAVIS_COMMIT") != "" {
-		// NOTE: We are not using any auth for Bitbucket so running this on Travis
+	if os.Getenv("CI_COMMIT") != "" {
+		// NOTE: We are not using any auth for Bitbucket so running this on a CI system
 		// almost always fails to run because someone else has already exhausted the
-		// number of requests from a Travis IP.
-		c.Skip("not running on Travis")
+		// number of requests
+		c.Skip("not running on CI")
 	}
 
 	api := NewBitbucketAPI(client.NewClient(true))

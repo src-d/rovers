@@ -13,8 +13,8 @@ const (
 )
 
 func (s *linkedInSuite) TestNewLinkedInWebCrawler(c *C) {
-	if os.Getenv("TRAVIS_COMMIT") != "" {
-		c.Skip("not running on Travis")
+	if os.Getenv("CI_COMMIT") != "" {
+		c.Skip("not running on CI")
 	}
 
 	cli := client.NewClient(false)
