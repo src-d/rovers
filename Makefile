@@ -1,18 +1,18 @@
 # Package configuration
 PROJECT = rovers
 COMMANDS = rovers
-REQUIREMENTS = mongo
+CODECOV_TOKEN = df85e862-606b-493c-b266-e2d895c3c697
 
 # Including devops Makefile
 MAKEFILE = Makefile.main
-DEVOPS_REPOSITORY = git@github.com:src-d/devops.git
+DEVOPS_REPOSITORY = https://github.com/src-d/devops.git
 DEVOPS_FOLDER = .devops
-TRAVIS_FOLDER = .travis
+CI_FOLDER = .ci
 
 $(MAKEFILE):
-	git clone $(DEVOPS_REPOSITORY) $(DEVOPS_FOLDER)
-	cp $(DEVOPS_FOLDER)/common/$(MAKEFILE) ./
-	cp -r $(DEVOPS_FOLDER)/common/travis $(TRAVIS_FOLDER)
-	rm -rf $(DEVOPS_FOLDER)
+	@git clone -b drone $(DEVOPS_REPOSITORY) $(DEVOPS_FOLDER); \
+	cp -r $(DEVOPS_FOLDER)/ci .ci; \
+	rm -rf $(DEVOPS_FOLDER); \
+	cp $(CI_FOLDER)/$(MAKEFILE) .;
 
-include $(MAKEFILE)
+-include $(MAKEFILE)
