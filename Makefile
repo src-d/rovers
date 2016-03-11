@@ -10,7 +10,7 @@ DEVOPS_FOLDER = .devops
 CI_FOLDER = .ci
 
 $(MAKEFILE):
-	@git clone -b drone $(DEVOPS_REPOSITORY) $(DEVOPS_FOLDER); \
+	@git clone --quiet $(DEVOPS_REPOSITORY) $(DEVOPS_FOLDER); \
 	cp -r $(DEVOPS_FOLDER)/ci .ci; \
 	rm -rf $(DEVOPS_FOLDER); \
 	cp $(CI_FOLDER)/$(MAKEFILE) .;
