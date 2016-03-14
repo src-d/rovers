@@ -12,10 +12,10 @@ type CmdLinkedInUpdate struct {
 	CodeName    string `long:"codename" description:"required for --mode=single"`
 	LinkedInId  int    `long:"linkedinid" description:"required for --mode=single"`
 	Cookie      string `long:"cookie" description:"session cookie to use"`
-	Force       bool   `long:"force" description:"force an update of employees, deletes all previous records" default:"false"`
-	UseCache    bool   `long:"cacheUse" description:"wether or not to use the request cache" default:"false"`
-	DeleteCache bool   `long:"cacheDelete" description:"delete cache before running" default:"false"`
-	DryRun      bool   `long:"dry" description:"show employees found, but don't save them" default:"false"`
+	Force       bool   `long:"force" description:"force an update of employees, deletes all previous records"`
+	UseCache    bool   `long:"cacheUse" description:"wether or not to use the request cache"`
+	DeleteCache bool   `long:"cacheDelete" description:"delete cache before running"`
+	DryRun      bool   `long:"dry" description:"show employees found, but don't save them"`
 }
 
 func (cmd *CmdLinkedInUpdate) Execute(args []string) error {
