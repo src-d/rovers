@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"testing"
 
-	"gop.kg/src-d/domain@v3/models"
+	"gop.kg/src-d/domain@v5/models"
 
 	. "gopkg.in/check.v1"
 	"gopkg.in/mgo.v2"

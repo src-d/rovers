@@ -7,7 +7,7 @@ import (
 
 	"github.com/src-d/rovers/client"
 	"github.com/src-d/rovers/metrics"
-	"gop.kg/src-d/domain@v3/models/social/bitbucket"
+	"gop.kg/src-d/domain@v5/models/social/bitbucket"
 
 	"gopkg.in/inconshreveable/log15.v2"
 )
