@@ -7,7 +7,7 @@ import (
 	"io"
 	"net/http"
 
-	"gop.kg/src-d/domain@v5/container"
+	"gop.kg/src-d/domain@v6/container"
 
 	"github.com/PuerkitoBio/goquery"
 	"github.com/gregjones/httpcache"
@@ -41,7 +41,7 @@ func NewCachedClient(session *mgo.Session) *Client {
 
 func NewClient(cacheEnforced bool) *Client {
 	if cacheEnforced {
-		session := container.GetMgoSession()
+		session := container.GetAnalysisMgoSession()
 		return NewCachedClient(session)
 	}
 	return &Client{}

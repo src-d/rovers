@@ -9,8 +9,8 @@ import (
 
 	"github.com/src-d/rovers/client"
 	"github.com/src-d/rovers/metrics"
-	"gop.kg/src-d/domain@v5/container"
-	"gop.kg/src-d/domain@v5/models/social"
+	"gop.kg/src-d/domain@v6/container"
+	"gop.kg/src-d/domain@v6/models/social"
 )
 
 const (

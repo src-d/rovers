@@ -2,7 +2,7 @@ package commands
 
 import (
 	"github.com/src-d/rovers/readers/linkedin"
-	"gop.kg/src-d/domain@v5/container"
+	"gop.kg/src-d/domain@v6/container"
 )
 
 type CmdLinkedInUpdate struct {

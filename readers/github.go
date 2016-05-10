@@ -6,8 +6,8 @@ import (
 	"time"
 
 	"github.com/src-d/rovers/client"
-	"gop.kg/src-d/domain@v5/models/social"
-	"gop.kg/src-d/domain@v5/models/social/github"
+	"gop.kg/src-d/domain@v6/models/social"
+	"gop.kg/src-d/domain@v6/models/social/github"
 
 	"github.com/PuerkitoBio/goquery"
 )

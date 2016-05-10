@@ -5,7 +5,7 @@ import (
 	"os"
 	"time"
 
-	"gop.kg/src-d/domain@v5/container"
+	"gop.kg/src-d/domain@v6/container"
 
 	"github.com/prometheus/client_golang/prometheus"
 )

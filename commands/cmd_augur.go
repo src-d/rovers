@@ -6,9 +6,9 @@ import (
 	"github.com/src-d/rovers/client"
 	"github.com/src-d/rovers/metrics"
 	"github.com/src-d/rovers/readers"
-	"gop.kg/src-d/domain@v5/container"
-	"gop.kg/src-d/domain@v5/models"
-	"gop.kg/src-d/domain@v5/models/social"
+	"gop.kg/src-d/domain@v6/container"
+	"gop.kg/src-d/domain@v6/models"
+	"gop.kg/src-d/domain@v6/models/social"
 
 	"gopkg.in/inconshreveable/log15.v2"
 	"gopkg.in/src-d/storable.v1"

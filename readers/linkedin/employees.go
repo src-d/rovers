@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"github.com/src-d/rovers/client"
-	"gop.kg/src-d/domain@v5/models/company"
+	"gop.kg/src-d/domain@v6/models/company"
 
 	"github.com/PuerkitoBio/goquery"
 	"gopkg.in/inconshreveable/log15.v2"
@@ -19,7 +19,7 @@ import (
 
 const (
 	UserAgent                  = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.10; rv:41.0) Gecko/20100101 Firefox/41.0"
-	CookieFixtureEiso          = `bcookie="v=2&a6df69ca-69d9-43e5-856b-0b77adc95a04"; bscookie="v=1&2016012016431869318f48-9ac1-4d89-82cd-997e7f977e54AQFdmcU0uOQ2UUtCLEOL20ZDxELWvPXs"; _ga=GA1.2.544046633.1453308203; visit="v=1&M"; JSESSIONID="ajax:6685549765576733025"; lang="v=2&lang=en-us"; lidc="b=LB30:g=499:u=369:i=1460452192:t=1460535779:s=AQHBcflYfRa2Dl6_61wV_Zopgyorda2b"; L1e=5744e48f; sl="v=1&0usGq"; liap=true; li_at=AQEDAQB8ujIAypc4AAABVAmXidUAAAFUCnNiaU4Ax-QbBxagBh7nvTC7vkmgMd1rBg2voQAF2Ytj_j9nZjAF4vybz0_qv6zVC6Xvl1VqdCHIA1iXAbidhl7pB79DR5brfFoQ9UXXs6hdGpkwkJJ3d6A6; _lipt=0_1D-AVb2j9I_N7rQ-krmYIgTr1ryCs0u2eaYv9Clyflg9by5sI8xxJ-Gd2bpsTMDYqBx3tsNs-K2ZZw3e6TQsDmEBe13z0EG4ciA4tcy58N_kHqPYG66G8kkciFVrgEiZIlJPzW5J2BADJXk8jpNQnq0X07LBtJ1ACFaRAKzwc5lq775vtdFLHGmexXdlNwKZCZJeP3FBpR-c9wf9GETtyHQF9xSAnsZK0SF1qu6xoXad2DzyJkyd_Fi0PadkkReup8UrsBT91Jvu5VVI5I9fnrXFTar2oEm3CFJR1yG7eJUJmqWZ94HbpTNP1X6whGzZYYTQ_UI6qn8U9laBFo4whyyNYhX_5wMbTsjaMYAccFDG2XdeJq9r4B9rxqQCFpACKllUw5Yql91W59e9_b8i1kS1jQCPUAILmG1w18qZpAPHDsYelT09Jtwz2bGFY1MwcvQmQkQzr7HRqvib5oFhhj; L1c=37b7dbd; oz_props_fetch_size1_8174130=15; wutan=nw/pPAg5KJEw6sE2PKexKop2v7/tSSPvOJAmPFF5o9o=; share_setting=PUBLIC; sdsc=1%3A1SZM1shxDNbLt36wZwCgPgvN58iw%3D; RT=s=1460457021923&r=https%3A%2F%2Fwww.linkedin.com%2Fvsearch%2Fp%3FtitleScope%3DCP%26title%3Darchitect%2BOR%2Bchief%2BOR%2Bcoder%2BOR%2Bcto%2BOR%2Bdataops%2BOR%2Bdesarrollador%2BOR%2Bdeveloper%2BOR%2Bdevops%2BOR%2Bengineer%2BOR%2Bengineering%2BOR%2Bprogramador%2BOR%2Bprogrammer%2BOR%2Bsoftware%2BOR%2Bsystem%2BOR%2Bsystems%26f_CC%3D3026823`
+	CookieFixtureEiso          = `bcookie="v=2&a6df69ca-69d9-43e5-856b-0b77adc95a04"; bscookie="v=1&2016012016431869318f48-9ac1-4d89-82cd-997e7f977e54AQFdmcU0uOQ2UUtCLEOL20ZDxELWvPXs"; _ga=GA1.2.544046633.1453308203; visit="v=1&M"; JSESSIONID="ajax:6685549765576733025"; liap=true; li_at=AQEDAQB8ujIFVd69AAABVJnnixYAAAFUmlVoFksA0jD8N8qow8FeFCIZOej2iFseI9Yebx8e6xY2MSavthC6Da9FrUB_jQ_2dLZ8Ds4rvfD9p6I9u7ZoWNwwRETsDhKjmQoeeRA7iUW72UbgmXBU4YEC; _lipt=0_1Mq7gN3oKU8DI3XUemApNB3grY_sQCmrK8obxyc2KyN1JwAiSFHmeStoZYWYu_iPQzJD1nk4lI4tyUSSVtK_c1chlz2TUPHUClox7wHfNlrhq1dYOgod9L7rukf2WoG9XmJctL_ah4e-GEHWyHx1sdzNot-1_HIhjje9Mfn5o8rC8ZcriXrRTQxYHKJB71f18NNZcudFBOhpit8keKqGx2UcKclJILQoNBGNB-TAYp8Z3JCPJZSdniKyMkAtlYftSxv7ZQ5Eqri6dh4aWRvSMc7822GdbKqY2O7irGJuVbm2oQuL1fosyq99AjG7nhX2ld12C7t1jS-6cHaYVdD5d9nidupkSCHrutV6zt2gw7H; lang="v=2&lang=en-us"; lidc="b=LB30:g=518:u=387:i=1462870963:t=1462946397:s=AQH7JaeF7NmVFxf7xo98Nwd4WqScbOUs"; _gat=1; L1e=a98019b; sl="v=1&H96VN"; RT=s=1462870969586&r=https%3A%2F%2Fwww.linkedin.com%2F; L1c=5eba1285; oz_props_fetch_size1_8174130=15; wutan=k12JhcE/r/rpOzWbnskhsZGyc+eEsONK/zRksDDqRKo=; share_setting=PUBLIC; sdsc=1%3A1SZM1shxDNbLt36wZwCgPgvN58iw%3D`
 	BaseURL                    = "https://www.linkedin.com"
 	EmployeesURL               = BaseURL + "/vsearch/p"
 	IdFilter                   = "?f_CC=%d"

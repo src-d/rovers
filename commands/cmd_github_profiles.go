@@ -7,8 +7,8 @@ import (
 
 	"github.com/src-d/rovers/client"
 	"github.com/src-d/rovers/readers"
-	"gop.kg/src-d/domain@v5/container"
-	"gop.kg/src-d/domain@v5/models/social"
+	"gop.kg/src-d/domain@v6/container"
+	"gop.kg/src-d/domain@v6/models/social"
 
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
@@ -35,7 +35,7 @@ type githubUrlData struct {
 func (c *CmdGitHubProfiles) Execute(args []string) error {
 	c.c = make(chan *githubUrlData, c.MaxThreads)
 
-	session := container.GetMgoSession()
+	session := container.GetAnalysisMgoSession()
 	defer session.Close()
 	c.github = readers.NewGithubWebCrawler(client.NewClient(true))
 	c.storage = session.DB("github").C("profiles")
