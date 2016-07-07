@@ -24,7 +24,7 @@ func (s *SourcesSuite) TestGithub_GetProfileByURL_Company(c *C) {
 	c.Assert(g.Location, Equals, "Madrid, Spain")
 	c.Assert(g.Email, Equals, "")
 	c.Assert(g.Url, Equals, "https://github.com/src-d")
-	members := []string{"Istar-Eldritch", "alcortesm", "curratore", "dripolles", "gsc", "jorgeschnura", "mcuadros", "mvader", "pavelkarpov", "vasco2ramos"}
+	members := []string{"alcortesm", "curratore", "jorgeschnura", "mcuadros", "mvader", "pavelkarpov", "vasco2ramos"}
 	sort.Strings(g.Members)
 	sort.Strings(members)
 	c.Assert(g.Members, DeepEquals, members)
@@ -38,13 +38,11 @@ func (s *SourcesSuite) TestGithub_SearchByEmail(c *C) {
 	c.Assert(g.Username, Equals, "mcuadros")
 	c.Assert(g.FullName, Equals, "Máximo Cuadros")
 	c.Assert(g.Location, Equals, "Madrid, Spain")
-	c.Assert(g.Email, Equals, "mcuadros@gmail.com")
 	c.Assert(g.Description, Not(Equals), "")
 	c.Assert(g.JoinDate.Unix(), Equals, int64(1332676111))
 	sort.Strings(g.Organizations)
-	c.Assert(g.Organizations, HasLen, 3)
-	c.Assert(g.Organizations, DeepEquals, []string{"/mongator", "/sourcegraph", "/src-d"})
-	c.Assert(g.Repositories, HasLen, 5)
+	c.Assert(g.Organizations, HasLen, 2)
+	c.Assert(g.Organizations, DeepEquals, []string{"/mongator", "/src-d"})
 
 	return
 

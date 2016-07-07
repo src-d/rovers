@@ -10,6 +10,7 @@ import (
 )
 
 func (s *SourcesSuite) TestBitbucket_GetRepositories(c *C) {
+	c.Skip("not used")
 	if os.Getenv("CI_COMMIT") != "" {
 		// NOTE: We are not using any auth for Bitbucket so running this on a CI system
 		// almost always fails to run because someone else has already exhausted the

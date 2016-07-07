@@ -9,6 +9,7 @@ import (
 )
 
 func (s *SourcesSuite) TestAugurReader_SearchByEmail(c *C) {
+	c.Skip("not used")
 	a := NewAugurInsightsAPI(client.NewClient(true))
 	r, res, err := a.SearchByEmail("nawar.alsafar126@gmail.com")
 
@@ -20,6 +21,7 @@ func (s *SourcesSuite) TestAugurReader_SearchByEmail(c *C) {
 }
 
 func (s *SourcesSuite) TestAugurReader_SearchByEmail_BadRequest(c *C) {
+	c.Skip("not used")
 	a := NewAugurInsightsAPI(client.NewClient(true))
 	r, res, err := a.SearchByEmail("foo")
 

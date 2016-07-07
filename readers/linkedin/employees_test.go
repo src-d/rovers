@@ -9,7 +9,7 @@ import (
 )
 
 const (
-	TybaCompanyId = 924688
+	SourcedCompanyId = 10284920
 )
 
 func (s *linkedInSuite) TestNewLinkedInWebCrawler(c *C) {
@@ -19,11 +19,11 @@ func (s *linkedInSuite) TestNewLinkedInWebCrawler(c *C) {
 
 	cli := client.NewClient(false)
 	wc := NewLinkedInWebCrawler(cli, CookieFixtureEiso)
-	employees, err := wc.GetEmployees(TybaCompanyId)
+	employees, err := wc.GetEmployees(SourcedCompanyId)
 	c.Assert(err, IsNil)
 	// NOTE(toqueteos): I'm not sure if checking this value is *that* useful, of
 	// course it's needed for validation but it shouldn't be an exact value
 	// because changes on the LinkedIn company page are independent of us and
 	// may turn up to be a pain in the ass when testing.
-	c.Assert(len(employees), Equals, 32)
+	c.Assert(employees, HasLen, 17)
 }
