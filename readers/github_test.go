@@ -24,7 +24,7 @@ func (s *SourcesSuite) TestGithub_GetProfileByURL_Company(c *C) {
 	c.Assert(g.Location, Equals, "Madrid, Spain")
 	c.Assert(g.Email, Equals, "")
 	c.Assert(g.Url, Equals, "https://github.com/src-d")
-	members := []string{"alcortesm", "curratore", "jorgeschnura", "mcuadros", "mvader", "pavelkarpov", "vasco2ramos"}
+	members := []string{"alcortesm", "curratore", "jorgeschnura", "mcuadros", "mvader", "vasco2ramos"}
 	sort.Strings(g.Members)
 	sort.Strings(members)
 	c.Assert(g.Members, DeepEquals, members)
