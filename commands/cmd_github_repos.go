@@ -3,7 +3,6 @@ package commands
 import (
 	"time"
 
-	"github.com/src-d/rovers/metrics"
 	"github.com/src-d/rovers/readers"
 	"gop.kg/src-d/domain@v6/container"
 	"gop.kg/src-d/domain@v6/models/social"
@@ -68,8 +67,6 @@ func (c *CmdGitHubAPIRepos) getSince() int {
 func (c *CmdGitHubAPIRepos) getRepositories(since int) (
 	repos []github.Repository, resp *github.Response, err error,
 ) {
-	metrics.GitHubReposRequested.Inc()
-
 	start := time.Now()
 	repos, resp, err = c.github.GetAllRepositories(since)
 	if err != nil {
@@ -77,13 +74,11 @@ func (c *CmdGitHubAPIRepos) getRepositories(since int) (
 			"since", since,
 			"error", err,
 		)
-		metrics.GitHubReposFailed.WithLabelValues("ghapi_request").Inc()
 		return
 	}
 
 	elapsed := time.Since(start)
 	microseconds := float64(elapsed) / float64(time.Microsecond)
-	metrics.GitHubReposRequestDur.Observe(microseconds)
 	return
 }
 
@@ -95,12 +90,10 @@ func (c *CmdGitHubAPIRepos) save(repos []github.Repository) {
 				"repo", doc.FullName,
 				"error", err,
 			)
-			metrics.GitHubReposFailed.WithLabelValues("db_insert").Inc()
 		}
 	}
 
 	numRepos := len(repos)
-	metrics.GitHubReposProcessed.Add(float64(numRepos))
 	log15.Info("Repositories saved", "num_repos", numRepos)
 }
 

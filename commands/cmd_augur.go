@@ -4,7 +4,6 @@ import (
 	"time"
 
 	"github.com/src-d/rovers/client"
-	"github.com/src-d/rovers/metrics"
 	"github.com/src-d/rovers/readers"
 	"gop.kg/src-d/domain@v6/container"
 	"gop.kg/src-d/domain@v6/models"
@@ -132,7 +131,6 @@ func (c *CmdAugur) fetchAugurData() error {
 			)
 			continue
 		}
-		metrics.AugurProcessed.Inc()
 	}
 	return nil
 }

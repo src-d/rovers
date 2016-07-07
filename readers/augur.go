@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/src-d/rovers/client"
-	"github.com/src-d/rovers/metrics"
 	"gop.kg/src-d/domain@v6/container"
 	"gop.kg/src-d/domain@v6/models/social"
 )
@@ -35,25 +34,20 @@ func NewAugurInsightsAPI(client *client.Client) *AugurInsightsAPI {
 }
 
 func (a *AugurInsightsAPI) SearchByEmail(email string) (*social.AugurInsight, *http.Response, error) {
-	metrics.AugurRequested.Inc()
-
 	q := &url.Values{}
 	q.Add("email", email)
 
 	body, res, err := a.doRequest(q)
 	if err == ErrRateLimitExceeded {
 		a.reachedLimit = true
-		metrics.AugurFailed.WithLabelValues("api_rate_limit").Inc()
 		return nil, res, err
 	}
 	if err != nil {
-		metrics.AugurFailed.WithLabelValues("request_err").Inc()
 		return nil, res, err
 	}
 
 	insight, err := a.processResponse(body)
 	if err != nil {
-		metrics.AugurFailed.WithLabelValues("process_response_err").Inc()
 		return nil, res, err
 	}
 	insight.InputEmail = email
@@ -86,7 +80,6 @@ func (a *AugurInsightsAPI) doRequest(q *url.Values) ([]byte, *http.Response, err
 	defer func() {
 		elapsed := time.Since(start)
 		microseconds := float64(elapsed) / float64(time.Microsecond)
-		metrics.AugurRequestDur.Observe(microseconds)
 	}()
 
 	body, err := ioutil.ReadAll(res.Body)

@@ -3,7 +3,6 @@ package commands
 import (
 	"time"
 
-	"github.com/src-d/rovers/metrics"
 	"github.com/src-d/rovers/readers"
 	"gop.kg/src-d/domain@v6/container"
 	"gop.kg/src-d/domain@v6/models/social"
@@ -22,8 +21,6 @@ type CmdGitHubAPIUsers struct {
 
 func (c *CmdGitHubAPIUsers) Execute(args []string) error {
 	c.CmdBase.ChangeLogLevel()
-
-	defer metrics.Push()
 
 	c.github = readers.NewGithubAPI()
 	c.storage = container.GetDomainModelsSocialGithubUserStore()
@@ -76,8 +73,6 @@ func (c *CmdGitHubAPIUsers) getSince() int {
 func (c *CmdGitHubAPIUsers) getUsers(since int) (
 	users []github.User, resp *github.Response, err error,
 ) {
-	metrics.GitHubUsersRequested.Inc()
-
 	start := time.Now()
 	users, resp, err = c.github.GetAllUsers(since)
 	if err != nil {
@@ -85,13 +80,11 @@ func (c *CmdGitHubAPIUsers) getUsers(since int) (
 			"since", since,
 			"error", err,
 		)
-		metrics.GitHubUsersFailed.WithLabelValues("ghapi_request").Inc()
 		return
 	}
 
 	elapsed := time.Since(start)
 	microseconds := float64(elapsed) / float64(time.Microsecond)
-	metrics.GitHubUsersRequestDur.Observe(microseconds)
 	return
 }
 
@@ -104,14 +97,12 @@ func (c *CmdGitHubAPIUsers) save(users []github.User) {
 				"user", doc.Login,
 				"error", err,
 			)
-			metrics.GitHubUsersFailed.WithLabelValues("db_insert").Inc()
 			continue
 		}
 		saved++
 	}
 
 	numUsers := len(users)
-	metrics.GitHubUsersProcessed.Add(float64(numUsers))
 	log15.Info("Users saved",
 		"num_input", numUsers,
 		"num_saved", saved,

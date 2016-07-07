@@ -2,7 +2,6 @@ package commands
 
 import (
 	"github.com/src-d/rovers/client"
-	"github.com/src-d/rovers/metrics"
 	"github.com/src-d/rovers/readers"
 	"gop.kg/src-d/domain@v6/container"
 	"gop.kg/src-d/domain@v6/models/social"
@@ -36,8 +35,6 @@ func (cmd *CmdTwitter) Execute(args []string) error {
 }
 
 func (cmd *CmdTwitter) fetchProfiles(insight *social.AugurInsight) {
-	defer metrics.TwitterProcessed.Inc()
-
 	for _, URL := range insight.TwitterURL {
 		if cmd.isStored(URL) {
 			log15.Info("Skipping", "url", URL)

@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/src-d/rovers/client"
-	"github.com/src-d/rovers/metrics"
 	"github.com/src-d/rovers/readers"
 	"gop.kg/src-d/domain@v6/container"
 	"gop.kg/src-d/domain@v6/models/social"
@@ -60,7 +59,6 @@ func (b *CmdBitbucket) getAfter() string {
 	repo, err := b.store.FindOne(q)
 	if err != nil {
 		log15.Error("getAfter query failed")
-		metrics.BitbucketFailed.WithLabelValues("getAfter").Inc()
 		return ""
 	}
 	// 2008-11-09T14:59:29.540461+00:00
@@ -74,7 +72,6 @@ func (b *CmdBitbucket) insertRepository(res *readers.BitbucketPagedResult) (n in
 
 		err = b.store.Insert(repository)
 		if err != nil {
-			metrics.BitbucketFailed.WithLabelValues("insert").Inc()
 			return
 		}
 		n++
@@ -82,7 +79,6 @@ func (b *CmdBitbucket) insertRepository(res *readers.BitbucketPagedResult) (n in
 		log15.Debug("Saved repository", "repo", repository)
 	}
 
-	metrics.BitbucketProcessed.Inc()
 	log15.Debug("Save", "num_repos", len(res.Values), "next", res.Next)
 
 	return n, nil
