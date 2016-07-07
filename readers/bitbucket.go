@@ -29,9 +29,6 @@ func NewBitbucketAPI(client *client.Client) *BitbucketAPI {
 func (a *BitbucketAPI) GetRepositories(q url.Values) (*BitbucketPagedResult, error) {
 	start := time.Now()
 	defer func() {
-		elapsed := time.Since(start)
-		microseconds := float64(elapsed) / float64(time.Microsecond)
-
 		needsWait := BitbucketRateLimit - time.Since(start)
 		if needsWait > 0 {
 			log15.Debug("Waiting", "duration", needsWait)

@@ -70,17 +70,11 @@ func (a *AugurInsightsAPI) doRequest(q *url.Values) ([]byte, *http.Response, err
 		return nil, nil, err
 	}
 
-	start := time.Now()
 	res, err := a.client.Do(req)
 	if err != nil {
 		return nil, res, err
 	}
 	defer res.Body.Close()
-
-	defer func() {
-		elapsed := time.Since(start)
-		microseconds := float64(elapsed) / float64(time.Microsecond)
-	}()
 
 	body, err := ioutil.ReadAll(res.Body)
 	if err != nil {

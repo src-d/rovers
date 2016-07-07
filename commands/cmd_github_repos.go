@@ -67,7 +67,6 @@ func (c *CmdGitHubAPIRepos) getSince() int {
 func (c *CmdGitHubAPIRepos) getRepositories(since int) (
 	repos []github.Repository, resp *github.Response, err error,
 ) {
-	start := time.Now()
 	repos, resp, err = c.github.GetAllRepositories(since)
 	if err != nil {
 		log15.Error("GetAllRepositories failed",
@@ -77,8 +76,6 @@ func (c *CmdGitHubAPIRepos) getRepositories(since int) (
 		return
 	}
 
-	elapsed := time.Since(start)
-	microseconds := float64(elapsed) / float64(time.Microsecond)
 	return
 }
 

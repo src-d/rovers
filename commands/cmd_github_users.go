@@ -73,7 +73,6 @@ func (c *CmdGitHubAPIUsers) getSince() int {
 func (c *CmdGitHubAPIUsers) getUsers(since int) (
 	users []github.User, resp *github.Response, err error,
 ) {
-	start := time.Now()
 	users, resp, err = c.github.GetAllUsers(since)
 	if err != nil {
 		log15.Error("GetAllUsers failed",
@@ -83,8 +82,6 @@ func (c *CmdGitHubAPIUsers) getUsers(since int) (
 		return
 	}
 
-	elapsed := time.Since(start)
-	microseconds := float64(elapsed) / float64(time.Microsecond)
 	return
 }
 
