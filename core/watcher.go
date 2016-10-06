@@ -37,14 +37,13 @@ func NewWatcher(providers []RepoProvider, persist func(string) error,
 
 func (w *Watcher) Start() {
 	for _, provider := range w.providers {
-		go func() {
+		go func(p RepoProvider) {
 			for {
-				err := w.handleProviderResult(provider)
-				if err == errBadAck {
+				if err := w.handleProviderResult(p); err == errBadAck {
 					break
 				}
 			}
-		}()
+		}(provider)
 	}
 }
 
