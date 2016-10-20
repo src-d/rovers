@@ -14,48 +14,79 @@ func Test(t *testing.T) {
 }
 
 type GithubProviderSuite struct {
-	client *core.Client
+	client   *core.Client
+	provider *githubProvider
 }
 
-var _ = Suite(&GithubProviderSuite{})
+var _ = Suite(&GithubProviderSuite{
+	client: core.NewClient(providerName),
+})
 
 func (s *GithubProviderSuite) SetUpTest(c *C) {
-	s.client = core.NewClient()
+	s.client.DropDatabase()
+	s.provider = NewProvider(&GithubConfig{})
 }
 
 func (s *GithubProviderSuite) TestGithubProvider_Next_FromStart(c *C) {
-	s.client.DropDatabase()
-	provider := NewProvider(&GithubConfig{})
 	for i := 0; i < 101; i++ {
-		repoUrl, err := provider.Next()
+		repoUrl, err := s.provider.Next()
 		c.Assert(err, IsNil)
 		c.Assert(repoUrl, Not(Equals), "")
-		err = provider.Ack(nil)
+		err = s.provider.Ack(nil)
 		c.Assert(err, IsNil)
 	}
 }
 
+func (s *GithubProviderSuite) TestGithubProvider_Next_FromStart_Repos(c *C) {
+	for i := 0; i < 100; i++ {
+		repoUrl, err := s.provider.Next()
+		c.Assert(err, IsNil)
+		c.Assert(repoUrl, Not(Equals), "")
+		err = s.provider.Ack(nil)
+		c.Assert(err, IsNil)
+	}
+
+	res := []githubData{}
+	err := s.client.Collection(providerName).Find(nil).All(&res)
+	c.Assert(err, IsNil)
+	c.Assert(len(res), Equals, 1)
+	c.Assert(len(res[0].Repositories), Equals, 100)
+}
+
+func (s *GithubProviderSuite) TestGithubProvider_Next_FromStart_ReposTwoPages(c *C) {
+	for i := 0; i < 101; i++ {
+		repoUrl, err := s.provider.Next()
+		c.Assert(err, IsNil)
+		c.Assert(repoUrl, Not(Equals), "")
+		err = s.provider.Ack(nil)
+		c.Assert(err, IsNil)
+	}
+
+	res := []githubData{}
+	err := s.client.Collection(providerName).Find(nil).All(&res)
+	c.Assert(err, IsNil)
+	c.Assert(len(res), Equals, 2)
+	c.Assert(len(res[0].Repositories), Equals, 100)
+	c.Assert(len(res[1].Repositories), Equals, 100)
+}
+
 func (s *GithubProviderSuite) TestGithubProvider_Next_End(c *C) {
-	s.client.DropDatabase()
-	provider := NewProvider(&GithubConfig{})
-	provider.setCheckpoint(&GithubData{
+	s.provider.setCheckpoint(&githubData{
 		Checkpoint: 99999999,
 	})
-	repoUrl, err := provider.Next()
+	repoUrl, err := s.provider.Next()
 	c.Assert(repoUrl, Equals, "")
 	c.Assert(err, Equals, io.EOF)
 }
 
 func (s *GithubProviderSuite) TestGithubProvider_Next_Retry(c *C) {
-	s.client.DropDatabase()
-	provider := NewProvider(&GithubConfig{})
-	repoUrl, err := provider.Next()
+	repoUrl, err := s.provider.Next()
 	c.Assert(err, IsNil)
 	c.Assert(repoUrl, Not(Equals), "")
 
 	// Simulate an error
-	provider.Ack(errors.New("WOOPS"))
-	repoUrl2, err := provider.Next()
+	s.provider.Ack(errors.New("WOOPS"))
+	repoUrl2, err := s.provider.Next()
 
 	c.Assert(err, IsNil)
 	c.Assert(repoUrl, Not(Equals), "")
