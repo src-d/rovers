@@ -7,17 +7,19 @@ import (
 	"github.com/src-d/rovers/core"
 	"gopkg.in/inconshreveable/log15.v2"
 	"gopkg.in/mgo.v2"
+	"gopkg.in/mgo.v2/bson"
 )
 
 const (
 	cgitProviderName = "cgit"
-	cgitUrlField     = "CgitUrl"
-	repoField        = "RepoUrls"
+	cgitUrlField     = "cgiturl"
+	repoField        = "repourl"
 )
 
 type cgitRepo struct {
 	CgitUrl string
 	RepoUrl string
+	Html    string
 }
 
 type provider struct {
@@ -25,15 +27,16 @@ type provider struct {
 	scrapers            []*scraper
 	currentScraperIndex int
 	mutex               *sync.Mutex
-	lastRepo            string
+	lastRepo            *cgitRepoData
 }
 
 func NewProvider(cgitUrls []string) *provider {
 	scrapers := initializeScrapers(cgitUrls)
 	p := &provider{
-		cgitCollection:      initializeCollection(),
-		scrapers:            scrapers,
-		mutex:               &sync.Mutex{},
+		cgitCollection: initializeCollection(),
+		scrapers:       scrapers,
+		mutex:          &sync.Mutex{},
+		lastRepo:       nil,
 	}
 
 	return p
@@ -58,15 +61,14 @@ func initializeCollection() *mgo.Collection {
 	return cgitColl
 }
 
-func (cp *provider) setCheckpoint(cgitUrl string, repoUrl string) error {
-	log15.Debug("Adding new checkpoint url", "cgitUrl", cgitUrl, "repoUrl", repoUrl)
+func (cp *provider) setCheckpoint(cgitUrl string, repo *cgitRepoData) error {
+	log15.Debug("Adding new checkpoint url", "cgitUrl", cgitUrl, "repoUrl", repo.RepoUrl)
 
-	return cp.cgitCollection.Insert(&cgitRepo{CgitUrl: cgitUrl, RepoUrl: repoUrl})
+	return cp.cgitCollection.Insert(&cgitRepo{CgitUrl: cgitUrl, RepoUrl: repo.RepoUrl, Html: repo.Html})
 }
 
-func (cp *provider) alreadyProcessed(cgitUrl string, repoUrl string) (bool, error) {
-	c, err := cp.cgitCollection.
-		Find(&cgitRepo{CgitUrl: cgitUrl, RepoUrl: repoUrl}).Count()
+func (cp *provider) alreadyProcessed(cgitUrl string, repo *cgitRepoData) (bool, error) {
+	c, err := cp.cgitCollection.Find(bson.M{cgitUrlField: cgitUrl, repoField: repo.RepoUrl}).Count()
 
 	return c > 0, err
 }
@@ -74,17 +76,17 @@ func (cp *provider) alreadyProcessed(cgitUrl string, repoUrl string) (bool, erro
 func (cp *provider) Next() (string, error) {
 	cp.mutex.Lock()
 	defer cp.mutex.Unlock()
-	if cp.lastRepo != "" {
+	if cp.lastRepo != nil {
 		log15.Warn("Some error happens when try to call Ack(), returning the last repository again",
-			"repo", cp.lastRepo)
+			"repo", cp.lastRepo.RepoUrl)
 
-		return cp.lastRepo, nil
+		return cp.lastRepo.RepoUrl, nil
 	}
 
 	for {
 		currentScraper := cp.scrapers[cp.currentScraperIndex]
 		cgitUrl := currentScraper.CgitUrl
-		url, err := currentScraper.Next()
+		repoData, err := currentScraper.Next()
 		switch {
 		case err == io.EOF:
 			cp.currentScraperIndex++
@@ -97,16 +99,16 @@ func (cp *provider) Next() (string, error) {
 		case err != nil:
 			return "", err
 		case err == nil:
-			processed, err := cp.alreadyProcessed(cgitUrl, url)
+			processed, err := cp.alreadyProcessed(cgitUrl, repoData)
 			if err != nil {
 				return "", err
 			}
 
 			if processed {
-				log15.Debug("Repository already processed", "cgitUrl", cgitUrl, "url", url)
+				log15.Debug("Repository already processed", "cgitUrl", cgitUrl, "url", repoData)
 			} else {
-				cp.lastRepo = url
-				return url, nil
+				cp.lastRepo = repoData
+				return repoData.RepoUrl, nil
 			}
 		}
 	}
@@ -115,12 +117,12 @@ func (cp *provider) Next() (string, error) {
 func (cp *provider) Ack(err error) error {
 	cp.mutex.Lock()
 	defer cp.mutex.Unlock()
-	if err == nil {
+	if err == nil && cp.lastRepo != nil {
 		err = cp.setCheckpoint(cp.scrapers[cp.currentScraperIndex].CgitUrl, cp.lastRepo)
 		if err != nil {
 			return err
 		} else {
-			cp.lastRepo = ""
+			cp.lastRepo = nil
 		}
 	}
 
