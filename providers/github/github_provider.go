@@ -30,8 +30,9 @@ type githubProvider struct {
 	mutex      *sync.Mutex
 }
 
-type GithubData struct {
-	Checkpoint int
+type githubData struct {
+	Checkpoint   int
+	Repositories []api.Repository
 }
 
 type GithubConfig struct {
@@ -47,7 +48,7 @@ func NewProvider(config *GithubConfig) *githubProvider {
 		log15.Warn("Creating anonimous http client. No GitHub token provided.")
 	}
 	apiClient := api.NewClient(httpClient)
-	dataClient := core.NewClient()
+	dataClient := core.NewClient(providerName)
 	repoStore := container.GetDomainModelsSocialGithubRepositoryStore()
 
 	return &githubProvider{
@@ -134,9 +135,9 @@ func (gp *githubProvider) requestNextPage(since int) ([]api.Repository, error) {
 		return nil, err
 	}
 	gp.checkpoint = resp.NextPage
-	// TODO there are any way to get the response raw data using this API?
-	gp.setCheckpoint(&GithubData{
-		Checkpoint: gp.checkpoint,
+	gp.setCheckpoint(&githubData{
+		Checkpoint:   gp.checkpoint,
+		Repositories: repos,
 	})
 	if resp.Remaining < 100 {
 		log15.Warn("Low remaining", "value", resp.Remaining)
@@ -146,7 +147,7 @@ func (gp *githubProvider) requestNextPage(since int) ([]api.Repository, error) {
 }
 
 func (gp *githubProvider) getCheckpoint() (int, error) {
-	result := GithubData{}
+	result := githubData{}
 	err := gp.dataClient.Collection(providerName).Find(nil).Sort("-_id").One(&result)
 	if err == mgo.ErrNotFound {
 		return 0, nil
@@ -155,7 +156,7 @@ func (gp *githubProvider) getCheckpoint() (int, error) {
 	return result.Checkpoint, err
 }
 
-func (gp *githubProvider) setCheckpoint(data *GithubData) error {
+func (gp *githubProvider) setCheckpoint(data *githubData) error {
 	err := gp.dataClient.Collection(providerName).Insert(data)
 
 	return err

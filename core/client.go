@@ -5,22 +5,22 @@ import (
 	"gopkg.in/mgo.v2"
 )
 
-const (
-	DatabaseName = "sources"
-)
-
 type Client struct {
+	dbName  string
 	session mgo.Session
 }
 
-func NewClient() *Client {
-	return &Client{*container.GetAnalysisMgoSession()}
+func NewClient(dbName string) *Client {
+	return &Client{
+		dbName:  dbName,
+		session: *container.GetAnalysisMgoSession(),
+	}
 }
 
 func (c *Client) Collection(collection string) *mgo.Collection {
-	return c.session.DB(DatabaseName).C(collection)
+	return c.session.DB(c.dbName).C(collection)
 }
 
 func (c *Client) DropDatabase() {
-	c.session.DB(DatabaseName).DropDatabase()
+	c.session.DB(c.dbName).DropDatabase()
 }
