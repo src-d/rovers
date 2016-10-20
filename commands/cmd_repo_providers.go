@@ -7,16 +7,18 @@ import (
 
 	"github.com/kr/beanstalk"
 	"github.com/src-d/rovers/core"
+	"github.com/src-d/rovers/providers/cgit"
 	"github.com/src-d/rovers/providers/github"
 	"gopkg.in/inconshreveable/log15.v2"
 )
 
 const (
 	githubProviderName = "github"
+	cgitProviderName   = "cgit"
 	priorityNormal     = 1024
 )
 
-var allowedProviders = []string{githubProviderName}
+var allowedProviders = []string{githubProviderName, cgitProviderName}
 
 type CmdRrepoProviders struct {
 	CmdBase
@@ -25,6 +27,7 @@ type CmdRrepoProviders struct {
 	WatcherTime time.Duration `short:"t" long:"watcher-time" optional:"no" default:"1h" description:"Time to try again to get new repos"`
 	QueueName   string        `short:"q" long:"queue" optional:"no" default:"repo-urls" description:"beanstalkd queue used to send repo urls"`
 	Beanstalk   string        `long:"beanstalk" default:"127.0.0.1:11300" description:"beanstalk url server"`
+	CgitUrls    []string      `short:"u" long:"cgit-url" decription:"If you are using the Cgit provider, you must add here some cgit urls"`
 }
 
 func (c *CmdRrepoProviders) Execute(args []string) error {
@@ -40,6 +43,13 @@ func (c *CmdRrepoProviders) Execute(args []string) error {
 			}
 			ghp := github.NewProvider(&github.GithubConfig{GithubToken: c.GithubToken})
 			providers = append(providers, ghp)
+		case cgitProviderName:
+			log15.Info("Creating cgit provider")
+			if len(c.CgitUrls) == 0 {
+				return errors.New("You need to specify at least one cgit-url")
+			}
+			cgp := cgit.NewProvider(c.CgitUrls)
+			providers = append(providers, cgp)
 		default:
 			return fmt.Errorf("Provider '%s' not found. Allowed providers: %v",
 				p, allowedProviders)

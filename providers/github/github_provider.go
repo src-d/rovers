@@ -2,9 +2,9 @@ package github
 
 import (
 	"io"
+	"net/http"
 	"sync"
 	"time"
-	"net/http"
 
 	api "github.com/mcuadros/go-github/github"
 	"github.com/src-d/rovers/core"
@@ -112,6 +112,7 @@ func (gp *githubProvider) Ack(err error) error {
 	} else {
 		log15.Warn("Error when watcher tried to send last url. Not applying ack", "error", err)
 	}
+
 	return nil
 }
 
@@ -140,6 +141,7 @@ func (gp *githubProvider) requestNextPage(since int) ([]api.Repository, error) {
 	if resp.Remaining < 100 {
 		log15.Warn("Low remaining", "value", resp.Remaining)
 	}
+
 	return repos, nil
 }
 
@@ -149,10 +151,12 @@ func (gp *githubProvider) getCheckpoint() (int, error) {
 	if err == mgo.ErrNotFound {
 		return 0, nil
 	}
+
 	return result.Checkpoint, err
 }
 
 func (gp *githubProvider) setCheckpoint(data *GithubData) error {
 	err := gp.dataClient.Collection(providerName).Insert(data)
+
 	return err
 }
