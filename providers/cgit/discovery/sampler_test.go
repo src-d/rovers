@@ -1,6 +1,7 @@
 package discovery
 
 import (
+	"math/rand"
 	"testing"
 
 	. "gopkg.in/check.v1"
@@ -11,44 +12,72 @@ func Test(t *testing.T) {
 }
 
 type SamplerSuite struct {
-	boolSearch *sampler
+	sampler *sampler
 }
 
 var _ = Suite(&SamplerSuite{})
 
 func (s *SamplerSuite) SetUpTest(c *C) {
-	s.boolSearch = newSampler(1, 91, 10)
+	s.sampler = newSampler(1, 91, 10)
 }
 func (s *SamplerSuite) TestSampler_findLastIndex(c *C) {
-	lastIndex := s.boolSearch.findLastIndex()
+	lastIndex := s.sampler.findLastIndex()
 	c.Assert(lastIndex, Equals, 91)
 }
 func (s *SamplerSuite) TestSampler_RandomSampling(c *C) {
-	samples := s.boolSearch.RandomSampling(10)
+	samples := s.sampler.RandomSampling(10)
 	c.Assert(len(samples), Equals, 10)
 }
 
 func (s *SamplerSuite) TestSampler_RandomSampling_Random(c *C) {
-	samplesOne := s.boolSearch.RandomSampling(5)
-	samplesTwo := s.boolSearch.RandomSampling(5)
+	s.sampler = &sampler{
+		firstIndex:        1,
+		lastKnownEndIndex: 91,
+		multiplier:        10,
+		r:                 rand.New(rand.NewSource(42)),
+	}
+	samplesOne := s.sampler.RandomSampling(5)
+	expectedSamplesOne := []int{1, 11, 31, 41, 21}
+	c.Assert(samplesOne, DeepEquals, expectedSamplesOne)
 	c.Assert(len(samplesOne), Equals, 5)
+
+	samplesTwo := s.sampler.RandomSampling(5)
+	expectedSamplesTwo := []int{31, 11, 21, 41, 1}
+	c.Assert(samplesTwo, DeepEquals, expectedSamplesTwo)
 	c.Assert(len(samplesTwo), Equals, 5)
-	c.Assert(samplesOne, Not(DeepEquals), samplesTwo)
 }
 
 func (s *SamplerSuite) TestSampler_RandomSampling_TryToGetMoreSamplings(c *C) {
-	samples := s.boolSearch.RandomSampling(30)
+	samples := s.sampler.RandomSampling(30)
 	c.Assert(len(samples), Equals, 10)
 }
 
 func (s *SamplerSuite) TestSampler_RandomSampling_OnlyFiveSamplings(c *C) {
-	samples := s.boolSearch.RandomSampling(5)
+	samples := s.sampler.RandomSampling(5)
 	c.Assert(len(samples), Equals, 5)
 }
 
+func (s *SamplerSuite) TestSampler_RandomSampling_LastKnownIndexSmallerThanFirstIndex(c *C) {
+	s.sampler = newSampler(100, 0, 10)
+
+	samples := s.sampler.RandomSampling(11)
+	c.Assert(len(samples), Equals, 0)
+}
+
+func (s *SamplerSuite) TestSampler_RandomSampling_NegativeMultiplier(c *C) {
+
+	defer func() {
+		if r := recover(); r == nil {
+			c.Errorf("The code did not panic")
+		}
+	}()
+
+	s.sampler = newSampler(0, 100, -10)
+}
+
 func (s *SamplerSuite) TestSampler_RandomSampling_DifferentConstructor(c *C) {
-	s.boolSearch = newSampler(0, 100, 10)
-	samples := s.boolSearch.RandomSampling(11)
+	s.sampler = newSampler(0, 100, 10)
+	samples := s.sampler.RandomSampling(11)
 	c.Assert(len(samples), Equals, 11)
 
 	cont := contains(samples, 20)

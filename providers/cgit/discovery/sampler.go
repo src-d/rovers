@@ -1,30 +1,44 @@
 package discovery
 
-import "math/rand"
+import (
+	"math/rand"
+	"time"
+)
 
+// sampler bring the possibility of get random pages from a certain API.
+// Doing this, we can eventually get all the results of that API in a certain amount of time,
+// if we have limited requests per day (quotas), and the amount of pages are variable
+// over the time (like a google search).
 type sampler struct {
 	firstIndex        int
 	lastKnownEndIndex int
 	multiplier        int
+	r                 *rand.Rand
 }
 
 func newSampler(firstIndex int, lastKnownEndIndex int, multiplier int) *sampler {
+	if multiplier < 0 {
+		panic("Mutiplier must be positive")
+	}
+
 	return &sampler{
 		firstIndex:        firstIndex,
 		lastKnownEndIndex: lastKnownEndIndex,
 		multiplier:        multiplier,
+		r:                 rand.New(rand.NewSource(time.Now().Unix())),
 	}
 }
 
-func (bs *sampler) RandomSampling(maxNumberOfSamplings int) []int {
+// This method will return a random valid pages between firstIndex value and LastKnownEndIndex value
+func (bs *sampler) RandomSampling(maxNumberOfSamples int) []int {
 	pageIndexes := bs.generatePages()
 	pagesCount := len(pageIndexes)
-	if pagesCount <= maxNumberOfSamplings {
+	if pagesCount <= maxNumberOfSamples {
 		return pageIndexes
 	}
 
 	result := []int{}
-	resultIndexes := rand.Perm(maxNumberOfSamplings)
+	resultIndexes := bs.r.Perm(maxNumberOfSamples)
 	for _, i := range resultIndexes {
 		result = append(result, pageIndexes[i])
 	}
@@ -43,6 +57,5 @@ func (bs *sampler) generatePages() []int {
 }
 
 func (bs *sampler) findLastIndex() int {
-	// TODO not necessary by now boolean search. Change this in the future.
 	return bs.lastKnownEndIndex
 }
