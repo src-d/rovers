@@ -17,6 +17,11 @@ const (
 	mainPageSelector    = "td.logo a"
 )
 
+type cgitRepoData struct {
+	RepoUrl string
+	Html    string
+}
+
 type scraper struct {
 	CgitUrl         string
 	firstIteration  bool
@@ -33,39 +38,38 @@ func newScraper(cgitUrl string) *scraper {
 	}
 }
 
-func (cs *scraper) Next() (string, error) {
+func (cs *scraper) Next() (*cgitRepoData, error) {
 	for {
 		if cs.isStart() {
 			if err := cs.initialize(); err != nil {
-				return "", err
+				return nil, err
 			}
 		}
 
 		if cs.isEnd() {
 			cs.firstIteration = true
-			return "", io.EOF
+			return nil, io.EOF
 		}
 
 		if cs.needMorePages() {
 			if err := cs.refreshPages(); err != nil {
-				return "", err
+				return nil, err
 			}
 		}
 
-		repo, err := cs.getRepo()
+		repoData, err := cs.getRepo()
 		if err != nil {
-			return "", err
+			return nil, err
 		}
 
-		if cs.repoFound(repo) {
-			return repo, nil
+		if cs.repoFound(repoData) {
+			return repoData, nil
 		}
-
 	}
 }
 
-func (cs *scraper) repoFound(repo string) bool {
-	return repo != ""
+func (cs *scraper) repoFound(repo *cgitRepoData) bool {
+	return repo.RepoUrl != ""
 }
 
 func (cs *scraper) needMorePages() bool {
@@ -114,15 +118,15 @@ func (cs *scraper) refreshPages() error {
 	return nil
 }
 
-func (cs *scraper) getRepo() (string, error) {
+func (cs *scraper) getRepo() (*cgitRepoData, error) {
 	repoPage, repositoryPages := cs.repositoryPages[0], cs.repositoryPages[1:]
-	repo, err := cs.repo(repoPage)
+	repoData, err := cs.repo(repoPage)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	cs.repositoryPages = repositoryPages
 
-	return repo, nil
+	return repoData, nil
 }
 
 func (cs *scraper) baseUrl() (*url.URL, error) {
@@ -209,24 +213,33 @@ func (cs *scraper) repoPageUrls(pageUrl string) ([]string, error) {
 		})
 }
 
-func (cs *scraper) repo(repoUrl string) (string, error) {
+func (cs *scraper) repo(repoUrl string) (*cgitRepoData, error) {
 	document, err := goquery.NewDocument(repoUrl)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
-	result := ""
+
+	html, err := document.Html()
+	if err != nil {
+		return nil, err
+	}
+
+	r := ""
 	document.Find(repoHttpUrlSelector).EachWithBreak(
 		func(i int, selection *goquery.Selection) bool {
 			repo, exists := selection.Attr("href")
 			if exists {
 				if strings.HasPrefix(repo, "https") {
-					result = repo
+					r = repo
 					return false
 				}
-				result = repo
+				r = repo
 			}
 			return true
 		})
 
-	return result, nil
+	return &cgitRepoData{
+		RepoUrl: r,
+		Html:    html,
+	}, nil
 }

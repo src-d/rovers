@@ -25,8 +25,10 @@ func (s *CgitProviderSuite) TestCgitProvider_WhenFinishScraping(c *C) {
 	count := 0
 	for err == nil {
 		url, err = provider.Next()
-		ackErr := provider.Ack(nil)
-		c.Assert(ackErr, IsNil)
+		if err == nil {
+			ackErr := provider.Ack(nil)
+			c.Assert(ackErr, IsNil)
+		}
 		count++
 	}
 

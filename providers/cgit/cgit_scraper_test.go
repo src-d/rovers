@@ -16,6 +16,8 @@ func (s *CgitScraperSuite) TestCgitScraper_Next_CorrectMainPage(c *C) {
 	u, err := scraper.Next()
 	c.Assert(err, IsNil)
 	c.Assert(u, NotNil)
+	c.Assert(u.Html, Not(Equals), "")
+	c.Assert(u.RepoUrl, Not(Equals), "")
 }
 
 func (s *CgitScraperSuite) TestCgitScraper_Next_CorrectMainPageWithNoPages(c *C) {
@@ -36,7 +38,7 @@ func (s *CgitScraperSuite) TestCgitScraper_Next_IncorrectPage(c *C) {
 	scraper := newScraper("https://golang.org/ref/spec")
 	u, err := scraper.Next()
 	c.Assert(err, NotNil)
-	c.Assert(u, Equals, "")
+	c.Assert(u, IsNil)
 }
 
 func (s *CgitScraperSuite) TestCgitScraper_Next_EOF(c *C) {
@@ -51,7 +53,7 @@ func (s *CgitScraperSuite) TestCgitScraper_Next_EOF(c *C) {
 	c.Assert(err, Equals, io.EOF)
 	u, err := scraper.Next()
 	c.Assert(err, IsNil)
-	c.Assert(u, Not(Equals), "")
+	c.Assert(u, NotNil)
 }
 
 func (s *CgitScraperSuite) TestCgitScraper_repoPageWithNoRepos(c *C) {
@@ -66,12 +68,12 @@ func (s *CgitScraperSuite) TestCgitScraper_repoPageWithNoRepos(c *C) {
 	c.Assert(err, Equals, io.EOF)
 	u, err := scraper.Next()
 	c.Assert(err, IsNil)
-	c.Assert(u, Not(Equals), "")
+	c.Assert(u, NotNil)
 }
 
 func (s *CgitScraperSuite) TestCgitScraper_repoPageWithNoHttpRepos(c *C) {
 	scraper := newScraper("http://cgit.openembedded.org/")
 	url, err := scraper.Next()
-	c.Assert(url, Equals, "")
+	c.Assert(url, IsNil)
 	c.Assert(err, Equals, io.EOF)
 }
