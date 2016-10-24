@@ -2,14 +2,9 @@ package discovery
 
 import (
 	"math/rand"
-	"testing"
 
 	. "gopkg.in/check.v1"
 )
-
-func Test(t *testing.T) {
-	TestingT(t)
-}
 
 type SamplerSuite struct {
 	sampler *sampler

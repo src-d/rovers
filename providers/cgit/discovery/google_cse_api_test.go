@@ -2,7 +2,6 @@ package discovery
 
 import (
 	"os"
-	"testing"
 
 	. "gopkg.in/check.v1"
 )
@@ -87,8 +86,4 @@ func (s *GoogleCseApiSuite) TestGoogleCseApi_BadCredentials(c *C) {
 	c.Assert(err, NotNil)
 	c.Assert(err, Equals, errInvalidKey)
 	c.Assert(result, IsNil)
-}
-
-func Test(t *testing.T) {
-	TestingT(t)
 }

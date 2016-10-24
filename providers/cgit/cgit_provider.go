@@ -5,6 +5,7 @@ import (
 	"sync"
 
 	"github.com/src-d/rovers/core"
+	"github.com/src-d/rovers/providers/cgit/discovery"
 	"gopkg.in/inconshreveable/log15.v2"
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
@@ -25,30 +26,22 @@ type cgitRepo struct {
 type provider struct {
 	cgitCollection      *mgo.Collection
 	scrapers            []*scraper
+	discoverer          discovery.Discoverer
 	currentScraperIndex int
 	mutex               *sync.Mutex
 	lastRepo            *cgitRepoData
 }
 
-func NewProvider(cgitUrls []string) *provider {
-	scrapers := initializeScrapers(cgitUrls)
+func NewProvider(googleKey string, googleCx string) *provider {
 	p := &provider{
 		cgitCollection: initializeCollection(),
-		scrapers:       scrapers,
+		discoverer:     discovery.NewDiscoverer(googleKey, googleCx),
+		scrapers:       []*scraper{},
 		mutex:          &sync.Mutex{},
 		lastRepo:       nil,
 	}
 
 	return p
-}
-
-func initializeScrapers(cgitUrls []string) []*scraper {
-	scrapers := []*scraper{}
-	for _, cgitUrl := range cgitUrls {
-		scrapers = append(scrapers, newScraper(cgitUrl))
-	}
-
-	return scrapers
 }
 
 func initializeCollection() *mgo.Collection {
@@ -73,6 +66,48 @@ func (cp *provider) alreadyProcessed(cgitUrl string, repo *cgitRepoData) (bool, 
 	return c > 0, err
 }
 
+func (cp *provider) getAllCgitUrlsAlreadyProcessed() ([]string, error) {
+	cgitUrls := []string{}
+	err := cp.cgitCollection.Find(nil).Distinct(cgitUrlField, &cgitUrls)
+
+	return cgitUrls, err
+}
+
+func (cp *provider) fillScrapersIfNecessary() error {
+	if len(cp.scrapers) == 0 {
+		cgitUrlsSet := map[string]struct{}{}
+
+		alreadyProcessedCgitUrls, err := cp.getAllCgitUrlsAlreadyProcessed()
+		if err != nil {
+			return err
+		}
+
+		cgitUrls := cp.discoverer.Samples()
+		cp.addToSet(cgitUrlsSet, cgitUrls)
+		cp.addToSet(cgitUrlsSet, alreadyProcessedCgitUrls)
+		for u := range cgitUrlsSet {
+			log15.Info("Adding new Scraper", "cgit url", u)
+			cp.scrapers = append(cp.scrapers, newScraper(u))
+		}
+
+		if len(cp.scrapers) == 0 {
+			// No scrapers found, sending an EOF because we have no data
+			return io.EOF
+		}
+	}
+
+	return nil
+}
+
+func (cp *provider) addToSet(set map[string]struct{}, slice []string) {
+	for _, e := range slice {
+		_, ok := set[e]
+		if !ok {
+			set[e] = struct{}{}
+		}
+	}
+}
+
 func (cp *provider) Next() (string, error) {
 	cp.mutex.Lock()
 	defer cp.mutex.Unlock()
@@ -81,6 +116,11 @@ func (cp *provider) Next() (string, error) {
 			"repo", cp.lastRepo.RepoUrl)
 
 		return cp.lastRepo.RepoUrl, nil
+	}
+
+	err := cp.fillScrapersIfNecessary()
+	if err != nil {
+		return "", err
 	}
 
 	for {
@@ -93,6 +133,7 @@ func (cp *provider) Next() (string, error) {
 			if len(cp.scrapers) <= cp.currentScraperIndex {
 				log15.Debug("All cgitUrls processed, ending provider iterator.",
 					"current index", cp.currentScraperIndex)
+				cp.scrapers = []*scraper{}
 				cp.currentScraperIndex = 0
 				return "", io.EOF
 			}
