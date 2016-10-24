@@ -74,35 +74,34 @@ func (cp *provider) getAllCgitUrlsAlreadyProcessed() ([]string, error) {
 }
 
 func (cp *provider) fillScrapersIfNecessary() error {
+	if len(cp.scrapers) != 0 {
+		return nil
+	}
+
+	cgitUrlsSet := map[string]struct{}{}
+	alreadyProcessedCgitUrls, err := cp.getAllCgitUrlsAlreadyProcessed()
+	if err != nil {
+		return err
+	}
+
+	cgitUrls := cp.discoverer.Samples()
+	cp.joinUnique(cgitUrlsSet, cgitUrls, alreadyProcessedCgitUrls)
+	for u := range cgitUrlsSet {
+		log15.Info("Adding new Scraper", "cgit url", u)
+		cp.scrapers = append(cp.scrapers, newScraper(u))
+	}
+
 	if len(cp.scrapers) == 0 {
-		cgitUrlsSet := map[string]struct{}{}
-
-		alreadyProcessedCgitUrls, err := cp.getAllCgitUrlsAlreadyProcessed()
-		if err != nil {
-			return err
-		}
-
-		cgitUrls := cp.discoverer.Samples()
-		cp.addToSet(cgitUrlsSet, cgitUrls)
-		cp.addToSet(cgitUrlsSet, alreadyProcessedCgitUrls)
-		for u := range cgitUrlsSet {
-			log15.Info("Adding new Scraper", "cgit url", u)
-			cp.scrapers = append(cp.scrapers, newScraper(u))
-		}
-
-		if len(cp.scrapers) == 0 {
-			// No scrapers found, sending an EOF because we have no data
-			return io.EOF
-		}
+		// No scrapers found, sending an EOF because we have no data
+		return io.EOF
 	}
 
 	return nil
 }
 
-func (cp *provider) addToSet(set map[string]struct{}, slice []string) {
-	for _, e := range slice {
-		_, ok := set[e]
-		if !ok {
+func (cp *provider) joinUnique(set map[string]struct{}, slices ...[]string) {
+	for _, slice := range slices {
+		for _, e := range slice {
 			set[e] = struct{}{}
 		}
 	}

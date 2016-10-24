@@ -33,10 +33,11 @@ func (d *DefaultDiscoverer) Samples() []string {
 		p, err := d.googleApi.GetPage(s)
 		if err != nil {
 			log15.Warn("Error obtaining google page", "Error", err)
-		} else {
-			for _, i := range p.Items {
-				cgitUrls = append(cgitUrls, i.Link)
-			}
+			continue
+		}
+
+		for _, i := range p.Items {
+			cgitUrls = append(cgitUrls, i.Link)
 		}
 	}
 
