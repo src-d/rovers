@@ -4,6 +4,9 @@ build:
     commands:
       - make dependencies
       - make test-coverage
+    environment:
+      - GOOGLE_SEARCH_CX=$$GOOGLE_SEARCH_CX
+      - GOOGLE_SEARCH_KEY=$$GOOGLE_SEARCH_KEY
   packages:
     image: golang:1.6
     commands:

@@ -14,7 +14,7 @@ type CgitProviderSuite struct {
 var _ = Suite(&CgitProviderSuite{})
 
 func (s *CgitProviderSuite) SetUpTest(c *C) {
-	core.NewClient().DropDatabase()
+	core.NewClient(cgitProviderName).DropDatabase()
 }
 
 func (s *CgitProviderSuite) TestCgitProvider_WhenFinishScraping(c *C) {

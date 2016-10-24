@@ -52,7 +52,7 @@ func initializeScrapers(cgitUrls []string) []*scraper {
 }
 
 func initializeCollection() *mgo.Collection {
-	cgitColl := core.NewClient().Collection(cgitProviderName)
+	cgitColl := core.NewClient(cgitProviderName).Collection(cgitProviderName)
 	index := mgo.Index{
 		Key: []string{"$text:" + cgitUrlField, "$text:" + repoField},
 	}
