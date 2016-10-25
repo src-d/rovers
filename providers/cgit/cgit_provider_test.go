@@ -18,7 +18,7 @@ func (s *CgitProviderSuite) SetUpTest(c *C) {
 	core.NewClient(cgitProviderName).DropDatabase()
 }
 
-func (s *CgitProviderSuite) newProvider(cgitUrls []string) *provider {
+func (s *CgitProviderSuite) newProvider(cgitUrls ...string) *provider {
 
 	return &provider{
 		cgitCollection: initializeCollection(),
@@ -30,7 +30,7 @@ func (s *CgitProviderSuite) newProvider(cgitUrls []string) *provider {
 }
 
 func (s *CgitProviderSuite) TestCgitProvider_WhenFinishScraping(c *C) {
-	provider := s.newProvider([]string{"https://a3nm.net/git/"})
+	provider := s.newProvider("https://a3nm.net/git/")
 
 	var err error = nil
 	url := ""
@@ -51,7 +51,7 @@ func (s *CgitProviderSuite) TestCgitProvider_WhenFinishScraping(c *C) {
 }
 
 func (s *CgitProviderSuite) TestCgitProvider_WhenAckIsError(c *C) {
-	provider := s.newProvider([]string{"https://a3nm.net/git/"})
+	provider := s.newProvider("https://a3nm.net/git/")
 
 	urlOne, err := provider.Next()
 	ackErr := provider.Ack(errors.New("OOPS"))
@@ -71,14 +71,14 @@ func (s *CgitProviderSuite) TestCgitProvider_WhenAckIsError(c *C) {
 }
 
 func (s *CgitProviderSuite) TestCgitProvider_NotSendAlreadySended(c *C) {
-	provider := s.newProvider([]string{"https://a3nm.net/git/"})
+	provider := s.newProvider("https://a3nm.net/git/")
 
 	urlOne, err := provider.Next()
 	ackErr := provider.Ack(nil)
 	c.Assert(err, IsNil)
 	c.Assert(ackErr, IsNil)
 
-	provider = s.newProvider([]string{"https://a3nm.net/git/"})
+	provider = s.newProvider("https://a3nm.net/git/")
 
 	urlTwo, err := provider.Next()
 	ackErr = provider.Ack(nil)
@@ -89,7 +89,7 @@ func (s *CgitProviderSuite) TestCgitProvider_NotSendAlreadySended(c *C) {
 }
 
 func (s *CgitProviderSuite) TestCgitProvider_IterateAllUrls(c *C) {
-	provider := s.newProvider([]string{"https://a3nm.net/git/", "https://ongardie.net/git/"})
+	provider := s.newProvider("https://a3nm.net/git/", "https://ongardie.net/git/")
 	maxIndex := 0
 	for {
 		_, err := provider.Next()
@@ -109,9 +109,9 @@ func (s *CgitProviderSuite) TestCgitProvider_IterateAllUrls(c *C) {
 }
 
 func (s *CgitProviderSuite) TestCgitProvider_ScrapersWithDifferentUrls(c *C) {
-	provider := s.newProvider([]string{"https://a3nm.net/git/", "https://a3nm.net/git/", "https://ongardie.net/git/"})
+	provider := s.newProvider("https://a3nm.net/git/", "https://a3nm.net/git/", "https://ongardie.net/git/")
 	_, err := provider.Next()
-	c.Assert(err,IsNil)
+	c.Assert(err, IsNil)
 	c.Assert(len(provider.scrapers), Equals, 2)
 }
 
@@ -119,6 +119,8 @@ type dummyDiscoverer struct {
 	urls []string
 }
 
-func (d *dummyDiscoverer) Samples() []string {
+func (d *dummyDiscoverer) Discover() []string {
 	return d.urls
 }
+
+func (d *dummyDiscoverer) Reset() {}

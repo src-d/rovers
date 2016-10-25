@@ -15,6 +15,6 @@ var _ = Suite(&DiscovererSuite{
 })
 
 func (s *DiscovererSuite) TestDiscoverer_Samples(c *C) {
-	samples := s.discoverer.Samples()
+	samples := s.discoverer.Discover()
 	c.Assert(len(samples), Equals, 100)
 }

@@ -73,30 +73,20 @@ func (cp *provider) getAllCgitUrlsAlreadyProcessed() ([]string, error) {
 	return cgitUrls, err
 }
 
-func (cp *provider) fillScrapersIfNecessary() error {
-	if len(cp.scrapers) != 0 {
-		return nil
-	}
-
+func (cp *provider) fillScrapers() {
 	cgitUrlsSet := map[string]struct{}{}
 	alreadyProcessedCgitUrls, err := cp.getAllCgitUrlsAlreadyProcessed()
 	if err != nil {
-		return err
+		log15.Error("Error getting cgit urls from database", "error", err)
 	}
 
-	cgitUrls := cp.discoverer.Samples()
+	cp.discoverer.Reset()
+	cgitUrls := cp.discoverer.Discover()
 	cp.joinUnique(cgitUrlsSet, cgitUrls, alreadyProcessedCgitUrls)
 	for u := range cgitUrlsSet {
 		log15.Info("Adding new Scraper", "cgit url", u)
 		cp.scrapers = append(cp.scrapers, newScraper(u))
 	}
-
-	if len(cp.scrapers) == 0 {
-		// No scrapers found, sending an EOF because we have no data
-		return io.EOF
-	}
-
-	return nil
 }
 
 func (cp *provider) joinUnique(set map[string]struct{}, slices ...[]string) {
@@ -117,9 +107,12 @@ func (cp *provider) Next() (string, error) {
 		return cp.lastRepo.RepoUrl, nil
 	}
 
-	err := cp.fillScrapersIfNecessary()
-	if err != nil {
-		return "", err
+	if cp.isFirst() {
+		cp.fillScrapers()
+		if len(cp.scrapers) == 0 {
+			log15.Warn("No scrapers found, sending an EOF because we have no data")
+			return "", io.EOF
+		}
 	}
 
 	for {
@@ -132,8 +125,7 @@ func (cp *provider) Next() (string, error) {
 			if len(cp.scrapers) <= cp.currentScraperIndex {
 				log15.Debug("All cgitUrls processed, ending provider iterator.",
 					"current index", cp.currentScraperIndex)
-				cp.scrapers = []*scraper{}
-				cp.currentScraperIndex = 0
+				cp.reset()
 				return "", io.EOF
 			}
 		case err != nil:
@@ -152,6 +144,15 @@ func (cp *provider) Next() (string, error) {
 			}
 		}
 	}
+}
+
+func (cp *provider) isFirst() bool {
+	return len(cp.scrapers) == 0
+}
+
+func (cp *provider) reset() {
+	cp.scrapers = []*scraper{}
+	cp.currentScraperIndex = 0
 }
 
 func (cp *provider) Ack(err error) error {

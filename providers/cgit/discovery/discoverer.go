@@ -11,7 +11,8 @@ const (
 )
 
 type Discoverer interface {
-	Samples() []string
+	Discover() []string
+	Reset()
 }
 
 type DefaultDiscoverer struct {
@@ -26,7 +27,7 @@ func NewDiscoverer(googleKey string, googleCx string) Discoverer {
 	}
 }
 
-func (d *DefaultDiscoverer) Samples() []string {
+func (d *DefaultDiscoverer) Discover() []string {
 	samples := d.sampler.RandomSampling(maxNumberOfPages)
 	cgitUrls := []string{}
 	for _, s := range samples {
@@ -42,4 +43,8 @@ func (d *DefaultDiscoverer) Samples() []string {
 	}
 
 	return cgitUrls
+}
+
+func (d *DefaultDiscoverer) Reset() {
+	d.googleApi.Reset()
 }
