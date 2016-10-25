@@ -119,6 +119,9 @@ func (cs *scraper) refreshPages() error {
 }
 
 func (cs *scraper) getRepo() (*cgitRepoData, error) {
+	if len(cs.repositoryPages) == 0 {
+		return nil, fmt.Errorf("No repository pages found: %v", cs.repositoryPages)
+	}
 	repoPage, repositoryPages := cs.repositoryPages[0], cs.repositoryPages[1:]
 	repoData, err := cs.repo(repoPage)
 	if err != nil {

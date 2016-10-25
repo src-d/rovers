@@ -116,6 +116,16 @@ func (s *CgitProviderSuite) TestCgitProvider_ScrapersWithDifferentUrls(c *C) {
 	c.Assert(len(provider.scrapers), Equals, 2)
 }
 
+func (s *CgitProviderSuite) TestCgitProvider_Retries(c *C) {
+	provider := s.newProvider("https://badurl.com")
+	_, err := provider.Next()
+	c.Assert(err, NotNil)
+	c.Assert(provider.scraperRetries, Equals, 1)
+	_, err = provider.Next()
+	c.Assert(err, NotNil)
+	c.Assert(provider.scraperRetries, Equals, 2)
+}
+
 type dummyDiscoverer struct {
 	urls []string
 }

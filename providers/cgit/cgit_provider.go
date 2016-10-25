@@ -3,20 +3,23 @@ package cgit
 import (
 	"io"
 	"sync"
+	"time"
 
+	"github.com/sourcegraph/go-vcsurl"
 	"github.com/src-d/rovers/core"
 	"github.com/src-d/rovers/providers/cgit/discovery"
 	"gop.kg/src-d/domain@v6/models/repository"
 	"gopkg.in/inconshreveable/log15.v2"
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
-	"github.com/sourcegraph/go-vcsurl"
 )
 
 const (
-	cgitProviderName = "cgit"
-	cgitUrlField     = "cgiturl"
-	repoField        = "repourl"
+	cgitProviderName      = "cgit"
+	cgitUrlField          = "cgiturl"
+	repoField             = "repourl"
+	cgitScraperMaxRetries = 20
+	timeToWait            = 5
 )
 
 type cgitRepo struct {
@@ -29,6 +32,7 @@ type provider struct {
 	cgitCollection      *mgo.Collection
 	scrapers            []*scraper
 	discoverer          discovery.Discoverer
+	scraperRetries      int
 	currentScraperIndex int
 	mutex               *sync.Mutex
 	lastRepo            *cgitRepoData
@@ -117,12 +121,15 @@ func (cp *provider) Next() (*repository.Raw, error) {
 		}
 	}
 
+	cp.handleRetries()
+
 	for {
 		currentScraper := cp.scrapers[cp.currentScraperIndex]
 		cgitUrl := currentScraper.CgitUrl
 		repoData, err := currentScraper.Next()
 		switch {
 		case err == io.EOF:
+			cp.scraperRetries = 0
 			cp.currentScraperIndex++
 			if len(cp.scrapers) <= cp.currentScraperIndex {
 				log15.Debug("All cgitUrls processed, ending provider iterator.",
@@ -131,8 +138,10 @@ func (cp *provider) Next() (*repository.Raw, error) {
 				return nil, io.EOF
 			}
 		case err != nil:
+			cp.scraperRetries++
 			return nil, err
 		case err == nil:
+			cp.scraperRetries = 0
 			processed, err := cp.alreadyProcessed(cgitUrl, repoData)
 			if err != nil {
 				return nil, err
@@ -145,6 +154,21 @@ func (cp *provider) Next() (*repository.Raw, error) {
 				return cp.repositoryRaw(repoData.RepoUrl), nil
 			}
 		}
+	}
+}
+
+func (cp *provider) handleRetries() {
+	if cp.scraperRetries != 0 {
+		log15.Info("Whaiting some time to try to get again the new scraper info", "time to wait", timeToWait,
+			"retries", cp.scraperRetries)
+		time.Sleep(time.Second * timeToWait)
+	}
+
+	if cp.scraperRetries == cgitScraperMaxRetries {
+		log15.Warn("Tried to get url from current scraper too much times. Going to the next scraper",
+			"retries", cgitScraperMaxRetries)
+		cp.scraperRetries = 0
+		cp.currentScraperIndex++
 	}
 }
 
