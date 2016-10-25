@@ -5,6 +5,7 @@ import (
 	"io"
 	"testing"
 
+	"github.com/mcuadros/go-github/github"
 	"github.com/src-d/rovers/core"
 	. "gopkg.in/check.v1"
 )
@@ -46,11 +47,10 @@ func (s *GithubProviderSuite) TestGithubProvider_Next_FromStart_Repos(c *C) {
 		c.Assert(err, IsNil)
 	}
 
-	res := []githubData{}
+	res := []github.Repository{}
 	err := s.client.Collection(providerName).Find(nil).All(&res)
 	c.Assert(err, IsNil)
-	c.Assert(len(res), Equals, 1)
-	c.Assert(len(res[0].Repositories), Equals, 100)
+	c.Assert(len(res), Equals, 100)
 }
 
 func (s *GithubProviderSuite) TestGithubProvider_Next_FromStart_ReposTwoPages(c *C) {
@@ -62,18 +62,20 @@ func (s *GithubProviderSuite) TestGithubProvider_Next_FromStart_ReposTwoPages(c 
 		c.Assert(err, IsNil)
 	}
 
-	res := []githubData{}
+	res := []github.Repository{}
 	err := s.client.Collection(providerName).Find(nil).All(&res)
 	c.Assert(err, IsNil)
-	c.Assert(len(res), Equals, 2)
-	c.Assert(len(res[0].Repositories), Equals, 100)
-	c.Assert(len(res[1].Repositories), Equals, 100)
+	c.Assert(len(res), Equals, 200)
 }
 
 func (s *GithubProviderSuite) TestGithubProvider_Next_End(c *C) {
-	s.provider.setCheckpoint(&githubData{
-		Checkpoint: 99999999,
-	})
+	lastRepoId := 99999999
+	repos := []github.Repository{{
+		ID: &lastRepoId,
+	}}
+
+	// Simulate Ack
+	s.provider.saveRepos(repos)
 	repoUrl, err := s.provider.Next()
 	c.Assert(repoUrl, Equals, "")
 	c.Assert(err, Equals, io.EOF)
