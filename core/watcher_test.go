@@ -7,12 +7,13 @@ import (
 	"testing"
 	"time"
 
+	"gop.kg/src-d/domain@v6/models/repository"
 	. "gopkg.in/check.v1"
 	"gopkg.in/inconshreveable/log15.v2"
 )
 
-var persistFunction = func(repoUrl string) error {
-	log15.Debug("Persisting new url", "repoUrl", repoUrl)
+var persistFunction = func(rawRepo *repository.Raw) error {
+	log15.Debug("Persisting new url", "repoUrl", rawRepo)
 	return nil
 }
 
@@ -20,12 +21,20 @@ func Test(t *testing.T) {
 	TestingT(t)
 }
 
-type WatcherSuite struct{}
+type WatcherSuite struct {
+	rawRepo *repository.Raw
+}
 
-var _ = Suite(&WatcherSuite{})
+var _ = Suite(&WatcherSuite{
+	rawRepo: &repository.Raw{
+		IsFork: true,
+		URL:    "SOME_REPO",
+		Status: repository.Initial,
+	},
+})
 
 func (s *WatcherSuite) TestWatcher_EOF(c *C) {
-	provider := &EOFProvider{}
+	provider := &EOFProvider{Repo: s.rawRepo}
 	providers := []RepoProvider{provider}
 	watcher := NewWatcher(providers, persistFunction, time.Second, time.Second)
 	watcher.Start()
@@ -37,6 +46,7 @@ func (s *WatcherSuite) TestWatcher_EOF(c *C) {
 func (s *WatcherSuite) TestWatcher_AckRetries(c *C) {
 	provider := &EOFProvider{
 		FailOnAck: true,
+		Repo:      s.rawRepo,
 	}
 	providers := []RepoProvider{provider}
 	watcher := NewWatcher(providers, persistFunction, time.Second, time.Second)
@@ -54,20 +64,21 @@ type EOFProvider struct {
 	NumberOfCalls         int
 	NumberOfAckErrorCalls int
 	FailOnAck             bool
+	Repo                  *repository.Raw
 }
 
-func (p *EOFProvider) Next() (string, error) {
+func (p *EOFProvider) Next() (*repository.Raw, error) {
 	mutex.Lock()
 	defer mutex.Unlock()
 
 	p.NumberOfCalls++
 	switch p.NumberOfCalls {
 	case 1:
-		return "SOME_REPO", nil
+		return p.Repo, nil
 	case 2:
-		return "", errors.New("OTHER ERROR")
+		return nil, errors.New("OTHER ERROR")
 	default:
-		return "", io.EOF
+		return nil, io.EOF
 	}
 }
 

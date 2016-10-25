@@ -6,6 +6,7 @@ import (
 	"sync"
 
 	"github.com/src-d/rovers/core"
+	"gop.kg/src-d/domain@v6/models/repository"
 	. "gopkg.in/check.v1"
 )
 
@@ -33,7 +34,7 @@ func (s *CgitProviderSuite) TestCgitProvider_WhenFinishScraping(c *C) {
 	provider := s.newProvider("https://a3nm.net/git/")
 
 	var err error = nil
-	url := ""
+	var url *repository.Raw = nil
 	count := 0
 	for err == nil {
 		url, err = provider.Next()
@@ -45,7 +46,7 @@ func (s *CgitProviderSuite) TestCgitProvider_WhenFinishScraping(c *C) {
 	}
 
 	c.Assert(count, Not(Equals), 0)
-	c.Assert(url, Equals, "")
+	c.Assert(url, IsNil)
 	c.Assert(err, Equals, io.EOF)
 
 }
@@ -66,8 +67,8 @@ func (s *CgitProviderSuite) TestCgitProvider_WhenAckIsError(c *C) {
 	urlTree, err := provider.Next()
 	c.Assert(err, IsNil)
 
-	c.Assert(urlOne, Equals, urlTwo)
-	c.Assert(urlTwo, Not(Equals), urlTree)
+	c.Assert(urlOne, DeepEquals, urlTwo)
+	c.Assert(urlTwo, Not(DeepEquals), urlTree)
 }
 
 func (s *CgitProviderSuite) TestCgitProvider_NotSendAlreadySended(c *C) {
@@ -85,7 +86,7 @@ func (s *CgitProviderSuite) TestCgitProvider_NotSendAlreadySended(c *C) {
 	c.Assert(err, IsNil)
 	c.Assert(ackErr, IsNil)
 
-	c.Assert(urlOne, Not(Equals), urlTwo)
+	c.Assert(urlOne, Not(DeepEquals), urlTwo)
 }
 
 func (s *CgitProviderSuite) TestCgitProvider_IterateAllUrls(c *C) {
