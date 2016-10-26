@@ -68,7 +68,7 @@ func (c *CmdRepoProviders) Execute(args []string) error {
 	return nil
 }
 
-func (c *CmdRepoProviders) getPersistFunction() (func(*repository.Raw) error, error) {
+func (c *CmdRepoProviders) getPersistFunction() (core.PersistFN, error) {
 	host := c.Beanstalk
 	log15.Info("Beanstalk", "host", host)
 	conn, err := beanstalk.Dial("tcp", host)
