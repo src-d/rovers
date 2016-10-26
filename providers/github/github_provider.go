@@ -44,7 +44,7 @@ func NewProvider(config *GithubConfig) *githubProvider {
 		token := &oauth2.Token{AccessToken: config.GithubToken}
 		httpClient = oauth2.NewClient(oauth2.NoContext, oauth2.StaticTokenSource(token))
 	} else {
-		log15.Warn("Creating anonimous http client. No GitHub token provided.")
+		log15.Warn("Creating anonymous http client. No GitHub token provided.")
 	}
 	apiClient := api.NewClient(httpClient)
 	dataClient := core.NewClient(providerName)
