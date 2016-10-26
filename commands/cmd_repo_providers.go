@@ -24,7 +24,7 @@ var allowedProviders = []string{githubProviderName, cgitProviderName}
 
 type CmdRepoProviders struct {
 	CmdBase
-	Providers   []string      `short:"p" long:"provider" optional:"no" description:"list of providers to execute."`
+	Providers   []string      `short:"p" long:"provider" optional:"yes" description:"list of providers to execute. (default: all)"`
 	WatcherTime time.Duration `short:"t" long:"watcher-time" optional:"no" default:"1h" description:"Time to try again to get new repos"`
 	QueueName   string        `short:"q" long:"queue" optional:"no" default:"repo-urls" description:"beanstalkd queue used to send repo urls"`
 	Beanstalk   string        `long:"beanstalk" default:"127.0.0.1:11300" description:"beanstalk url server"`
@@ -33,6 +33,12 @@ type CmdRepoProviders struct {
 func (c *CmdRepoProviders) Execute(args []string) error {
 	c.InitVars()
 	c.ChangeLogLevel()
+
+	if len(c.Providers) == 0 {
+		log15.Info("No providers added using --provider option. Executing all known providers",
+			"providers", allowedProviders)
+		c.Providers = allowedProviders
+	}
 
 	providers := []core.RepoProvider{}
 	for _, p := range c.Providers {
