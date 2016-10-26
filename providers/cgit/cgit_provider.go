@@ -3,20 +3,26 @@ package cgit
 import (
 	"io"
 	"sync"
+	"time"
 
+	"github.com/jpillora/backoff"
+	"github.com/sourcegraph/go-vcsurl"
 	"github.com/src-d/rovers/core"
 	"github.com/src-d/rovers/providers/cgit/discovery"
 	"gop.kg/src-d/domain@v6/models/repository"
 	"gopkg.in/inconshreveable/log15.v2"
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
-	"github.com/sourcegraph/go-vcsurl"
 )
 
 const (
 	cgitProviderName = "cgit"
-	cgitUrlField     = "cgiturl"
-	repoField        = "repourl"
+
+	cgitURLField    = "cgiturl"
+	repositoryField = "repourl"
+
+	maxDurationToRetry = 16 * time.Second
+	minDurationToRetry = 1 * time.Second
 )
 
 type cgitRepo struct {
@@ -29,15 +35,26 @@ type provider struct {
 	cgitCollection      *mgo.Collection
 	scrapers            []*scraper
 	discoverer          discovery.Discoverer
+	backoff             *backoff.Backoff
 	currentScraperIndex int
 	mutex               *sync.Mutex
 	lastRepo            *cgitRepoData
+}
+
+func getBackoff() *backoff.Backoff {
+	return &backoff.Backoff{
+		Jitter: true,
+		Factor: 2,
+		Max:    maxDurationToRetry,
+		Min:    minDurationToRetry,
+	}
 }
 
 func NewProvider(googleKey string, googleCx string) *provider {
 	p := &provider{
 		cgitCollection: initializeCollection(),
 		discoverer:     discovery.NewDiscoverer(googleKey, googleCx),
+		backoff:        getBackoff(),
 		scrapers:       []*scraper{},
 		mutex:          &sync.Mutex{},
 		lastRepo:       nil,
@@ -49,7 +66,7 @@ func NewProvider(googleKey string, googleCx string) *provider {
 func initializeCollection() *mgo.Collection {
 	cgitColl := core.NewClient(cgitProviderName).Collection(cgitProviderName)
 	index := mgo.Index{
-		Key: []string{"$text:" + cgitUrlField, "$text:" + repoField},
+		Key: []string{"$text:" + cgitURLField, "$text:" + repositoryField},
 	}
 	cgitColl.EnsureIndex(index)
 
@@ -63,14 +80,14 @@ func (cp *provider) setCheckpoint(cgitUrl string, repo *cgitRepoData) error {
 }
 
 func (cp *provider) alreadyProcessed(cgitUrl string, repo *cgitRepoData) (bool, error) {
-	c, err := cp.cgitCollection.Find(bson.M{cgitUrlField: cgitUrl, repoField: repo.RepoUrl}).Count()
+	c, err := cp.cgitCollection.Find(bson.M{cgitURLField: cgitUrl, repositoryField: repo.RepoUrl}).Count()
 
 	return c > 0, err
 }
 
 func (cp *provider) getAllCgitUrlsAlreadyProcessed() ([]string, error) {
 	cgitUrls := []string{}
-	err := cp.cgitCollection.Find(nil).Distinct(cgitUrlField, &cgitUrls)
+	err := cp.cgitCollection.Find(nil).Distinct(cgitURLField, &cgitUrls)
 
 	return cgitUrls, err
 }
@@ -123,7 +140,7 @@ func (cp *provider) Next() (*repository.Raw, error) {
 		repoData, err := currentScraper.Next()
 		switch {
 		case err == io.EOF:
-			cp.currentScraperIndex++
+			cp.nextScraper()
 			if len(cp.scrapers) <= cp.currentScraperIndex {
 				log15.Debug("All cgitUrls processed, ending provider iterator.",
 					"current index", cp.currentScraperIndex)
@@ -131,20 +148,35 @@ func (cp *provider) Next() (*repository.Raw, error) {
 				return nil, io.EOF
 			}
 		case err != nil:
+			cp.handleRetries()
 			return nil, err
 		case err == nil:
+			cp.backoff.Reset()
 			processed, err := cp.alreadyProcessed(cgitUrl, repoData)
 			if err != nil {
 				return nil, err
 			}
 
 			if processed {
-				log15.Debug("Repository already processed", "cgitUrl", cgitUrl, "url", repoData)
+				log15.Debug("Repository already processed", "cgitUrl", cgitUrl, "url", repoData.RepoUrl)
 			} else {
 				cp.lastRepo = repoData
 				return cp.repositoryRaw(repoData.RepoUrl), nil
 			}
 		}
+	}
+}
+
+func (cp *provider) handleRetries() {
+	tts := cp.backoff.Duration()
+	log15.Info("Sleeping before next scraper request",
+		"retries", cp.backoff.Attempt(), "time to sleep", tts)
+	time.Sleep(tts)
+
+	if tts >= maxDurationToRetry {
+		log15.Warn("Scraper request failed too many times. Skipping to the next scraper",
+			"retries", cp.backoff.Attempt())
+		cp.nextScraper()
 	}
 }
 
@@ -155,6 +187,11 @@ func (*provider) repositoryRaw(repoUrl string) *repository.Raw {
 		URL:      repoUrl,
 		VCS:      vcsurl.Git,
 	}
+}
+
+func (cp *provider) nextScraper() {
+	cp.backoff.Reset()
+	cp.currentScraperIndex++
 }
 
 func (cp *provider) isFirst() bool {

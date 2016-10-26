@@ -24,6 +24,7 @@ func (s *CgitProviderSuite) newProvider(cgitUrls ...string) *provider {
 	return &provider{
 		cgitCollection: initializeCollection(),
 		discoverer:     &dummyDiscoverer{cgitUrls},
+		backoff:        getBackoff(),
 		scrapers:       []*scraper{},
 		mutex:          &sync.Mutex{},
 		lastRepo:       nil,
@@ -114,6 +115,16 @@ func (s *CgitProviderSuite) TestCgitProvider_ScrapersWithDifferentUrls(c *C) {
 	_, err := provider.Next()
 	c.Assert(err, IsNil)
 	c.Assert(len(provider.scrapers), Equals, 2)
+}
+
+func (s *CgitProviderSuite) TestCgitProvider_Retries(c *C) {
+	provider := s.newProvider("https://badurl.com")
+	_, err := provider.Next()
+	c.Assert(err, NotNil)
+	c.Assert(provider.backoff.Attempt(), Equals, float64(1))
+	_, err = provider.Next()
+	c.Assert(err, NotNil)
+	c.Assert(provider.backoff.Attempt(), Equals, float64(2))
 }
 
 type dummyDiscoverer struct {
