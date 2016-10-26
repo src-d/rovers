@@ -19,7 +19,7 @@ const (
 	cgitUrlField          = "cgiturl"
 	repoField             = "repourl"
 	cgitScraperMaxRetries = 20
-	timeToWait            = 5
+	timeToRetry           = 5
 )
 
 type cgitRepo struct {
@@ -129,8 +129,7 @@ func (cp *provider) Next() (*repository.Raw, error) {
 		repoData, err := currentScraper.Next()
 		switch {
 		case err == io.EOF:
-			cp.scraperRetries = 0
-			cp.currentScraperIndex++
+			cp.nextScraper()
 			if len(cp.scrapers) <= cp.currentScraperIndex {
 				log15.Debug("All cgitUrls processed, ending provider iterator.",
 					"current index", cp.currentScraperIndex)
@@ -159,16 +158,15 @@ func (cp *provider) Next() (*repository.Raw, error) {
 
 func (cp *provider) handleRetries() {
 	if cp.scraperRetries != 0 {
-		log15.Info("Whaiting some time to try to get again the new scraper info", "time to wait", timeToWait,
+		log15.Info("Sleeping before next scraper request", "time to wait", timeToRetry,
 			"retries", cp.scraperRetries)
-		time.Sleep(time.Second * timeToWait)
+		time.Sleep(time.Second * timeToRetry)
 	}
 
 	if cp.scraperRetries == cgitScraperMaxRetries {
-		log15.Warn("Tried to get url from current scraper too much times. Going to the next scraper",
-			"retries", cgitScraperMaxRetries)
-		cp.scraperRetries = 0
-		cp.currentScraperIndex++
+		log15.Warn("Scraper request failed too many times. Skipping to the next scraper",
+			"retries", cp.scraperRetries)
+		cp.nextScraper()
 	}
 }
 
@@ -179,6 +177,11 @@ func (*provider) repositoryRaw(repoUrl string) *repository.Raw {
 		URL:      repoUrl,
 		VCS:      vcsurl.Git,
 	}
+}
+
+func (cp *provider) nextScraper() {
+	cp.scraperRetries = 0
+	cp.currentScraperIndex++
 }
 
 func (cp *provider) isFirst() bool {
