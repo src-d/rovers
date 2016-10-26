@@ -5,6 +5,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/jpillora/backoff"
 	"github.com/sourcegraph/go-vcsurl"
 	"github.com/src-d/rovers/core"
 	"github.com/src-d/rovers/providers/cgit/discovery"
@@ -15,11 +16,13 @@ import (
 )
 
 const (
-	cgitProviderName      = "cgit"
-	cgitUrlField          = "cgiturl"
-	repoField             = "repourl"
-	cgitScraperMaxRetries = 20
-	timeToRetry           = 5
+	cgitProviderName = "cgit"
+
+	cgitURLField    = "cgiturl"
+	repositoryField = "repourl"
+
+	maxDurationToRetry = 16 * time.Second
+	minDurationToRetry = 1 * time.Second
 )
 
 type cgitRepo struct {
@@ -32,16 +35,26 @@ type provider struct {
 	cgitCollection      *mgo.Collection
 	scrapers            []*scraper
 	discoverer          discovery.Discoverer
-	scraperRetries      int
+	backoff             *backoff.Backoff
 	currentScraperIndex int
 	mutex               *sync.Mutex
 	lastRepo            *cgitRepoData
+}
+
+func getBackoff() *backoff.Backoff {
+	return &backoff.Backoff{
+		Jitter: true,
+		Factor: 2,
+		Max:    maxDurationToRetry,
+		Min:    minDurationToRetry,
+	}
 }
 
 func NewProvider(googleKey string, googleCx string) *provider {
 	p := &provider{
 		cgitCollection: initializeCollection(),
 		discoverer:     discovery.NewDiscoverer(googleKey, googleCx),
+		backoff:        getBackoff(),
 		scrapers:       []*scraper{},
 		mutex:          &sync.Mutex{},
 		lastRepo:       nil,
@@ -53,7 +66,7 @@ func NewProvider(googleKey string, googleCx string) *provider {
 func initializeCollection() *mgo.Collection {
 	cgitColl := core.NewClient(cgitProviderName).Collection(cgitProviderName)
 	index := mgo.Index{
-		Key: []string{"$text:" + cgitUrlField, "$text:" + repoField},
+		Key: []string{"$text:" + cgitURLField, "$text:" + repositoryField},
 	}
 	cgitColl.EnsureIndex(index)
 
@@ -67,14 +80,14 @@ func (cp *provider) setCheckpoint(cgitUrl string, repo *cgitRepoData) error {
 }
 
 func (cp *provider) alreadyProcessed(cgitUrl string, repo *cgitRepoData) (bool, error) {
-	c, err := cp.cgitCollection.Find(bson.M{cgitUrlField: cgitUrl, repoField: repo.RepoUrl}).Count()
+	c, err := cp.cgitCollection.Find(bson.M{cgitURLField: cgitUrl, repositoryField: repo.RepoUrl}).Count()
 
 	return c > 0, err
 }
 
 func (cp *provider) getAllCgitUrlsAlreadyProcessed() ([]string, error) {
 	cgitUrls := []string{}
-	err := cp.cgitCollection.Find(nil).Distinct(cgitUrlField, &cgitUrls)
+	err := cp.cgitCollection.Find(nil).Distinct(cgitURLField, &cgitUrls)
 
 	return cgitUrls, err
 }
@@ -121,8 +134,6 @@ func (cp *provider) Next() (*repository.Raw, error) {
 		}
 	}
 
-	cp.handleRetries()
-
 	for {
 		currentScraper := cp.scrapers[cp.currentScraperIndex]
 		cgitUrl := currentScraper.CgitUrl
@@ -137,17 +148,17 @@ func (cp *provider) Next() (*repository.Raw, error) {
 				return nil, io.EOF
 			}
 		case err != nil:
-			cp.scraperRetries++
+			cp.handleRetries()
 			return nil, err
 		case err == nil:
-			cp.scraperRetries = 0
+			cp.backoff.Reset()
 			processed, err := cp.alreadyProcessed(cgitUrl, repoData)
 			if err != nil {
 				return nil, err
 			}
 
 			if processed {
-				log15.Debug("Repository already processed", "cgitUrl", cgitUrl, "url", repoData)
+				log15.Debug("Repository already processed", "cgitUrl", cgitUrl, "url", repoData.RepoUrl)
 			} else {
 				cp.lastRepo = repoData
 				return cp.repositoryRaw(repoData.RepoUrl), nil
@@ -157,15 +168,14 @@ func (cp *provider) Next() (*repository.Raw, error) {
 }
 
 func (cp *provider) handleRetries() {
-	if cp.scraperRetries != 0 {
-		log15.Info("Sleeping before next scraper request", "time to wait", timeToRetry,
-			"retries", cp.scraperRetries)
-		time.Sleep(time.Second * timeToRetry)
-	}
+	tts := cp.backoff.Duration()
+	log15.Info("Sleeping before next scraper request",
+		"retries", cp.backoff.Attempt(), "time to sleep", tts)
+	time.Sleep(tts)
 
-	if cp.scraperRetries == cgitScraperMaxRetries {
+	if tts >= maxDurationToRetry {
 		log15.Warn("Scraper request failed too many times. Skipping to the next scraper",
-			"retries", cp.scraperRetries)
+			"retries", cp.backoff.Attempt())
 		cp.nextScraper()
 	}
 }
@@ -180,7 +190,7 @@ func (*provider) repositoryRaw(repoUrl string) *repository.Raw {
 }
 
 func (cp *provider) nextScraper() {
-	cp.scraperRetries = 0
+	cp.backoff.Reset()
 	cp.currentScraperIndex++
 }
 
