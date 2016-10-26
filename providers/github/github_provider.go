@@ -7,9 +7,11 @@ import (
 	"time"
 
 	api "github.com/mcuadros/go-github/github"
+	"github.com/sourcegraph/go-vcsurl"
 	"github.com/src-d/rovers/core"
 	"golang.org/x/oauth2"
 	"gop.kg/src-d/domain@v6/container"
+	"gop.kg/src-d/domain@v6/models/repository"
 	"gop.kg/src-d/domain@v6/models/social"
 	"gopkg.in/inconshreveable/log15.v2"
 	"gopkg.in/mgo.v2"
@@ -61,7 +63,7 @@ func (gp *githubProvider) Name() string {
 	return providerName
 }
 
-func (gp *githubProvider) Next() (string, error) {
+func (gp *githubProvider) Next() (*repository.Raw, error) {
 	gp.mutex.Lock()
 	defer gp.mutex.Unlock()
 	switch len(gp.repoCache) {
@@ -71,7 +73,7 @@ func (gp *githubProvider) Next() (string, error) {
 			c, err := gp.getLastRepoId()
 			if err != nil {
 				log15.Error("Error getting checkpoint from database", "error", err)
-				return "", err
+				return nil, err
 			}
 			gp.checkpoint = c
 		}
@@ -79,23 +81,32 @@ func (gp *githubProvider) Next() (string, error) {
 		repos, err := gp.requestNextPage(gp.checkpoint)
 		if err != nil {
 			log15.Error("Something bad happens getting more repositories", "error", err)
-			return "", err
+			return nil, err
 		}
 		if len(repos) != 0 {
 			gp.repoCache = repos
 		} else {
 			log15.Info("No more repos, sending EOF")
-			return "", io.EOF
+			return nil, io.EOF
 		}
 	}
 
 	x, repoCache := gp.repoCache[0], gp.repoCache[1:]
-	repoUrl := *x.HTMLURL + ".git"
 	gp.applyAck = func() {
 		gp.repoCache = repoCache
 	}
 
-	return repoUrl, nil
+	return gp.repositoryRaw(*x.HTMLURL+".git", *x.Fork), nil
+}
+
+func (*githubProvider) repositoryRaw(repoUrl string, isFork bool) *repository.Raw {
+	return &repository.Raw{
+		Status:   repository.Initial,
+		Provider: providerName,
+		URL:      repoUrl,
+		IsFork:   isFork,
+		VCS:      vcsurl.Git,
+	}
 }
 
 func (gp *githubProvider) Ack(err error) error {

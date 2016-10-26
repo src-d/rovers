@@ -18,7 +18,7 @@ func main() {
 	parser := flags.NewNamedParser("rovers", flags.Default)
 
 	var err error
-	_, err = parser.AddCommand("repos", "Get repos from internet", "", &commands.CmdRrepoProviders{})
+	_, err = parser.AddCommand("repos", "Get repos from internet", "", &commands.CmdRepoProviders{})
 	PanicIf(err)
 
 	_, err = parser.Parse()

@@ -6,9 +6,11 @@ import (
 
 	"github.com/src-d/rovers/core"
 	"github.com/src-d/rovers/providers/cgit/discovery"
+	"gop.kg/src-d/domain@v6/models/repository"
 	"gopkg.in/inconshreveable/log15.v2"
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
+	"github.com/sourcegraph/go-vcsurl"
 )
 
 const (
@@ -97,21 +99,21 @@ func (cp *provider) joinUnique(set map[string]struct{}, slices ...[]string) {
 	}
 }
 
-func (cp *provider) Next() (string, error) {
+func (cp *provider) Next() (*repository.Raw, error) {
 	cp.mutex.Lock()
 	defer cp.mutex.Unlock()
 	if cp.lastRepo != nil {
 		log15.Warn("Some error happens when try to call Ack(), returning the last repository again",
 			"repo", cp.lastRepo.RepoUrl)
 
-		return cp.lastRepo.RepoUrl, nil
+		return cp.repositoryRaw(cp.lastRepo.RepoUrl), nil
 	}
 
 	if cp.isFirst() {
 		cp.fillScrapers()
 		if len(cp.scrapers) == 0 {
 			log15.Warn("No scrapers found, sending an EOF because we have no data")
-			return "", io.EOF
+			return nil, io.EOF
 		}
 	}
 
@@ -126,23 +128,32 @@ func (cp *provider) Next() (string, error) {
 				log15.Debug("All cgitUrls processed, ending provider iterator.",
 					"current index", cp.currentScraperIndex)
 				cp.reset()
-				return "", io.EOF
+				return nil, io.EOF
 			}
 		case err != nil:
-			return "", err
+			return nil, err
 		case err == nil:
 			processed, err := cp.alreadyProcessed(cgitUrl, repoData)
 			if err != nil {
-				return "", err
+				return nil, err
 			}
 
 			if processed {
 				log15.Debug("Repository already processed", "cgitUrl", cgitUrl, "url", repoData)
 			} else {
 				cp.lastRepo = repoData
-				return repoData.RepoUrl, nil
+				return cp.repositoryRaw(repoData.RepoUrl), nil
 			}
 		}
+	}
+}
+
+func (*provider) repositoryRaw(repoUrl string) *repository.Raw {
+	return &repository.Raw{
+		Status:   repository.Initial,
+		Provider: cgitProviderName,
+		URL:      repoUrl,
+		VCS:      vcsurl.Git,
 	}
 }
 

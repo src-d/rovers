@@ -5,6 +5,7 @@ import (
 	"io"
 	"time"
 
+	"gop.kg/src-d/domain@v6/models/repository"
 	"gopkg.in/inconshreveable/log15.v2"
 )
 
@@ -13,16 +14,18 @@ const (
 	secondsBetweenRetries = 10
 )
 
+type PersistFN func(*repository.Raw) error
+
 var errBadAck = errors.New("Error while executing ACK")
 
 type Watcher struct {
 	providers      []RepoProvider
-	persist        func(string) error
+	persist        PersistFN
 	timeToSleep    time.Duration
 	timeToRetryAck time.Duration
 }
 
-func NewWatcher(providers []RepoProvider, persist func(string) error,
+func NewWatcher(providers []RepoProvider, persist PersistFN,
 	timeToSleep time.Duration, timeToRetryAck time.Duration) *Watcher {
 	if timeToRetryAck == 0 {
 		timeToRetryAck = time.Second * secondsBetweenRetries
@@ -48,7 +51,7 @@ func (w *Watcher) Start() {
 }
 
 func (w *Watcher) handleProviderResult(p RepoProvider) error {
-	repoUrl, err := p.Next()
+	repositoryRaw, err := p.Next()
 	switch err {
 	case io.EOF:
 		log15.Info("No more repositories, "+
@@ -56,10 +59,10 @@ func (w *Watcher) handleProviderResult(p RepoProvider) error {
 			"time to sleep", w.timeToSleep)
 		time.Sleep(w.timeToSleep)
 	case nil:
-		log15.Info("Getting new repository", "provider", p.Name(), "url", repoUrl)
-		err := w.persist(repoUrl)
+		log15.Info("Getting new repository", "provider", p.Name(), "repository", repositoryRaw.URL)
+		err := w.persist(repositoryRaw)
 		if err != nil {
-			log15.Error("Error saving new repo", "error", err, "repoUrl", repoUrl)
+			log15.Error("Error saving new repo", "error", err, "repository", repositoryRaw.URL)
 		}
 		retries := 0
 		for retries != maxRetries {

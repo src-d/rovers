@@ -32,7 +32,7 @@ func (s *GithubProviderSuite) TestGithubProvider_Next_FromStart(c *C) {
 	for i := 0; i < 101; i++ {
 		repoUrl, err := s.provider.Next()
 		c.Assert(err, IsNil)
-		c.Assert(repoUrl, Not(Equals), "")
+		c.Assert(repoUrl, NotNil)
 		err = s.provider.Ack(nil)
 		c.Assert(err, IsNil)
 	}
@@ -42,7 +42,7 @@ func (s *GithubProviderSuite) TestGithubProvider_Next_FromStart_Repos(c *C) {
 	for i := 0; i < 100; i++ {
 		repoUrl, err := s.provider.Next()
 		c.Assert(err, IsNil)
-		c.Assert(repoUrl, Not(Equals), "")
+		c.Assert(repoUrl, NotNil)
 		err = s.provider.Ack(nil)
 		c.Assert(err, IsNil)
 	}
@@ -57,7 +57,7 @@ func (s *GithubProviderSuite) TestGithubProvider_Next_FromStart_ReposTwoPages(c 
 	for i := 0; i < 101; i++ {
 		repoUrl, err := s.provider.Next()
 		c.Assert(err, IsNil)
-		c.Assert(repoUrl, Not(Equals), "")
+		c.Assert(repoUrl, NotNil)
 		err = s.provider.Ack(nil)
 		c.Assert(err, IsNil)
 	}
@@ -77,20 +77,20 @@ func (s *GithubProviderSuite) TestGithubProvider_Next_End(c *C) {
 	// Simulate Ack
 	s.provider.saveRepos(repos)
 	repoUrl, err := s.provider.Next()
-	c.Assert(repoUrl, Equals, "")
+	c.Assert(repoUrl, IsNil)
 	c.Assert(err, Equals, io.EOF)
 }
 
 func (s *GithubProviderSuite) TestGithubProvider_Next_Retry(c *C) {
 	repoUrl, err := s.provider.Next()
 	c.Assert(err, IsNil)
-	c.Assert(repoUrl, Not(Equals), "")
+	c.Assert(repoUrl, NotNil)
 
 	// Simulate an error
 	s.provider.Ack(errors.New("WOOPS"))
 	repoUrl2, err := s.provider.Next()
 
 	c.Assert(err, IsNil)
-	c.Assert(repoUrl, Not(Equals), "")
-	c.Assert(repoUrl, Equals, repoUrl2)
+	c.Assert(repoUrl, NotNil)
+	c.Assert(repoUrl, DeepEquals, repoUrl2)
 }
