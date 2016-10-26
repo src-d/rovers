@@ -48,7 +48,7 @@ func (s *GithubProviderSuite) TestGithubProvider_Next_FromStart_Repos(c *C) {
 	}
 
 	res := []github.Repository{}
-	err := s.client.Collection(providerName).Find(nil).All(&res)
+	err := s.client.Collection(repositoryCollection).Find(nil).All(&res)
 	c.Assert(err, IsNil)
 	c.Assert(len(res), Equals, 100)
 }
@@ -63,7 +63,7 @@ func (s *GithubProviderSuite) TestGithubProvider_Next_FromStart_ReposTwoPages(c 
 	}
 
 	res := []github.Repository{}
-	err := s.client.Collection(providerName).Find(nil).All(&res)
+	err := s.client.Collection(repositoryCollection).Find(nil).All(&res)
 	c.Assert(err, IsNil)
 	c.Assert(len(res), Equals, 200)
 }

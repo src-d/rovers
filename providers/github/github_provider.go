@@ -19,7 +19,9 @@ import (
 
 const (
 	minRequestDuration = time.Hour / 5000
-	providerName       = "github"
+
+	providerName         = "github"
+	repositoryCollection = "repositories"
 )
 
 type githubProvider struct {
@@ -151,7 +153,7 @@ func (gp *githubProvider) requestNextPage(since int) ([]api.Repository, error) {
 
 func (gp *githubProvider) getLastRepoId() (int, error) {
 	result := api.Repository{}
-	err := gp.dataClient.Collection(providerName).Find(nil).Sort("-_id").One(&result)
+	err := gp.dataClient.Collection(repositoryCollection).Find(nil).Sort("-_id").One(&result)
 	if err == mgo.ErrNotFound {
 		return 0, nil
 	}
@@ -160,7 +162,7 @@ func (gp *githubProvider) getLastRepoId() (int, error) {
 }
 
 func (gp *githubProvider) saveRepos(repositories []api.Repository) error {
-	bulkOp := gp.dataClient.Collection(providerName).Bulk()
+	bulkOp := gp.dataClient.Collection(repositoryCollection).Bulk()
 	for _, repo := range repositories {
 		bulkOp.Insert(repo)
 	}

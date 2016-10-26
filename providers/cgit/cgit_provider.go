@@ -17,6 +17,7 @@ import (
 
 const (
 	cgitProviderName = "cgit"
+	repositoryCollection = "repositories"
 
 	cgitURLField    = "cgiturl"
 	repositoryField = "repourl"
@@ -64,7 +65,7 @@ func NewProvider(googleKey string, googleCx string) *provider {
 }
 
 func initializeCollection() *mgo.Collection {
-	cgitColl := core.NewClient(cgitProviderName).Collection(cgitProviderName)
+	cgitColl := core.NewClient(cgitProviderName).Collection(repositoryCollection)
 	index := mgo.Index{
 		Key: []string{"$text:" + cgitURLField, "$text:" + repositoryField},
 	}
