@@ -82,7 +82,7 @@ func (w *Watcher) handleProviderResult(p RepoProvider) error {
 			return errBadAck
 		}
 	default:
-		log15.Error("Error obtaining new repo...", "error", err)
+		log15.Error("error obtaining new repository", "provider", p.Name(), "error", err)
 	}
 
 	return nil

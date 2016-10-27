@@ -16,7 +16,7 @@ import (
 )
 
 const (
-	cgitProviderName = "cgit"
+	cgitProviderName     = "cgit"
 	repositoryCollection = "repositories"
 
 	cgitURLField    = "cgiturl"
@@ -149,6 +149,7 @@ func (cp *provider) Next() (*repository.Raw, error) {
 				return nil, io.EOF
 			}
 		case err != nil:
+			log15.Error("error on scraper.next", "cgitUrl", currentScraper.CgitUrl, "error", err)
 			cp.handleRetries()
 			return nil, err
 		case err == nil:
