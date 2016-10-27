@@ -3,8 +3,10 @@ package cgit
 import (
 	"fmt"
 	"io"
+	"net/http"
 	"net/url"
 	"strings"
+	"time"
 
 	"github.com/PuerkitoBio/goquery"
 	"gopkg.in/inconshreveable/log15.v2"
@@ -15,6 +17,8 @@ const (
 	paginationSelector  = "ul.pager li a"
 	pagesUrlSelector    = "div.content table tr td.toplevel-repo a, td.sublevel-repo a"
 	mainPageSelector    = "td.logo a"
+
+	httpTimeout = 30 * time.Second
 )
 
 type cgitRepoData struct {
@@ -27,6 +31,7 @@ type scraper struct {
 	firstIteration  bool
 	pageUrls        []string
 	repositoryPages []string
+	client          http.Client
 }
 
 func newScraper(cgitUrl string) *scraper {
@@ -35,6 +40,9 @@ func newScraper(cgitUrl string) *scraper {
 		firstIteration:  true,
 		pageUrls:        []string{},
 		repositoryPages: []string{},
+		client: http.Client{
+			Timeout: httpTimeout,
+		},
 	}
 }
 
@@ -144,7 +152,7 @@ func (cs *scraper) baseUrl() (*url.URL, error) {
 }
 
 func (cs *scraper) mainPage(cgitUrl string) (string, error) {
-	mainDoc, err := goquery.NewDocument(cgitUrl)
+	mainDoc, err := cs.newDocument(cgitUrl)
 	if err != nil {
 		return "", err
 	}
@@ -176,7 +184,7 @@ func (cs *scraper) scrapeMain(initUrl string, selector string,
 	if err != nil {
 		return nil, err
 	}
-	document, err := goquery.NewDocument(initUrl)
+	document, err := cs.newDocument(initUrl)
 	if err != nil {
 		return nil, err
 	}
@@ -217,7 +225,7 @@ func (cs *scraper) repoPageUrls(pageUrl string) ([]string, error) {
 }
 
 func (cs *scraper) repo(repoUrl string) (*cgitRepoData, error) {
-	document, err := goquery.NewDocument(repoUrl)
+	document, err := cs.newDocument(repoUrl)
 	if err != nil {
 		return nil, err
 	}
@@ -245,4 +253,13 @@ func (cs *scraper) repo(repoUrl string) (*cgitRepoData, error) {
 		RepoUrl: r,
 		Html:    html,
 	}, nil
+}
+
+func (cs *scraper) newDocument(url string) (*goquery.Document, error) {
+	resp, err := cs.client.Get(url)
+	if err != nil {
+		return nil, err
+	}
+
+	return goquery.NewDocumentFromResponse(resp)
 }
