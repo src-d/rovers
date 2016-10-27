@@ -47,7 +47,7 @@ func NewProvider(config *GithubConfig) *githubProvider {
 		log15.Warn("Creating anonymous http client. No GitHub token provided.")
 	}
 	apiClient := api.NewClient(httpClient)
-	dataClient := core.NewClient(providerName)
+	dataClient := core.NewClient(container.Config.MongoDb.Database.Github)
 	repoStore := container.GetDomainModelsSocialGithubRepositoryStore()
 
 	return &githubProvider{

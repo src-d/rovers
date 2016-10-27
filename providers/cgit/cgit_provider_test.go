@@ -6,6 +6,7 @@ import (
 	"sync"
 
 	"github.com/src-d/rovers/core"
+	"gop.kg/src-d/domain@v6/container"
 	"gop.kg/src-d/domain@v6/models/repository"
 	. "gopkg.in/check.v1"
 )
@@ -16,7 +17,7 @@ type CgitProviderSuite struct {
 var _ = Suite(&CgitProviderSuite{})
 
 func (s *CgitProviderSuite) SetUpTest(c *C) {
-	core.NewClient(cgitProviderName).DropDatabase()
+	core.NewClient(container.Config.MongoDb.Database.Cgit).DropDatabase()
 }
 
 func (s *CgitProviderSuite) newProvider(cgitUrls ...string) *provider {
