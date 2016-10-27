@@ -9,6 +9,7 @@ import (
 	"github.com/sourcegraph/go-vcsurl"
 	"github.com/src-d/rovers/core"
 	"github.com/src-d/rovers/providers/cgit/discovery"
+	"gop.kg/src-d/domain@v6/container"
 	"gop.kg/src-d/domain@v6/models/repository"
 	"gopkg.in/inconshreveable/log15.v2"
 	"gopkg.in/mgo.v2"
@@ -65,7 +66,7 @@ func NewProvider(googleKey string, googleCx string) *provider {
 }
 
 func initializeCollection() *mgo.Collection {
-	cgitColl := core.NewClient(cgitProviderName).Collection(repositoryCollection)
+	cgitColl := core.NewClient(container.Config.MongoDb.Database.Cgit).Collection(repositoryCollection)
 	index := mgo.Index{
 		Key: []string{"$text:" + cgitURLField, "$text:" + repositoryField},
 	}

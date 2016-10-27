@@ -8,6 +8,7 @@ import (
 
 	"github.com/mcuadros/go-github/github"
 	"github.com/src-d/rovers/core"
+	"gop.kg/src-d/domain@v6/container"
 	. "gopkg.in/check.v1"
 )
 
@@ -23,7 +24,7 @@ type GithubProviderSuite struct {
 }
 
 var _ = Suite(&GithubProviderSuite{
-	client: core.NewClient(providerName),
+	client: core.NewClient(container.Config.MongoDb.Database.Github),
 })
 
 func (s *GithubProviderSuite) SetUpTest(c *C) {
