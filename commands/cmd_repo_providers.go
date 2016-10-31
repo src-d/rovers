@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/kr/beanstalk"
 	"github.com/src-d/rovers/core"
 	"github.com/src-d/rovers/providers/cgit"
 	"github.com/src-d/rovers/providers/github"
@@ -75,13 +74,7 @@ func (c *CmdRepoProviders) Execute(args []string) error {
 }
 
 func (c *CmdRepoProviders) getPersistFunction() (core.PersistFN, error) {
-	host := c.Beanstalk
-	log15.Info("Beanstalk", "host", host)
-	conn, err := beanstalk.Dial("tcp", host)
-	if err != nil {
-		return nil, err
-	}
-	queue := core.NewBeanstalkQueue(conn, c.QueueName)
+	queue := core.NewBeanstalkQueue(c.Beanstalk, c.QueueName)
 
 	return func(repo *repository.Raw) error {
 		var buf bytes.Buffer
@@ -91,11 +84,7 @@ func (c *CmdRepoProviders) getPersistFunction() (core.PersistFN, error) {
 			log15.Error("gob.Encode", "error", err)
 			return err
 		}
-		_, err = queue.Put(buf.Bytes(), priorityNormal, 0, 0)
-		if err != nil {
-			log15.Error("Error sending data to queue", "error", err)
-			return err
-		}
+		queue.Put(buf.Bytes(), priorityNormal, 0, 0)
 		return nil
 	}, nil
 }

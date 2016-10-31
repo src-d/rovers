@@ -8,7 +8,6 @@ import (
 
 	"github.com/kr/beanstalk"
 	"github.com/sourcegraph/go-vcsurl"
-	"github.com/src-d/rovers/core"
 	"gop.kg/src-d/domain@v6/models/repository"
 	. "gopkg.in/check.v1"
 )
@@ -46,8 +45,8 @@ func (s *CmdRepoProviderSuite) TestCmdRepoProvider_getPersistFunction_CorrectlyS
 
 	conn, err := beanstalk.Dial("tcp", s.cmdProviders.Beanstalk)
 	c.Assert(err, IsNil)
-	queue := core.NewBeanstalkQueue(conn, s.cmdProviders.QueueName)
-	_, body, err := queue.Reserve(500 * time.Millisecond)
+	tube := beanstalk.NewTubeSet(conn, s.cmdProviders.QueueName)
+	_, body, err := tube.Reserve(500 * time.Millisecond)
 	c.Assert(err, IsNil)
 
 	obtainedRepositoryRaw := &repository.Raw{}
