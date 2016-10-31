@@ -26,7 +26,7 @@ type CmdRepoProviders struct {
 	CmdBase
 	Providers   []string      `short:"p" long:"provider" optional:"yes" description:"list of providers to execute. (default: all)"`
 	WatcherTime time.Duration `short:"t" long:"watcher-time" optional:"no" default:"1h" description:"Time to try again to get new repos"`
-	QueueName   string        `short:"q" long:"queue" optional:"no" default:"repo-urls" description:"beanstalkd queue used to send repo urls"`
+	QueueName   string        `short:"q" long:"queue" optional:"no" default:"new_repositories" description:"beanstalkd queue used to send repo urls"`
 	Beanstalk   string        `long:"beanstalk" default:"127.0.0.1:11300" description:"beanstalk url server"`
 }
 
