@@ -5,9 +5,9 @@ build:
       - make dependencies
       - make test-coverage
     environment:
-      - GOOGLE_SEARCH_CX=$$GOOGLE_SEARCH_CX
-      - GOOGLE_SEARCH_KEY=$$GOOGLE_SEARCH_KEY
-      - GITHUB_TOKEN=$$GITHUB_TOKEN
+      - CONFIG_GOOGLE_SEARCH_CX=$$GOOGLE_SEARCH_CX
+      - CONFIG_GOOGLE_SEARCH_KEY=$$GOOGLE_SEARCH_KEY
+      - CONFIG_GITHUB_TOKEN=$$GITHUB_TOKEN
   packages:
     image: golang:1.6
     commands:

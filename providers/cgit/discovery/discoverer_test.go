@@ -1,8 +1,7 @@
 package discovery
 
 import (
-	"os"
-
+	"github.com/src-d/rovers/core"
 	. "gopkg.in/check.v1"
 )
 
@@ -11,7 +10,7 @@ type DiscovererSuite struct {
 }
 
 var _ = Suite(&DiscovererSuite{
-	discoverer: NewDiscoverer(os.Getenv(envKey), os.Getenv(envCx)),
+	discoverer: NewDiscoverer(core.Config.Google.SearchKey, core.Config.Google.SearchCx),
 })
 
 func (s *DiscovererSuite) TestDiscoverer_Samples(c *C) {

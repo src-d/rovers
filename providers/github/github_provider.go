@@ -36,6 +36,7 @@ type githubProvider struct {
 
 type GithubConfig struct {
 	GithubToken string
+	Database    string
 }
 
 func NewProvider(config *GithubConfig) *githubProvider {
@@ -47,7 +48,7 @@ func NewProvider(config *GithubConfig) *githubProvider {
 		log15.Warn("Creating anonymous http client. No GitHub token provided.")
 	}
 	apiClient := api.NewClient(httpClient)
-	dataClient := core.NewClient(providerName)
+	dataClient := core.NewClient(config.Database)
 	repoStore := container.GetDomainModelsSocialGithubRepositoryStore()
 
 	return &githubProvider{

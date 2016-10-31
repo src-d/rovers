@@ -51,9 +51,9 @@ func getBackoff() *backoff.Backoff {
 	}
 }
 
-func NewProvider(googleKey string, googleCx string) *provider {
+func NewProvider(googleKey string, googleCx string, database string) *provider {
 	p := &provider{
-		cgitCollection: initializeCollection(),
+		cgitCollection: initializeCollection(database),
 		discoverer:     discovery.NewDiscoverer(googleKey, googleCx),
 		backoff:        getBackoff(),
 		scrapers:       []*scraper{},
@@ -64,8 +64,8 @@ func NewProvider(googleKey string, googleCx string) *provider {
 	return p
 }
 
-func initializeCollection() *mgo.Collection {
-	cgitColl := core.NewClient(cgitProviderName).Collection(repositoryCollection)
+func initializeCollection(database string) *mgo.Collection {
+	cgitColl := core.NewClient(database).Collection(repositoryCollection)
 	index := mgo.Index{
 		Key: []string{"$text:" + cgitURLField, "$text:" + repositoryField},
 	}
