@@ -3,11 +3,11 @@ package commands
 import (
 	"bytes"
 	"encoding/gob"
+	"errors"
 	"fmt"
 	"time"
 
 	"github.com/kr/beanstalk"
-	"github.com/pkg/errors"
 	"github.com/src-d/rovers/core"
 	"github.com/src-d/rovers/providers/cgit"
 	"github.com/src-d/rovers/providers/github"
