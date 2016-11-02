@@ -5,7 +5,7 @@ import (
 	"io"
 	"testing"
 
-	"github.com/mcuadros/go-github/github"
+	"github.com/src-d/go-github/github"
 	"github.com/src-d/rovers/core"
 	. "gopkg.in/check.v1"
 )
@@ -74,7 +74,7 @@ func (s *GithubProviderSuite) TestGithubProvider_Next_FromStart_ReposTwoPages(c 
 
 func (s *GithubProviderSuite) TestGithubProvider_Next_End(c *C) {
 	lastRepoId := 99999999
-	repos := []github.Repository{{
+	repos := []*github.Repository{{
 		ID: &lastRepoId,
 	}}
 
