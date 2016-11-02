@@ -1,13 +1,14 @@
 package github
 
 import (
+	"fmt"
 	"io"
 	"net/http"
 	"sync"
 	"time"
 
-	api "github.com/src-d/go-github/github"
 	"github.com/sourcegraph/go-vcsurl"
+	api "github.com/src-d/go-github/github"
 	"github.com/src-d/rovers/core"
 	"golang.org/x/oauth2"
 	"gop.kg/src-d/domain@v6/container"
@@ -22,16 +23,23 @@ const (
 
 	providerName         = "github"
 	repositoryCollection = "repositories"
+
+	idField       = "id"
+	fullnameField = "fullname"
+	htmlurlField  = "htmlurl"
+	forkField     = "fork"
+
+	textIndexFormat = "$text:%s"
 )
 
 type githubProvider struct {
-	dataClient *core.Client
-	apiClient  *api.Client
-	repoStore  *social.GithubRepositoryStore
-	repoCache  []*api.Repository
-	checkpoint int
-	applyAck   func()
-	mutex      *sync.Mutex
+	repositoriesCollection *mgo.Collection
+	apiClient              *api.Client
+	repoStore              *social.GithubRepositoryStore
+	repoCache              []*api.Repository
+	checkpoint             int
+	applyAck               func()
+	mutex                  *sync.Mutex
 }
 
 type GithubConfig struct {
@@ -48,11 +56,10 @@ func NewProvider(config *GithubConfig) core.RepoProvider {
 		log15.Warn("Creating anonymous http client. No GitHub token provided.")
 	}
 	apiClient := api.NewClient(httpClient)
-	dataClient := core.NewClient(config.Database)
 	repoStore := container.GetDomainModelsSocialGithubRepositoryStore()
 
 	return &githubProvider{
-		dataClient,
+		initializeCollection(config.Database),
 		apiClient,
 		repoStore,
 		[]*api.Repository{},
@@ -60,6 +67,21 @@ func NewProvider(config *GithubConfig) core.RepoProvider {
 		nil,
 		&sync.Mutex{},
 	}
+}
+
+func initializeCollection(database string) *mgo.Collection {
+	githubColl := core.NewClient(database).Collection(repositoryCollection)
+	index := mgo.Index{
+		Key: []string{
+			fmt.Sprintf(textIndexFormat, fullnameField),
+			fmt.Sprintf(textIndexFormat, htmlurlField),
+			idField,
+			forkField,
+		},
+	}
+	githubColl.EnsureIndex(index)
+
+	return githubColl
 }
 
 func (gp *githubProvider) Name() string {
@@ -154,7 +176,7 @@ func (gp *githubProvider) requestNextPage(since int) ([]*api.Repository, error) 
 
 func (gp *githubProvider) getLastRepoId() (int, error) {
 	result := api.Repository{}
-	err := gp.dataClient.Collection(repositoryCollection).Find(nil).Sort("-_id").One(&result)
+	err := gp.repositoriesCollection.Find(nil).Sort("-_id").One(&result)
 	if err == mgo.ErrNotFound {
 		return 0, nil
 	}
@@ -163,7 +185,7 @@ func (gp *githubProvider) getLastRepoId() (int, error) {
 }
 
 func (gp *githubProvider) saveRepos(repositories []*api.Repository) error {
-	bulkOp := gp.dataClient.Collection(repositoryCollection).Bulk()
+	bulkOp := gp.repositoriesCollection.Bulk()
 	for _, repo := range repositories {
 		bulkOp.Insert(repo)
 	}

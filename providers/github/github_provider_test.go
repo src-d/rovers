@@ -81,7 +81,9 @@ func (s *GithubProviderSuite) TestGithubProvider_Next_End(c *C) {
 	// Simulate Ack
 	githubProvider, ok := s.provider.(*githubProvider)
 	c.Assert(ok, Equals, true)
-	githubProvider.saveRepos(repos)
+	err := githubProvider.saveRepos(repos)
+	c.Assert(err, IsNil)
+
 	repoUrl, err := s.provider.Next()
 	c.Assert(repoUrl, IsNil)
 	c.Assert(err, Equals, io.EOF)
