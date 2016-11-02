@@ -3,6 +3,7 @@ package commands
 import (
 	"bytes"
 	"encoding/gob"
+	"errors"
 	"fmt"
 	"time"
 
@@ -31,7 +32,6 @@ type CmdRepoProviders struct {
 }
 
 func (c *CmdRepoProviders) Execute(args []string) error {
-	c.InitVars()
 	c.ChangeLogLevel()
 
 	if len(c.Providers) == 0 {
@@ -45,18 +45,26 @@ func (c *CmdRepoProviders) Execute(args []string) error {
 		switch p {
 		case githubProviderName:
 			log15.Info("Creating github provider")
-			if c.EnvVars.githubToken == "" {
-				return fmt.Errorf("Github api token must be provided. Env variable: %s", envGithubToken)
+			if core.Config.Github.Token == "" {
+				return errors.New("Github api token must be provided.")
 			}
-			ghp := github.NewProvider(&github.GithubConfig{GithubToken: c.EnvVars.githubToken})
+			ghp := github.NewProvider(
+				&github.GithubConfig{
+					GithubToken: core.Config.Github.Token,
+					Database:    core.Config.MongoDb.Database.Github,
+				})
 			providers = append(providers, ghp)
 		case cgitProviderName:
 			log15.Info("Creating cgit provider")
-			if c.EnvVars.googleCSECxKey == "" || c.EnvVars.googleCSEApiKey == "" {
-				return fmt.Errorf("Environment variables %s and %s are mandatory for cgit provider",
-					envGoogleKey, envGoogleCx)
+			if core.Config.Google.SearchCx == "" || core.Config.Google.SearchKey == "" {
+				return errors.New("Google search key and google search cx are mandatory " +
+					"for cgit provider")
 			}
-			cgp := cgit.NewProvider(c.EnvVars.googleCSEApiKey, c.EnvVars.googleCSECxKey)
+			cgp := cgit.NewProvider(
+				core.Config.Google.SearchKey,
+				core.Config.Google.SearchCx,
+				core.Config.MongoDb.Database.Cgit,
+			)
 			providers = append(providers, cgp)
 		default:
 			return fmt.Errorf("Provider '%s' not found. Allowed providers: %v",

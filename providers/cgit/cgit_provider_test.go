@@ -10,19 +10,21 @@ import (
 	. "gopkg.in/check.v1"
 )
 
+const testDatabase = "cgit-test"
+
 type CgitProviderSuite struct {
 }
 
 var _ = Suite(&CgitProviderSuite{})
 
 func (s *CgitProviderSuite) SetUpTest(c *C) {
-	core.NewClient(cgitProviderName).DropDatabase()
+	core.NewClient(testDatabase).DropDatabase()
 }
 
 func (s *CgitProviderSuite) newProvider(cgitUrls ...string) *provider {
 
 	return &provider{
-		cgitCollection: initializeCollection(),
+		cgitCollection: initializeCollection(testDatabase),
 		discoverer:     &dummyDiscoverer{cgitUrls},
 		backoff:        getBackoff(),
 		scrapers:       []*scraper{},

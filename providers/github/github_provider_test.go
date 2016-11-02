@@ -3,7 +3,6 @@ package github
 import (
 	"errors"
 	"io"
-	"os"
 	"testing"
 
 	"github.com/mcuadros/go-github/github"
@@ -11,7 +10,7 @@ import (
 	. "gopkg.in/check.v1"
 )
 
-const envGithubToken = "GITHUB_TOKEN"
+const testDatabase = "github-test"
 
 func Test(t *testing.T) {
 	TestingT(t)
@@ -23,12 +22,12 @@ type GithubProviderSuite struct {
 }
 
 var _ = Suite(&GithubProviderSuite{
-	client: core.NewClient(providerName),
+	client: core.NewClient(testDatabase),
 })
 
 func (s *GithubProviderSuite) SetUpTest(c *C) {
 	s.client.DropDatabase()
-	config := &GithubConfig{GithubToken: os.Getenv(envGithubToken)}
+	config := &GithubConfig{GithubToken: core.Config.Github.Token, Database: testDatabase}
 	s.provider = NewProvider(config)
 
 }

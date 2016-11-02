@@ -1,14 +1,8 @@
 package discovery
 
 import (
-	"os"
-
+	"github.com/src-d/rovers/core"
 	. "gopkg.in/check.v1"
-)
-
-const (
-	envKey = "GOOGLE_SEARCH_KEY"
-	envCx  = "GOOGLE_SEARCH_CX"
 )
 
 type GoogleCseApiSuite struct {
@@ -17,8 +11,8 @@ type GoogleCseApiSuite struct {
 }
 
 var _ = Suite(&GoogleCseApiSuite{
-	key: os.Getenv(envKey),
-	cx:  os.Getenv(envCx),
+	key: core.Config.Google.SearchKey,
+	cx:  core.Config.Google.SearchCx,
 })
 
 func (s *GoogleCseApiSuite) SetUpTest(c *C) {
