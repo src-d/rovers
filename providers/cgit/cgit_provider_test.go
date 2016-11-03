@@ -4,6 +4,7 @@ import (
 	"errors"
 	"io"
 	"sync"
+	"net/url"
 
 	"github.com/src-d/rovers/core"
 	"gop.kg/src-d/domain@v6/models/repository"
@@ -25,7 +26,7 @@ func (s *CgitProviderSuite) newProvider(cgitUrls ...string) *provider {
 
 	return &provider{
 		cgitCollection: initializeCollection(testDatabase),
-		discoverer:     &dummyDiscoverer{cgitUrls},
+		searcher:       &dummySearcher{cgitUrls},
 		backoff:        getBackoff(),
 		scrapers:       []*scraper{},
 		mutex:          &sync.Mutex{},
@@ -129,12 +130,15 @@ func (s *CgitProviderSuite) TestCgitProvider_Retries(c *C) {
 	c.Assert(provider.backoff.Attempt(), Equals, float64(2))
 }
 
-type dummyDiscoverer struct {
+type dummySearcher struct {
 	urls []string
 }
 
-func (d *dummyDiscoverer) Discover() []string {
-	return d.urls
+func (d *dummySearcher) Search(query string) ([]*url.URL, error) {
+	result := []*url.URL{}
+	for _, s := range d.urls {
+		u, _ := url.Parse(s)
+		result = append(result, u)
+	}
+	return result, nil
 }
-
-func (d *dummyDiscoverer) Reset() {}
