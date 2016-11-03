@@ -6,7 +6,7 @@ import (
 	"sync"
 	"time"
 
-	api "github.com/mcuadros/go-github/github"
+	api "github.com/src-d/go-github/github"
 	"github.com/sourcegraph/go-vcsurl"
 	"github.com/src-d/rovers/core"
 	"golang.org/x/oauth2"
@@ -28,7 +28,7 @@ type githubProvider struct {
 	dataClient *core.Client
 	apiClient  *api.Client
 	repoStore  *social.GithubRepositoryStore
-	repoCache  []api.Repository
+	repoCache  []*api.Repository
 	checkpoint int
 	applyAck   func()
 	mutex      *sync.Mutex
@@ -55,7 +55,7 @@ func NewProvider(config *GithubConfig) *githubProvider {
 		dataClient,
 		apiClient,
 		repoStore,
-		make([]api.Repository, 0),
+		[]*api.Repository{},
 		0,
 		nil,
 		&sync.Mutex{},
@@ -130,7 +130,7 @@ func (gp *githubProvider) Close() error {
 	return nil
 }
 
-func (gp *githubProvider) requestNextPage(since int) ([]api.Repository, error) {
+func (gp *githubProvider) requestNextPage(since int) ([]*api.Repository, error) {
 	start := time.Now()
 	defer func() {
 		needsWait := minRequestDuration - time.Since(start)
@@ -162,7 +162,7 @@ func (gp *githubProvider) getLastRepoId() (int, error) {
 	return *result.ID, err
 }
 
-func (gp *githubProvider) saveRepos(repositories []api.Repository) error {
+func (gp *githubProvider) saveRepos(repositories []*api.Repository) error {
 	bulkOp := gp.dataClient.Collection(repositoryCollection).Bulk()
 	for _, repo := range repositories {
 		bulkOp.Insert(repo)
