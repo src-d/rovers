@@ -8,6 +8,7 @@ build:
       - CONFIG_GOOGLE_SEARCH_CX=$$GOOGLE_SEARCH_CX
       - CONFIG_GOOGLE_SEARCH_KEY=$$GOOGLE_SEARCH_KEY
       - CONFIG_GITHUB_TOKEN=$$GITHUB_TOKEN
+      - CONFIG_BING_KEY=$$BING_KEY
   packages:
     image: golang:1.6
     commands:
