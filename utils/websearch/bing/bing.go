@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/src-d/rovers/utils/websearch"
 	"gopkg.in/inconshreveable/log15.v2"
 )
 
@@ -34,19 +35,19 @@ var errInvalidKey error = errors.New("Invalid key")
 var errTooManyRequests error = errors.New("Too many requests")
 var errUnexpected error = errors.New("Bing unexpected error")
 
-type Bing struct {
+type searcher struct {
 	apiKey string
 	client *http.Client
 }
 
-func New(key string) *Bing {
-	return &Bing{
+func New(key string) websearch.Searcher {
+	return &searcher{
 		apiKey: key,
 		client: &http.Client{Timeout: timeout},
 	}
 }
 
-func (b *Bing) apiUrl(query string, offset int) *url.URL {
+func (b *searcher) apiUrl(query string, offset int) *url.URL {
 	u := &url.URL{
 		Host:   apiHost,
 		Path:   apiPath,
@@ -63,7 +64,7 @@ func (b *Bing) apiUrl(query string, offset int) *url.URL {
 	return u
 }
 
-func (b *Bing) newRequest(u *url.URL) *http.Request {
+func (b *searcher) newRequest(u *url.URL) *http.Request {
 	return &http.Request{
 		Header: http.Header{keyHeader: []string{b.apiKey}},
 		Method: http.MethodGet,
@@ -71,14 +72,17 @@ func (b *Bing) newRequest(u *url.URL) *http.Request {
 	}
 }
 
-func (b *Bing) Search(query string) ([]*url.URL, error) {
+func (b *searcher) Search(query string) ([]*url.URL, error) {
 	offset := 0
 	urls := []*url.URL{}
 For:
 	for {
 		baseUrl := b.apiUrl(query, offset)
-		log15.Info("obtaining page for Bing search", "query", query, "offset", offset)
-		log15.Debug("actual API URL", "api URL", baseUrl.String())
+		log15.Info("obtaining page for Bing search",
+			"query", query,
+			"offset", offset,
+			"api URL", baseUrl.String(),
+		)
 		resp, err := b.client.Do(b.newRequest(baseUrl))
 		if err != nil {
 			return nil, err
@@ -95,10 +99,10 @@ For:
 				originalURL := v.URL
 				resolvedURL, err := b.resolveURL(originalURL)
 				if err != nil {
-					log15.Error("Error resolving URL, ignoring.", "original URL", originalURL, "error", err)
+					log15.Error("error resolving URL, ignoring.", "original URL", originalURL, "error", err)
 					continue
 				}
-				log15.Debug("new resolved URL", "resolved URL", resolvedURL.String())
+				log15.Debug("new result", "resolved URL", resolvedURL.String())
 				urls = append(urls, resolvedURL)
 			}
 			if b.isLastPage(offset, result.WebPages.TotalEstimatedMatches) {
@@ -120,11 +124,11 @@ For:
 	return urls, nil
 }
 
-func (b *Bing) isLastPage(offset int, totalEstimatedMatches int) bool {
+func (b *searcher) isLastPage(offset int, totalEstimatedMatches int) bool {
 	return offset+countValue >= totalEstimatedMatches
 }
 
-func (b *Bing) resolveURL(u string) (*url.URL, error) {
+func (b *searcher) resolveURL(u string) (*url.URL, error) {
 	parsedURL, err := url.Parse(u)
 	if err != nil {
 		return nil, err
@@ -135,8 +139,8 @@ func (b *Bing) resolveURL(u string) (*url.URL, error) {
 	return url.Parse(resolvedURL)
 }
 
-func (b *Bing) getResponse(body io.ReadCloser) (*BingResult, error) {
-	var record BingResult
+func (b *searcher) getResponse(body io.ReadCloser) (*result, error) {
+	var record result
 	if err := json.NewDecoder(body).Decode(&record); err != nil {
 		return nil, err
 	}

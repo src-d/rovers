@@ -4,11 +4,12 @@ import (
 	"testing"
 
 	"github.com/src-d/rovers/core"
+	"github.com/src-d/rovers/utils/websearch"
 	. "gopkg.in/check.v1"
 )
 
 type BingSuite struct {
-	bing  *Bing
+	bing  websearch.Searcher
 	query string
 }
 

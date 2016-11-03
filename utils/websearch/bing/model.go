@@ -1,6 +1,6 @@
 package bing
 
-type BingResult struct {
+type result struct {
 	Type     string `json:"_type"`
 	WebPages struct {
 		WebSearchURL          string  `json:"webSearchUrl"`
