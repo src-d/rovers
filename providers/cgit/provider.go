@@ -28,6 +28,7 @@ const (
 	cgitURLField    = "cgiturl"
 	repositoryField = "url"
 	dateField       = "date"
+	aliasesField    = "aliases"
 
 	maxDurationToRetry = 16 * time.Second
 	minDurationToRetry = 1 * time.Second
@@ -94,7 +95,7 @@ func initializeCgitUrlsCollection(database string) *mgo.Collection {
 func initRepositoriesCollection(database string) *mgo.Collection {
 	cgitColl := core.NewClient(database).Collection(repositoryCollection)
 	index := mgo.Index{
-		Key: []string{"$text:" + cgitURLField, "$text:" + repositoryField},
+		Key: []string{cgitURLField, repositoryField, aliasesField},
 	}
 	cgitColl.EnsureIndex(index)
 
@@ -116,8 +117,8 @@ func (cp *provider) setCheckpoint(cgitUrl string, cgitPage *page) error {
 func (cp *provider) alreadyProcessed(cgitUrl string, cgitPage *page) (bool, error) {
 	c, err := cp.repositoriesColl.Find(
 		bson.M{
-			cgitURLField:    cgitUrl,
-			repositoryField: cgitPage.RepositoryURL,
+			cgitURLField: cgitUrl,
+			aliasesField: cgitPage.RepositoryURL,
 		}).Count()
 
 	return c > 0, err
