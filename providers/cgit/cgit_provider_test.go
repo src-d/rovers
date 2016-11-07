@@ -3,8 +3,8 @@ package cgit
 import (
 	"errors"
 	"io"
-	"sync"
 	"net/url"
+	"sync"
 
 	"github.com/src-d/rovers/core"
 	"gop.kg/src-d/domain@v6/models/repository"
