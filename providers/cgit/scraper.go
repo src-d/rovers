@@ -6,6 +6,7 @@ import (
 	"io"
 	goURL "net/url"
 	"strings"
+	"time"
 
 	"github.com/src-d/rovers/utils"
 
@@ -18,10 +19,22 @@ const (
 	paginationSelector  = "ul.pager li a"
 	pagesUrlSelector    = "div.content table tr td.toplevel-repo a, td.sublevel-repo a"
 	mainPageSelector    = "td.logo a"
+
+	hrefAttr = "href"
+
+	httpTimeout = 30 * time.Second
+
+	prefixGit   = "git://"
+	prefixHttps = "https://"
+	prefixHttp  = "http://"
+	prefixSsh   = "ssh://"
 )
+
+var gitPrefixesByPreference = []string{prefixHttps, prefixGit, prefixHttp, prefixSsh}
 
 type page struct {
 	RepositoryURL string
+	Aliases       []string
 	Html          string
 }
 
@@ -157,7 +170,7 @@ func mainPage(cgitUrl string, gqClient *utils.GoqueryClient) (string, error) {
 		return "", err
 	}
 
-	href, exists := mainDoc.Find(mainPageSelector).Attr("href")
+	href, exists := mainDoc.Find(mainPageSelector).Attr(hrefAttr)
 	if !exists {
 		return "", fmt.Errorf("tried to scrape a non correct cgit URL: %v", cgitUrl)
 	}
@@ -203,7 +216,7 @@ func (cs *scraper) scrapeMain(initUrl string, selector string,
 func (cs *scraper) paginationUrls(mainPageUrl string) ([]string, error) {
 	return cs.scrapeMain(mainPageUrl, paginationSelector,
 		func(s *goquery.Selection, baseUrl string) string {
-			pageUrl, exists := s.Attr("href")
+			pageUrl, exists := s.Attr(hrefAttr)
 			if exists {
 				return baseUrl + pageUrl
 			} else {
@@ -215,7 +228,7 @@ func (cs *scraper) paginationUrls(mainPageUrl string) ([]string, error) {
 func (cs *scraper) repoPageUrls(pageUrl string) ([]string, error) {
 	return cs.scrapeMain(pageUrl, pagesUrlSelector,
 		func(s *goquery.Selection, baseUrl string) string {
-			repoPageUrlPath, exists := s.Attr("href")
+			repoPageUrlPath, exists := s.Attr(hrefAttr)
 			return baseUrl + repoPageUrlPath
 			if exists {
 				return baseUrl + repoPageUrlPath
@@ -236,22 +249,36 @@ func (cs *scraper) repo(repoUrl string) (*page, error) {
 		return nil, err
 	}
 
-	r := ""
-	document.Find(repoHttpUrlSelector).EachWithBreak(
-		func(i int, selection *goquery.Selection) bool {
-			repo, exists := selection.Attr("href")
-			if exists {
-				if strings.HasPrefix(repo, "https") {
-					r = repo
-					return false
-				}
-				r = repo
-			}
-			return true
-		})
+	urls := document.Find(repoHttpUrlSelector).Map(func(i int, s *goquery.Selection) string {
+		// all '<a>' html tags have href in this case
+		href, _ := s.Attr(hrefAttr)
+		return href
+	})
 
 	return &page{
-		RepositoryURL: r,
+		RepositoryURL: cs.mainUrl(urls),
+		Aliases:       urls,
 		Html:          html,
 	}, nil
+}
+
+func (cs *scraper) mainUrl(urls []string) string {
+	for _, prefix := range gitPrefixesByPreference {
+		for _, u := range urls {
+			if strings.HasPrefix(u, prefix) {
+				return u
+			}
+		}
+	}
+
+	return ""
+}
+
+func (cs *scraper) newDocument(url string) (*goquery.Document, error) {
+	resp, err := cs.goqueryClient.Get(url)
+	if err != nil {
+		return nil, err
+	}
+
+	return goquery.NewDocumentFromResponse(resp)
 }

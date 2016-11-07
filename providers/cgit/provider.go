@@ -34,9 +34,10 @@ const (
 )
 
 type repository struct {
-	CgitUrl string
-	URL     string
-	Html    string
+	CgitUrl string   `bson:",omitempty"`
+	URL     string   `bson:",omitempty"`
+	Aliases []string `bson:",omitempty"`
+	Html    string   `bson:",omitempty"`
 }
 
 type url struct {
@@ -107,6 +108,7 @@ func (cp *provider) setCheckpoint(cgitUrl string, cgitPage *page) error {
 		&repository{
 			CgitUrl: cgitUrl,
 			URL:     cgitPage.RepositoryURL,
+			Aliases: cgitPage.Aliases,
 			Html:    cgitPage.Html,
 		})
 }
@@ -187,7 +189,7 @@ func (cp *provider) Next() (*repositoryModel.Raw, error) {
 		log15.Warn("some error happens when try to call Ack(), returning the last repository again",
 			"repository", cp.lastPage.RepositoryURL)
 
-		return cp.repositoryRaw(cp.lastPage.RepositoryURL), nil
+		return cp.repositoryRaw(cp.lastPage), nil
 	}
 
 	if cp.isFirst() {
@@ -226,7 +228,7 @@ func (cp *provider) Next() (*repositoryModel.Raw, error) {
 				log15.Debug("repository already processed", "cgit URL", cgitUrl, "url", repoData.RepositoryURL)
 			} else {
 				cp.lastPage = repoData
-				return cp.repositoryRaw(repoData.RepositoryURL), nil
+				return cp.repositoryRaw(repoData), nil
 			}
 		}
 	}
@@ -245,11 +247,12 @@ func (cp *provider) handleRetries() {
 	}
 }
 
-func (*provider) repositoryRaw(repoUrl string) *repositoryModel.Raw {
+func (*provider) repositoryRaw(page *page) *repositoryModel.Raw {
 	return &repositoryModel.Raw{
 		Status:   repositoryModel.Initial,
 		Provider: cgitProviderName,
-		URL:      repoUrl,
+		URL:      page.RepositoryURL,
+		Aliases:  page.Aliases,
 		VCS:      vcsurl.Git,
 	}
 }
