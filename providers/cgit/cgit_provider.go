@@ -51,7 +51,7 @@ func getBackoff() *backoff.Backoff {
 	}
 }
 
-func NewProvider(googleKey string, googleCx string, database string) *provider {
+func NewProvider(googleKey string, googleCx string, database string) core.RepoProvider {
 	p := &provider{
 		cgitCollection: initializeCollection(database),
 		discoverer:     discovery.NewDiscoverer(googleKey, googleCx),

@@ -39,7 +39,7 @@ type GithubConfig struct {
 	Database    string
 }
 
-func NewProvider(config *GithubConfig) *githubProvider {
+func NewProvider(config *GithubConfig) core.RepoProvider {
 	httpClient := http.DefaultClient
 	if config.GithubToken != "" {
 		token := &oauth2.Token{AccessToken: config.GithubToken}
