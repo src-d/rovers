@@ -95,7 +95,7 @@ For:
 				return nil, err
 			}
 
-			urls = append(urls, b.handleCorrectResult(result)...)
+			urls = append(urls, b.obtainResponseUrls(result)...)
 			if b.isLastPage(offset, result.WebPages.TotalEstimatedMatches) {
 				break For
 			} else {
@@ -115,7 +115,7 @@ For:
 	return urls, nil
 }
 
-func (b *searcher) handleCorrectResult(result *result) []*url.URL {
+func (b *searcher) obtainResponseUrls(result *result) []*url.URL {
 	urls := make([]*url.URL, 0)
 	for _, v := range result.WebPages.Values {
 		originalURL := v.URL
