@@ -18,7 +18,7 @@ func Test(t *testing.T) {
 
 type GithubProviderSuite struct {
 	client   *core.Client
-	provider *githubProvider
+	provider core.RepoProvider
 }
 
 var _ = Suite(&GithubProviderSuite{
@@ -79,7 +79,9 @@ func (s *GithubProviderSuite) TestGithubProvider_Next_End(c *C) {
 	}}
 
 	// Simulate Ack
-	s.provider.saveRepos(repos)
+	githubProvider, ok := s.provider.(*githubProvider)
+	c.Assert(ok, Equals, true)
+	githubProvider.saveRepos(repos)
 	repoUrl, err := s.provider.Next()
 	c.Assert(repoUrl, IsNil)
 	c.Assert(err, Equals, io.EOF)
