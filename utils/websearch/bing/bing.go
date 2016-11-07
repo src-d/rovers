@@ -74,7 +74,7 @@ func (b *searcher) newRequest(u *url.URL) *http.Request {
 
 func (b *searcher) Search(query string) ([]*url.URL, error) {
 	offset := 0
-	urls := []*url.URL{}
+	urls := make([]*url.URL, 0)
 For:
 	for {
 		baseUrl := b.apiUrl(query, offset)
@@ -95,16 +95,7 @@ For:
 				return nil, err
 			}
 
-			for _, v := range result.WebPages.Values {
-				originalURL := v.URL
-				resolvedURL, err := b.resolveURL(originalURL)
-				if err != nil {
-					log15.Error("error resolving URL, ignoring.", "original URL", originalURL, "error", err)
-					continue
-				}
-				log15.Debug("new result", "resolved URL", resolvedURL.String())
-				urls = append(urls, resolvedURL)
-			}
+			urls = append(urls, b.handleCorrectResult(result)...)
 			if b.isLastPage(offset, result.WebPages.TotalEstimatedMatches) {
 				break For
 			} else {
@@ -122,6 +113,22 @@ For:
 	}
 
 	return urls, nil
+}
+
+func (b *searcher) handleCorrectResult(result *result) []*url.URL {
+	urls := make([]*url.URL, 0)
+	for _, v := range result.WebPages.Values {
+		originalURL := v.URL
+		resolvedURL, err := b.resolveURL(originalURL)
+		if err != nil {
+			log15.Error("error resolving URL, ignoring.", "original URL", originalURL, "error", err)
+			continue
+		}
+		log15.Debug("new result", "resolved URL", resolvedURL.String())
+		urls = append(urls, resolvedURL)
+	}
+
+	return urls
 }
 
 func (b *searcher) isLastPage(offset int, totalEstimatedMatches int) bool {
