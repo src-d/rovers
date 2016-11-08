@@ -55,13 +55,11 @@ func (c *CmdRepoProviders) Execute(args []string) error {
 			providers = append(providers, ghp)
 		case cgitProviderName:
 			log15.Info("Creating cgit provider")
-			if core.Config.Google.SearchCx == "" || core.Config.Google.SearchKey == "" {
-				return errors.New("Google search key and google search cx are mandatory " +
-					"for cgit provider")
+			if core.Config.Bing.Key == "" {
+				return errors.New("Bing search key are mandatory for cgit provider")
 			}
 			cgp := cgit.NewProvider(
-				core.Config.Google.SearchKey,
-				core.Config.Google.SearchCx,
+				core.Config.Bing.Key,
 				core.Config.MongoDb.Database.Cgit,
 			)
 			providers = append(providers, cgp)

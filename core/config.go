@@ -10,10 +10,6 @@ var (
 )
 
 type config struct {
-	Google struct {
-		SearchKey string
-		SearchCx  string
-	}
 	Bing struct {
 		Key string
 	}
