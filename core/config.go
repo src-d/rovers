@@ -14,6 +14,9 @@ type config struct {
 		SearchKey string
 		SearchCx  string
 	}
+	Bing struct {
+		Key string
+	}
 	Github struct {
 		Token string
 	}
