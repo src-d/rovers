@@ -5,12 +5,13 @@ import (
 	"sync"
 	"time"
 
-	"github.com/jpillora/backoff"
-	"github.com/sourcegraph/go-vcsurl"
 	"github.com/src-d/rovers/core"
 	"github.com/src-d/rovers/utils"
 	"github.com/src-d/rovers/utils/websearch"
 	"github.com/src-d/rovers/utils/websearch/bing"
+
+	"github.com/jpillora/backoff"
+	"github.com/sourcegraph/go-vcsurl"
 	"gop.kg/src-d/domain@v6/models/repository"
 	"gopkg.in/inconshreveable/log15.v2"
 	"gopkg.in/mgo.v2"
@@ -25,33 +26,33 @@ const (
 	cgitUrlsCollection   = "cgit_urls"
 
 	cgitURLField    = "cgiturl"
-	repositoryField = "repourl"
+	repositoryField = "url"
 	dateField       = "date"
 
 	maxDurationToRetry = 16 * time.Second
 	minDurationToRetry = 1 * time.Second
 )
 
+type cgitRepository struct {
+	CgitUrl string
+	URL     string
+	Html    string
+}
+
 type cgitUrl struct {
 	CgitUrl string
 	Date    time.Time
 }
 
-type cgitRepo struct {
-	CgitUrl string
-	RepoUrl string
-	Html    string
-}
-
 type provider struct {
-	cgitCollection      *mgo.Collection
+	repositoriesColl    *mgo.Collection
 	cgitUrlsCollection  *mgo.Collection
 	scrapers            []*scraper
 	searcher            websearch.Searcher
 	backoff             *backoff.Backoff
 	currentScraperIndex int
 	mutex               *sync.Mutex
-	lastRepo            *cgitRepoData
+	lastCgitPage        *cgitPage
 }
 
 func getBackoff() *backoff.Backoff {
@@ -65,13 +66,12 @@ func getBackoff() *backoff.Backoff {
 
 func NewProvider(bingKey string, database string) core.RepoProvider {
 	p := &provider{
-		cgitCollection:     initializeCollection(database),
+		repositoriesColl:   initRepositoriesCollection(database),
 		cgitUrlsCollection: initializeCgitUrlsCollection(database),
+		scrapers:           []*scraper{},
 		searcher:           bing.New(bingKey),
 		backoff:            getBackoff(),
-		scrapers:           []*scraper{},
 		mutex:              &sync.Mutex{},
-		lastRepo:           nil,
 	}
 
 	return p
@@ -90,7 +90,7 @@ func initializeCgitUrlsCollection(database string) *mgo.Collection {
 	return cgitUrlsColl
 }
 
-func initializeCollection(database string) *mgo.Collection {
+func initRepositoriesCollection(database string) *mgo.Collection {
 	cgitColl := core.NewClient(database).Collection(repositoryCollection)
 	index := mgo.Index{
 		Key: []string{"$text:" + cgitURLField, "$text:" + repositoryField},
@@ -100,14 +100,23 @@ func initializeCollection(database string) *mgo.Collection {
 	return cgitColl
 }
 
-func (cp *provider) setCheckpoint(cgitUrl string, repo *cgitRepoData) error {
-	log15.Debug("Adding new checkpoint url", "cgitUrl", cgitUrl, "repoUrl", repo.RepoUrl)
+func (cp *provider) setCheckpoint(cgitUrl string, cgitPage *cgitPage) error {
+	log15.Debug("adding new checkpoint url", "cgit URL", cgitUrl, "repository", cgitPage.RepositoryURL)
 
-	return cp.cgitCollection.Insert(&cgitRepo{CgitUrl: cgitUrl, RepoUrl: repo.RepoUrl, Html: repo.Html})
+	return cp.repositoriesColl.Insert(
+		&cgitRepository{
+			CgitUrl: cgitUrl,
+			URL:     cgitPage.RepositoryURL,
+			Html:    cgitPage.Html,
+		})
 }
 
-func (cp *provider) alreadyProcessed(cgitUrl string, repo *cgitRepoData) (bool, error) {
-	c, err := cp.cgitCollection.Find(bson.M{cgitURLField: cgitUrl, repositoryField: repo.RepoUrl}).Count()
+func (cp *provider) alreadyProcessed(cgitUrl string, cgitPage *cgitPage) (bool, error) {
+	c, err := cp.repositoriesColl.Find(
+		bson.M{
+			cgitURLField:    cgitUrl,
+			repositoryField: cgitPage.RepositoryURL,
+		}).Count()
 
 	return c > 0, err
 }
@@ -143,12 +152,12 @@ func (cp *provider) fillScrapers() {
 	cgitUrlsSet := map[string]struct{}{}
 	alreadyProcessedCgitUrls, err := cp.getAllCgitUrlsAlreadyProcessed()
 	if err != nil {
-		log15.Error("Error getting cgit urls from database", "error", err)
+		log15.Error("error getting cgit urls from database", "error", err)
 	}
 
 	possibleCgitUrls, err := cp.searcher.Search(searchQuery)
 	if err != nil {
-		log15.Error("Error getting cgit urls from Searcher", "error", err)
+		log15.Error("error getting cgit urls from Searcher", "error", err)
 	}
 
 	mainCgitUrls := getAllMainCgitUrls(utils.URLsToStrings(possibleCgitUrls...))
@@ -158,7 +167,7 @@ func (cp *provider) fillScrapers() {
 
 	cp.joinUnique(cgitUrlsSet, mainCgitUrls, alreadyProcessedCgitUrls)
 	for u := range cgitUrlsSet {
-		log15.Info("Adding new Scraper", "cgit url", u)
+		log15.Info("adding new Scraper", "cgit URL", u)
 		cp.scrapers = append(cp.scrapers, newScraper(u))
 	}
 }
@@ -174,36 +183,36 @@ func (cp *provider) joinUnique(set map[string]struct{}, slices ...[]string) {
 func (cp *provider) Next() (*repository.Raw, error) {
 	cp.mutex.Lock()
 	defer cp.mutex.Unlock()
-	if cp.lastRepo != nil {
-		log15.Warn("Some error happens when try to call Ack(), returning the last repository again",
-			"repo", cp.lastRepo.RepoUrl)
+	if cp.lastCgitPage != nil {
+		log15.Warn("some error happens when try to call Ack(), returning the last repository again",
+			"repository", cp.lastCgitPage.RepositoryURL)
 
-		return cp.repositoryRaw(cp.lastRepo.RepoUrl), nil
+		return cp.repositoryRaw(cp.lastCgitPage.RepositoryURL), nil
 	}
 
 	if cp.isFirst() {
 		cp.fillScrapers()
 		if len(cp.scrapers) == 0 {
-			log15.Warn("No scrapers found, sending an EOF because we have no data")
+			log15.Warn("no scrapers found, sending an EOF because we have no data")
 			return nil, io.EOF
 		}
 	}
 
 	for {
 		currentScraper := cp.scrapers[cp.currentScraperIndex]
-		cgitUrl := currentScraper.CgitUrl
+		cgitUrl := currentScraper.URL
 		repoData, err := currentScraper.Next()
 		switch {
 		case err == io.EOF:
 			cp.nextScraper()
 			if len(cp.scrapers) <= cp.currentScraperIndex {
-				log15.Debug("All cgitUrls processed, ending provider iterator.",
+				log15.Debug("all cgitUrls processed, ending provider iterator",
 					"current index", cp.currentScraperIndex)
 				cp.reset()
 				return nil, io.EOF
 			}
 		case err != nil:
-			log15.Error("error on scraper.next", "cgitUrl", currentScraper.CgitUrl, "error", err)
+			log15.Error("error on scraper.next", "cgit URL", currentScraper.URL, "error", err)
 			cp.handleRetries()
 			return nil, err
 		case err == nil:
@@ -214,10 +223,10 @@ func (cp *provider) Next() (*repository.Raw, error) {
 			}
 
 			if processed {
-				log15.Debug("Repository already processed", "cgitUrl", cgitUrl, "url", repoData.RepoUrl)
+				log15.Debug("repository already processed", "cgit URL", cgitUrl, "url", repoData.RepositoryURL)
 			} else {
-				cp.lastRepo = repoData
-				return cp.repositoryRaw(repoData.RepoUrl), nil
+				cp.lastCgitPage = repoData
+				return cp.repositoryRaw(repoData.RepositoryURL), nil
 			}
 		}
 	}
@@ -225,12 +234,12 @@ func (cp *provider) Next() (*repository.Raw, error) {
 
 func (cp *provider) handleRetries() {
 	tts := cp.backoff.Duration()
-	log15.Info("Sleeping before next scraper request",
+	log15.Info("sleeping before next scraper request",
 		"retries", cp.backoff.Attempt(), "time to sleep", tts)
 	time.Sleep(tts)
 
 	if tts >= maxDurationToRetry {
-		log15.Warn("Scraper request failed too many times. Skipping to the next scraper",
+		log15.Warn("scraper request failed too many times. Skipping to the next scraper",
 			"retries", cp.backoff.Attempt())
 		cp.nextScraper()
 	}
@@ -262,12 +271,12 @@ func (cp *provider) reset() {
 func (cp *provider) Ack(err error) error {
 	cp.mutex.Lock()
 	defer cp.mutex.Unlock()
-	if err == nil && cp.lastRepo != nil {
-		err = cp.setCheckpoint(cp.scrapers[cp.currentScraperIndex].CgitUrl, cp.lastRepo)
+	if err == nil && cp.lastCgitPage != nil {
+		err = cp.setCheckpoint(cp.scrapers[cp.currentScraperIndex].URL, cp.lastCgitPage)
 		if err != nil {
 			return err
 		} else {
-			cp.lastRepo = nil
+			cp.lastCgitPage = nil
 		}
 	}
 

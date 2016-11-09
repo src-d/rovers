@@ -16,7 +16,7 @@ const (
 
 type PersistFN func(*repository.Raw) error
 
-var errBadAck = errors.New("Error while executing ACK")
+var errBadAck = errors.New("error while executing ACK")
 
 type Watcher struct {
 	providers      []RepoProvider
@@ -54,21 +54,21 @@ func (w *Watcher) handleProviderResult(p RepoProvider) error {
 	repositoryRaw, err := p.Next()
 	switch err {
 	case io.EOF:
-		log15.Info("No more repositories, "+
+		log15.Info("no more repositories, "+
 			"waiting for more...",
 			"time to sleep", w.timeToSleep)
 		time.Sleep(w.timeToSleep)
 	case nil:
-		log15.Info("Getting new repository", "provider", p.Name(), "repository", repositoryRaw.URL)
+		log15.Info("getting new repository", "provider", p.Name(), "repository", repositoryRaw.URL)
 		err := w.persist(repositoryRaw)
 		if err != nil {
-			log15.Error("Error saving new repo", "error", err, "repository", repositoryRaw.URL)
+			log15.Error("error saving new repo", "error", err, "repository", repositoryRaw.URL)
 		}
 		retries := 0
 		for retries != maxRetries {
 			ackErr := p.Ack(err)
 			if ackErr != nil {
-				log15.Error("Error setting Ack", "ackErr", ackErr)
+				log15.Error("error setting Ack", "ackErr", ackErr)
 				retries++
 				time.Sleep(w.timeToRetryAck)
 			} else {
@@ -76,7 +76,7 @@ func (w *Watcher) handleProviderResult(p RepoProvider) error {
 			}
 		}
 		if retries == maxRetries {
-			log15.Error("Error in ACK. Shutting down provider.",
+			log15.Error("error in ACK. Shutting down provider.",
 				"provider", p.Name(), "retries", retries, "timeToRetry", w.timeToRetryAck)
 			p.Close()
 			return errBadAck

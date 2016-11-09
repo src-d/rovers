@@ -7,6 +7,7 @@ import (
 	"sync"
 
 	"github.com/src-d/rovers/core"
+
 	"gop.kg/src-d/domain@v6/models/repository"
 	. "gopkg.in/check.v1"
 )
@@ -25,13 +26,12 @@ func (s *CgitProviderSuite) SetUpTest(c *C) {
 func (s *CgitProviderSuite) newProvider(cgitUrls ...string) *provider {
 
 	return &provider{
-		cgitCollection:     initializeCollection(testDatabase),
+		repositoriesColl:   initRepositoriesCollection(testDatabase),
 		cgitUrlsCollection: initializeCgitUrlsCollection(testDatabase),
 		searcher:           &dummySearcher{cgitUrls},
 		backoff:            getBackoff(),
 		scrapers:           []*scraper{},
 		mutex:              &sync.Mutex{},
-		lastRepo:           nil,
 	}
 }
 

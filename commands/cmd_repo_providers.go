@@ -11,6 +11,7 @@ import (
 	"github.com/src-d/rovers/providers/bitbucket"
 	"github.com/src-d/rovers/providers/cgit"
 	"github.com/src-d/rovers/providers/github"
+
 	"gop.kg/src-d/domain@v6/models/repository"
 	"gopkg.in/inconshreveable/log15.v2"
 )
@@ -51,7 +52,7 @@ func (c *CmdRepoProviders) Execute(args []string) error {
 				return errors.New("Github api token must be provided.")
 			}
 			ghp := github.NewProvider(
-				&github.GithubConfig{
+				&github.Config{
 					GithubToken: core.Config.Github.Token,
 					Database:    core.Config.MongoDb.Database.Github,
 				})
