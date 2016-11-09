@@ -18,8 +18,9 @@ type config struct {
 	}
 	MongoDb struct {
 		Database struct {
-			Github string `default:"github"`
-			Cgit   string `default:"cgit"`
+			Github    string `default:"github"`
+			Cgit      string `default:"cgit"`
+			Bitbucket string `default:"bitbucket"`
 		}
 	}
 }
