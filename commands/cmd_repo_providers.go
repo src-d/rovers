@@ -88,7 +88,10 @@ func (c *CmdRepoProviders) Execute(args []string) error {
 }
 
 func (c *CmdRepoProviders) getPersistFunction() (core.PersistFN, error) {
-	queue := core.NewBeanstalkQueue(c.Beanstalk, c.QueueName)
+	queue, err := core.NewBeanstalkQueue(c.Beanstalk, 10, 2*time.Second, c.QueueName)
+	if err != nil {
+		return nil, err
+	}
 
 	return func(repo *repository.Raw) error {
 		var buf bytes.Buffer
@@ -96,9 +99,10 @@ func (c *CmdRepoProviders) getPersistFunction() (core.PersistFN, error) {
 		err := enc.Encode(repo)
 		if err != nil {
 			log15.Error("gob.Encode", "error", err)
-			return err
+			panic(fmt.Errorf("encode error: %v", err))
 		}
-		queue.Put(buf.Bytes(), priorityNormal, 0, 0)
-		return nil
+		_, err = queue.Put(buf.Bytes(), priorityNormal, 0, 0)
+
+		return err
 	}, nil
 }
