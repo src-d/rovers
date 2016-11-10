@@ -3,10 +3,10 @@ package cgit
 import (
 	"fmt"
 	"io"
-	"net/http"
 	"net/url"
 	"strings"
-	"time"
+
+	"github.com/src-d/rovers/utils"
 
 	"github.com/PuerkitoBio/goquery"
 	"gopkg.in/inconshreveable/log15.v2"
@@ -17,8 +17,6 @@ const (
 	paginationSelector  = "ul.pager li a"
 	pagesUrlSelector    = "div.content table tr td.toplevel-repo a, td.sublevel-repo a"
 	mainPageSelector    = "td.logo a"
-
-	httpTimeout = 30 * time.Second
 )
 
 type cgitRepoData struct {
@@ -31,7 +29,7 @@ type scraper struct {
 	firstIteration  bool
 	pageUrls        []string
 	repositoryPages []string
-	client          http.Client
+	goqueryClient   *utils.GoqueryClient
 }
 
 func newScraper(cgitUrl string) *scraper {
@@ -40,9 +38,7 @@ func newScraper(cgitUrl string) *scraper {
 		firstIteration:  true,
 		pageUrls:        []string{},
 		repositoryPages: []string{},
-		client: http.Client{
-			Timeout: httpTimeout,
-		},
+		goqueryClient:   utils.NewDefaultGoqueryClient(),
 	}
 }
 
@@ -94,7 +90,7 @@ func (cs *scraper) isStart() bool {
 
 func (cs *scraper) initialize() error {
 	log15.Debug("First execution, adding more page URLs", "cgitPage", cs.CgitUrl)
-	mainPage, err := cs.mainPage(cs.CgitUrl)
+	mainPage, err := mainPage(cs.CgitUrl, cs.goqueryClient)
 	if err != nil {
 		return err
 	}
@@ -140,27 +136,31 @@ func (cs *scraper) getRepo() (*cgitRepoData, error) {
 	return repoData, nil
 }
 
-func (cs *scraper) baseUrl() (*url.URL, error) {
-	urlType, err := url.Parse(cs.CgitUrl)
-	if err != nil {
-		return nil, err
+func getAllMainCgitUrls(possibleCgitURLs []string) []string {
+	goqueryClient := utils.NewDefaultGoqueryClient()
+	cgitUrls := []string{}
+	for _, pcu := range possibleCgitURLs {
+		cgitUrl, err := mainPage(pcu, goqueryClient)
+		if err != nil {
+			log15.Warn("Error getting cgit main page url", "error", err)
+			continue
+		}
+		cgitUrls = append(cgitUrls, cgitUrl)
 	}
-	return &url.URL{
-		Scheme: urlType.Scheme,
-		Host:   urlType.Host,
-	}, nil
+	return cgitUrls
 }
 
-func (cs *scraper) mainPage(cgitUrl string) (string, error) {
-	mainDoc, err := cs.newDocument(cgitUrl)
+func mainPage(cgitUrl string, gqClient *utils.GoqueryClient) (string, error) {
+	mainDoc, err := gqClient.NewDocument(cgitUrl)
 	if err != nil {
 		return "", err
 	}
+
 	href, exists := mainDoc.Find(mainPageSelector).Attr("href")
 	if !exists {
 		return "", fmt.Errorf("Tried to scrape a non correct cgit url: %v", cgitUrl)
 	}
-	urlType, err := cs.baseUrl()
+	urlType, err := utils.BaseURL(cgitUrl)
 	if err != nil {
 		return "", err
 	}
@@ -171,7 +171,7 @@ func (cs *scraper) mainPage(cgitUrl string) (string, error) {
 	}
 	if mainUrl.String() != cgitUrl {
 		log15.Info("We are not in the main page, getting data from main page", "inputUrl", cgitUrl, "mainPage", mainUrl)
-		return cs.mainPage(mainUrl.String())
+		return mainPage(mainUrl.String(), gqClient)
 	} else {
 		return mainUrl.String(), nil
 	}
@@ -180,11 +180,11 @@ func (cs *scraper) mainPage(cgitUrl string) (string, error) {
 func (cs *scraper) scrapeMain(initUrl string, selector string,
 	fun func(s *goquery.Selection, baseUrl string) string) ([]string, error) {
 	urlsToScrape := []string{}
-	baseUrl, err := cs.baseUrl()
+	baseUrl, err := utils.BaseURL(cs.CgitUrl)
 	if err != nil {
 		return nil, err
 	}
-	document, err := cs.newDocument(initUrl)
+	document, err := cs.goqueryClient.NewDocument(initUrl)
 	if err != nil {
 		return nil, err
 	}
@@ -225,7 +225,7 @@ func (cs *scraper) repoPageUrls(pageUrl string) ([]string, error) {
 }
 
 func (cs *scraper) repo(repoUrl string) (*cgitRepoData, error) {
-	document, err := cs.newDocument(repoUrl)
+	document, err := cs.goqueryClient.NewDocument(repoUrl)
 	if err != nil {
 		return nil, err
 	}
@@ -253,13 +253,4 @@ func (cs *scraper) repo(repoUrl string) (*cgitRepoData, error) {
 		RepoUrl: r,
 		Html:    html,
 	}, nil
-}
-
-func (cs *scraper) newDocument(url string) (*goquery.Document, error) {
-	resp, err := cs.client.Get(url)
-	if err != nil {
-		return nil, err
-	}
-
-	return goquery.NewDocumentFromResponse(resp)
 }

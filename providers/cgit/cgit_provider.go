@@ -2,13 +2,13 @@ package cgit
 
 import (
 	"io"
-	"net/url"
 	"sync"
 	"time"
 
 	"github.com/jpillora/backoff"
 	"github.com/sourcegraph/go-vcsurl"
 	"github.com/src-d/rovers/core"
+	"github.com/src-d/rovers/utils"
 	"github.com/src-d/rovers/utils/websearch"
 	"github.com/src-d/rovers/utils/websearch/bing"
 	"gop.kg/src-d/domain@v6/models/repository"
@@ -22,13 +22,20 @@ const (
 
 	cgitProviderName     = "cgit"
 	repositoryCollection = "repositories"
+	cgitUrlsCollection   = "cgit_urls"
 
 	cgitURLField    = "cgiturl"
 	repositoryField = "repourl"
+	dateField       = "date"
 
 	maxDurationToRetry = 16 * time.Second
 	minDurationToRetry = 1 * time.Second
 )
+
+type cgitUrl struct {
+	CgitUrl string
+	Date    time.Time
+}
 
 type cgitRepo struct {
 	CgitUrl string
@@ -38,6 +45,7 @@ type cgitRepo struct {
 
 type provider struct {
 	cgitCollection      *mgo.Collection
+	cgitUrlsCollection  *mgo.Collection
 	scrapers            []*scraper
 	searcher            websearch.Searcher
 	backoff             *backoff.Backoff
@@ -57,15 +65,29 @@ func getBackoff() *backoff.Backoff {
 
 func NewProvider(bingKey string, database string) core.RepoProvider {
 	p := &provider{
-		cgitCollection: initializeCollection(database),
-		searcher:       bing.New(bingKey),
-		backoff:        getBackoff(),
-		scrapers:       []*scraper{},
-		mutex:          &sync.Mutex{},
-		lastRepo:       nil,
+		cgitCollection:     initializeCollection(database),
+		cgitUrlsCollection: initializeCgitUrlsCollection(database),
+		searcher:           bing.New(bingKey),
+		backoff:            getBackoff(),
+		scrapers:           []*scraper{},
+		mutex:              &sync.Mutex{},
+		lastRepo:           nil,
 	}
 
 	return p
+}
+
+func initializeCgitUrlsCollection(database string) *mgo.Collection {
+	cgitUrlsColl := core.NewClient(database).Collection(cgitUrlsCollection)
+	index := mgo.Index{
+		Key:      []string{cgitURLField},
+		Unique:   true,
+		DropDups: true,
+	}
+	cgitUrlsColl.EnsureIndex(index)
+	cgitUrlsColl.EnsureIndexKey(dateField)
+
+	return cgitUrlsColl
 }
 
 func initializeCollection(database string) *mgo.Collection {
@@ -91,10 +113,30 @@ func (cp *provider) alreadyProcessed(cgitUrl string, repo *cgitRepoData) (bool, 
 }
 
 func (cp *provider) getAllCgitUrlsAlreadyProcessed() ([]string, error) {
-	cgitUrls := []string{}
-	err := cp.cgitCollection.Find(nil).Distinct(cgitURLField, &cgitUrls)
+	cgitUrls := []*cgitUrl{}
+	err := cp.cgitUrlsCollection.Find(nil).All(&cgitUrls)
+	result := []string{}
+	for _, cu := range cgitUrls {
+		result = append(result, cu.CgitUrl)
+	}
 
-	return cgitUrls, err
+	return result, err
+}
+
+func (cp *provider) saveNewCgitUrls(urls []string) error {
+	for _, u := range urls {
+		err := cp.cgitUrlsCollection.Insert(&cgitUrl{CgitUrl: u, Date: time.Now()})
+		switch {
+		case err == nil:
+			log15.Debug("New inserted cgit URL", "url", u)
+		case mgo.IsDup(err):
+			log15.Debug("Duplicated cgit URL", "url", u)
+		default:
+			return err
+		}
+	}
+
+	return nil
 }
 
 func (cp *provider) fillScrapers() {
@@ -104,23 +146,21 @@ func (cp *provider) fillScrapers() {
 		log15.Error("Error getting cgit urls from database", "error", err)
 	}
 
-	cgitUrls, err := cp.searcher.Search(searchQuery)
+	possibleCgitUrls, err := cp.searcher.Search(searchQuery)
 	if err != nil {
 		log15.Error("Error getting cgit urls from Searcher", "error", err)
 	}
-	cp.joinUnique(cgitUrlsSet, cp.toString(cgitUrls), alreadyProcessedCgitUrls)
+
+	mainCgitUrls := getAllMainCgitUrls(utils.URLsToStrings(possibleCgitUrls...))
+	if err := cp.saveNewCgitUrls(mainCgitUrls); err != nil {
+		log15.Error("Error saving new cgit urls", "missed cgit urls", mainCgitUrls, "error", err)
+	}
+
+	cp.joinUnique(cgitUrlsSet, mainCgitUrls, alreadyProcessedCgitUrls)
 	for u := range cgitUrlsSet {
 		log15.Info("Adding new Scraper", "cgit url", u)
 		cp.scrapers = append(cp.scrapers, newScraper(u))
 	}
-}
-
-func (cp *provider) toString(urls []*url.URL) []string {
-	result := []string{}
-	for _, u := range urls {
-		result = append(result, u.String())
-	}
-	return result
 }
 
 func (cp *provider) joinUnique(set map[string]struct{}, slices ...[]string) {

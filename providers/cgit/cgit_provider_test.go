@@ -25,12 +25,13 @@ func (s *CgitProviderSuite) SetUpTest(c *C) {
 func (s *CgitProviderSuite) newProvider(cgitUrls ...string) *provider {
 
 	return &provider{
-		cgitCollection: initializeCollection(testDatabase),
-		searcher:       &dummySearcher{cgitUrls},
-		backoff:        getBackoff(),
-		scrapers:       []*scraper{},
-		mutex:          &sync.Mutex{},
-		lastRepo:       nil,
+		cgitCollection:     initializeCollection(testDatabase),
+		cgitUrlsCollection: initializeCgitUrlsCollection(testDatabase),
+		searcher:           &dummySearcher{cgitUrls},
+		backoff:            getBackoff(),
+		scrapers:           []*scraper{},
+		mutex:              &sync.Mutex{},
+		lastRepo:           nil,
 	}
 }
 
@@ -121,13 +122,50 @@ func (s *CgitProviderSuite) TestCgitProvider_ScrapersWithDifferentUrls(c *C) {
 }
 
 func (s *CgitProviderSuite) TestCgitProvider_Retries(c *C) {
-	provider := s.newProvider("https://badurl.com")
+	provider := s.newProvider()
+	provider.scrapers = []*scraper{newScraper("https://badurl.com")}
 	_, err := provider.Next()
 	c.Assert(err, NotNil)
 	c.Assert(provider.backoff.Attempt(), Equals, float64(1))
 	_, err = provider.Next()
 	c.Assert(err, NotNil)
 	c.Assert(provider.backoff.Attempt(), Equals, float64(2))
+}
+
+func (s *CgitProviderSuite) TestCgitProvider_RetriesBadUrl(c *C) {
+	provider := s.newProvider("https://badurl.com")
+	_, err := provider.Next()
+	c.Assert(err, Equals, io.EOF)
+	c.Assert(provider.backoff.Attempt(), Equals, float64(0))
+}
+
+func (s *CgitProviderSuite) TestCgitProvider_CgitUrlsNotDuplicated(c *C) {
+	provider := s.newProvider("https://a3nm.net/git/", "https://a3nm.net/git/", "https://ongardie.net/git/")
+	_, err := provider.Next()
+	c.Assert(err, IsNil)
+
+	uCount, err := provider.cgitUrlsCollection.Find(nil).Count()
+	c.Assert(err, IsNil)
+	c.Assert(uCount, Equals, 2)
+
+	provider = s.newProvider("https://a3nm.net/git/")
+	_, err = provider.Next()
+	c.Assert(err, IsNil)
+	uCount, err = provider.cgitUrlsCollection.Find(nil).Count()
+	c.Assert(err, IsNil)
+	c.Assert(uCount, Equals, 2)
+
+	provider = s.newProvider("http://pkgs.fedoraproject.org/cgit/rpms/")
+	_, err = provider.Next()
+	c.Assert(err, IsNil)
+	uCount, err = provider.cgitUrlsCollection.Find(nil).Count()
+	c.Assert(err, IsNil)
+	c.Assert(uCount, Equals, 3)
+
+	provider = s.newProvider()
+	_, err = provider.Next()
+	c.Assert(err, IsNil)
+	c.Assert(len(provider.scrapers), Equals, 3)
 }
 
 type dummySearcher struct {
