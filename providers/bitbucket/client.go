@@ -69,6 +69,11 @@ func (c *client) decode(body io.ReadCloser) (*response, error) {
 	return &record, nil
 }
 
+// Repositories returns Bitbucket API response with 100 repositories max.
+// 'after' is a string in a very specific date time format used to get data from a specific time.
+// If you want to get the first page, use "". Every response result has a 'Next' field.
+// It could be used to get the next page calling again to Repositories method.
+// If you try to obtain a page that doesn't exists, error 'io.EOF' is returned.
 func (c *client) Repositories(after string) (*response, error) {
 	u, err := c.parse(after)
 	if err != nil {
@@ -91,7 +96,7 @@ func (c *client) Repositories(after string) (*response, error) {
 		return nil, err
 	}
 
-	if response.Next == "" {
+	if len(response.Repositories) == 0 {
 		return nil, io.EOF
 	}
 

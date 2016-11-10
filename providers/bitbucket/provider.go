@@ -4,8 +4,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/sourcegraph/go-vcsurl"
 	"github.com/src-d/rovers/core"
+
+	"github.com/sourcegraph/go-vcsurl"
 	"gop.kg/src-d/domain@v6/models/repository"
 	"gopkg.in/inconshreveable/log15.v2"
 	"gopkg.in/mgo.v2"
@@ -18,11 +19,13 @@ const (
 
 	idDescKey = "-_id"
 
+	scmField      = "scm"
+	fullNameField = "fullname"
+
 	gitScm        = "git"
 	httpsCloneKey = "https"
 
-	// before this date, all the repositories are not git
-	firstCheckpoint    = "2011-08-10T00:42:35.509559+00:00"
+	firstCheckpoint    = ""
 	minRequestDuration = time.Hour / 1000
 )
 
@@ -45,8 +48,10 @@ func NewProvider(database string) core.RepoProvider {
 }
 
 func initializeRepositoriesCollection(database string) *mgo.Collection {
-	// TODO add indexes
-	return core.NewClient(database).Collection(repositoriesCollection)
+	coll := core.NewClient(database).Collection(repositoriesCollection)
+	coll.EnsureIndexKey(scmField, fullNameField)
+
+	return coll
 }
 
 func (p *provider) isInit() bool {
