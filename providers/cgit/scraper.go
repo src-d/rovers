@@ -24,13 +24,13 @@ const (
 
 	httpTimeout = 30 * time.Second
 
-	prefixGit   = "git://"
-	prefixHttps = "https://"
-	prefixHttp  = "http://"
-	prefixSsh   = "ssh://"
+	prefixGIT   = "git://"
+	prefixHTTPS = "https://"
+	prefixHTTP  = "http://"
+	prefixSSH   = "ssh://"
 )
 
-var gitPrefixesByPreference = []string{prefixHttps, prefixGit, prefixHttp, prefixSsh}
+var gitPrefixesByPreference = []string{prefixHTTPS, prefixGIT, prefixHTTP, prefixSSH}
 
 type page struct {
 	RepositoryURL string

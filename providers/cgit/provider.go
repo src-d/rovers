@@ -35,10 +35,10 @@ const (
 )
 
 type repository struct {
-	CgitUrl string   `bson:",omitempty"`
+	CgitURL string   `bson:",omitempty"`
 	URL     string   `bson:",omitempty"`
 	Aliases []string `bson:",omitempty"`
-	Html    string   `bson:",omitempty"`
+	HTML    string   `bson:",omitempty"`
 }
 
 type url struct {
@@ -107,10 +107,10 @@ func (cp *provider) setCheckpoint(cgitUrl string, cgitPage *page) error {
 
 	return cp.repositoriesColl.Insert(
 		&repository{
-			CgitUrl: cgitUrl,
+			CgitURL: cgitUrl,
 			URL:     cgitPage.RepositoryURL,
 			Aliases: cgitPage.Aliases,
-			Html:    cgitPage.Html,
+			HTML:    cgitPage.Html,
 		})
 }
 
