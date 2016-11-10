@@ -14,12 +14,12 @@ const httpTimeout = 30 * time.Second
 // into http.DefaultClient is 0. Because of that, we use
 // a custom instance of http.Client.
 type GoqueryClient struct {
-	client http.Client
+	http.Client
 }
 
 func NewDefaultGoqueryClient() *GoqueryClient {
 	return &GoqueryClient{
-		client: http.Client{
+		http.Client{
 			Timeout: httpTimeout,
 		},
 	}
@@ -27,7 +27,7 @@ func NewDefaultGoqueryClient() *GoqueryClient {
 
 // Generates a new Goquery document from the given url using a custom http.Client, if possible.
 func (gq *GoqueryClient) NewDocument(url string) (*goquery.Document, error) {
-	resp, err := gq.client.Get(url)
+	resp, err := gq.Get(url)
 	if err != nil {
 		return nil, err
 	}

@@ -151,7 +151,7 @@ func (cp *provider) fillScrapers() {
 		log15.Error("Error getting cgit urls from Searcher", "error", err)
 	}
 
-	mainCgitUrls := getAllMainCgitUrls(utils.URLsToString(possibleCgitUrls))
+	mainCgitUrls := getAllMainCgitUrls(utils.URLsToStrings(possibleCgitUrls...))
 	if err := cp.saveNewCgitUrls(mainCgitUrls); err != nil {
 		log15.Error("Error saving new cgit urls", "missed cgit urls", mainCgitUrls, "error", err)
 	}

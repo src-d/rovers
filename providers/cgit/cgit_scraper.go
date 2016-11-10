@@ -6,8 +6,9 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/PuerkitoBio/goquery"
 	"github.com/src-d/rovers/utils"
+
+	"github.com/PuerkitoBio/goquery"
 	"gopkg.in/inconshreveable/log15.v2"
 )
 
@@ -159,7 +160,7 @@ func mainPage(cgitUrl string, gqClient *utils.GoqueryClient) (string, error) {
 	if !exists {
 		return "", fmt.Errorf("Tried to scrape a non correct cgit url: %v", cgitUrl)
 	}
-	urlType, err := utils.GetBaseUrl(cgitUrl)
+	urlType, err := utils.BaseURL(cgitUrl)
 	if err != nil {
 		return "", err
 	}
@@ -179,7 +180,7 @@ func mainPage(cgitUrl string, gqClient *utils.GoqueryClient) (string, error) {
 func (cs *scraper) scrapeMain(initUrl string, selector string,
 	fun func(s *goquery.Selection, baseUrl string) string) ([]string, error) {
 	urlsToScrape := []string{}
-	baseUrl, err := utils.GetBaseUrl(cs.CgitUrl)
+	baseUrl, err := utils.BaseURL(cs.CgitUrl)
 	if err != nil {
 		return nil, err
 	}
