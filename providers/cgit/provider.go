@@ -52,7 +52,7 @@ type provider struct {
 	backoff             *backoff.Backoff
 	currentScraperIndex int
 	mutex               *sync.Mutex
-	lastCgitPage        *cgitPage
+	lastPage            *page
 }
 
 func getBackoff() *backoff.Backoff {
@@ -100,7 +100,7 @@ func initRepositoriesCollection(database string) *mgo.Collection {
 	return cgitColl
 }
 
-func (cp *provider) setCheckpoint(cgitUrl string, cgitPage *cgitPage) error {
+func (cp *provider) setCheckpoint(cgitUrl string, cgitPage *page) error {
 	log15.Debug("adding new checkpoint url", "cgit URL", cgitUrl, "repository", cgitPage.RepositoryURL)
 
 	return cp.repositoriesColl.Insert(
@@ -111,7 +111,7 @@ func (cp *provider) setCheckpoint(cgitUrl string, cgitPage *cgitPage) error {
 		})
 }
 
-func (cp *provider) alreadyProcessed(cgitUrl string, cgitPage *cgitPage) (bool, error) {
+func (cp *provider) alreadyProcessed(cgitUrl string, cgitPage *page) (bool, error) {
 	c, err := cp.repositoriesColl.Find(
 		bson.M{
 			cgitURLField:    cgitUrl,
@@ -183,11 +183,11 @@ func (cp *provider) joinUnique(set map[string]struct{}, slices ...[]string) {
 func (cp *provider) Next() (*repository.Raw, error) {
 	cp.mutex.Lock()
 	defer cp.mutex.Unlock()
-	if cp.lastCgitPage != nil {
+	if cp.lastPage != nil {
 		log15.Warn("some error happens when try to call Ack(), returning the last repository again",
-			"repository", cp.lastCgitPage.RepositoryURL)
+			"repository", cp.lastPage.RepositoryURL)
 
-		return cp.repositoryRaw(cp.lastCgitPage.RepositoryURL), nil
+		return cp.repositoryRaw(cp.lastPage.RepositoryURL), nil
 	}
 
 	if cp.isFirst() {
@@ -225,7 +225,7 @@ func (cp *provider) Next() (*repository.Raw, error) {
 			if processed {
 				log15.Debug("repository already processed", "cgit URL", cgitUrl, "url", repoData.RepositoryURL)
 			} else {
-				cp.lastCgitPage = repoData
+				cp.lastPage = repoData
 				return cp.repositoryRaw(repoData.RepositoryURL), nil
 			}
 		}
@@ -271,12 +271,12 @@ func (cp *provider) reset() {
 func (cp *provider) Ack(err error) error {
 	cp.mutex.Lock()
 	defer cp.mutex.Unlock()
-	if err == nil && cp.lastCgitPage != nil {
-		err = cp.setCheckpoint(cp.scrapers[cp.currentScraperIndex].URL, cp.lastCgitPage)
+	if err == nil && cp.lastPage != nil {
+		err = cp.setCheckpoint(cp.scrapers[cp.currentScraperIndex].URL, cp.lastPage)
 		if err != nil {
 			return err
 		} else {
-			cp.lastCgitPage = nil
+			cp.lastPage = nil
 		}
 	}
 

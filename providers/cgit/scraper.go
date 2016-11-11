@@ -20,7 +20,7 @@ const (
 	mainPageSelector    = "td.logo a"
 )
 
-type cgitPage struct {
+type page struct {
 	RepositoryURL string
 	Html          string
 }
@@ -43,7 +43,7 @@ func newScraper(cgitUrl string) *scraper {
 	}
 }
 
-func (cs *scraper) Next() (*cgitPage, error) {
+func (cs *scraper) Next() (*page, error) {
 	for {
 		if cs.isStart() {
 			if err := cs.initialize(); err != nil {
@@ -73,7 +73,7 @@ func (cs *scraper) Next() (*cgitPage, error) {
 	}
 }
 
-func (cs *scraper) repoFound(repo *cgitPage) bool {
+func (cs *scraper) repoFound(repo *page) bool {
 	return repo.RepositoryURL != ""
 }
 
@@ -123,7 +123,7 @@ func (cs *scraper) refreshPages() error {
 	return nil
 }
 
-func (cs *scraper) getRepo() (*cgitPage, error) {
+func (cs *scraper) getRepo() (*page, error) {
 	if len(cs.repositoryPages) == 0 {
 		return nil, errors.New("no repository pages found")
 	}
@@ -225,7 +225,7 @@ func (cs *scraper) repoPageUrls(pageUrl string) ([]string, error) {
 		})
 }
 
-func (cs *scraper) repo(repoUrl string) (*cgitPage, error) {
+func (cs *scraper) repo(repoUrl string) (*page, error) {
 	document, err := cs.goqueryClient.NewDocument(repoUrl)
 	if err != nil {
 		return nil, err
@@ -250,7 +250,7 @@ func (cs *scraper) repo(repoUrl string) (*cgitPage, error) {
 			return true
 		})
 
-	return &cgitPage{
+	return &page{
 		RepositoryURL: r,
 		Html:          html,
 	}, nil
