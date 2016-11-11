@@ -30,8 +30,9 @@ const (
 )
 
 type provider struct {
-	repoCollection    *mgo.Collection
-	client            *client
+	repoCollection *mgo.Collection
+	client         *client
+
 	mutex             *sync.Mutex
 	repositoriesCache repositories
 	lastCheckpoint    string

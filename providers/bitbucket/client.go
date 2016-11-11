@@ -52,7 +52,7 @@ func (c *client) parse(after string) (string, error) {
 	return u.String(), nil
 }
 
-func (c *client) decode(body io.ReadCloser) (*response, error) {
+func (c *client) decode(body io.Reader) (*response, error) {
 	var record response
 	if err := json.NewDecoder(body).Decode(&record); err != nil {
 		return nil, err
