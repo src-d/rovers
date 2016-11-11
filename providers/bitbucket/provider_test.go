@@ -3,6 +3,7 @@ package bitbucket
 import (
 	"errors"
 	"io"
+	"testing"
 
 	"github.com/src-d/rovers/core"
 
@@ -10,10 +11,14 @@ import (
 )
 
 const (
-	testDatabase                        = "bitbucket-test"
-	lastPage                            = "3000-01-00T17:25:17.038951+00:00"
-	firstCheckpointWithCgitRepositories = "2011-08-10T00:42:35.509559+00:00"
+	testDatabase                       = "bitbucket-test"
+	lastPage                           = "3000-01-00T17:25:17.038951+00:00"
+	firstCheckpointWithGitRepositories = "2011-08-10T00:42:35.509559+00:00"
 )
+
+func Test(t *testing.T) {
+	TestingT(t)
+}
 
 type ProviderSuite struct {
 	p core.RepoProvider
@@ -27,7 +32,7 @@ func (s *ProviderSuite) SetUpTest(c *C) {
 	s.p = NewProvider(testDatabase)
 	bitbucketProvider, ok := s.p.(*provider)
 	c.Assert(ok, Equals, true)
-	bitbucketProvider.lastCheckpoint = firstCheckpointWithCgitRepositories
+	bitbucketProvider.lastCheckpoint = firstCheckpointWithGitRepositories
 }
 
 func (s *ProviderSuite) TestProvider_Next(c *C) {
