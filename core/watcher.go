@@ -16,7 +16,7 @@ const (
 
 type PersistFN func(*repository.Raw) error
 
-var errBadAck = errors.New("error while executing ACK")
+var errBadAck = errors.New("error while executing ack")
 
 type Watcher struct {
 	providers      []RepoProvider
@@ -68,7 +68,7 @@ func (w *Watcher) handleProviderResult(p RepoProvider) error {
 		for retries != maxRetries {
 			ackErr := p.Ack(err)
 			if ackErr != nil {
-				log15.Error("error setting Ack", "ackErr", ackErr)
+				log15.Error("error setting ack", "ack error", ackErr)
 				retries++
 				time.Sleep(w.timeToRetryAck)
 			} else {
@@ -76,8 +76,8 @@ func (w *Watcher) handleProviderResult(p RepoProvider) error {
 			}
 		}
 		if retries == maxRetries {
-			log15.Error("error in ACK. Shutting down provider.",
-				"provider", p.Name(), "retries", retries, "timeToRetry", w.timeToRetryAck)
+			log15.Error("error in ack. Shutting down provider",
+				"provider", p.Name(), "retries", retries, "time to retry", w.timeToRetryAck)
 			p.Close()
 			return errBadAck
 		}
