@@ -17,7 +17,7 @@ func (s *CgitScraperSuite) TestCgitScraper_Next_CorrectMainPage(c *C) {
 	c.Assert(err, IsNil)
 	c.Assert(u, NotNil)
 	c.Assert(u.Html, Not(Equals), "")
-	c.Assert(u.RepoUrl, Not(Equals), "")
+	c.Assert(u.RepositoryURL, Not(Equals), "")
 }
 
 func (s *CgitScraperSuite) TestCgitScraper_Next_CorrectMainPageWithNoPages(c *C) {

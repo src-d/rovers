@@ -27,7 +27,7 @@ var _ = Suite(&GithubProviderSuite{
 
 func (s *GithubProviderSuite) SetUpTest(c *C) {
 	s.client.DropDatabase()
-	config := &GithubConfig{GithubToken: core.Config.Github.Token, Database: testDatabase}
+	config := &Config{GithubToken: core.Config.Github.Token, Database: testDatabase}
 	s.provider = NewProvider(config)
 
 }
@@ -79,7 +79,7 @@ func (s *GithubProviderSuite) TestGithubProvider_Next_End(c *C) {
 	}}
 
 	// Simulate Ack
-	githubProvider, ok := s.provider.(*githubProvider)
+	githubProvider, ok := s.provider.(*provider)
 	c.Assert(ok, Equals, true)
 	err := githubProvider.saveRepos(repos)
 	c.Assert(err, IsNil)

@@ -32,34 +32,34 @@ const (
 	textIndexFormat = "$text:%s"
 )
 
-type githubProvider struct {
-	repositoriesCollection *mgo.Collection
-	apiClient              *api.Client
-	repoStore              *social.GithubRepositoryStore
-	repoCache              []*api.Repository
-	checkpoint             int
-	applyAck               func()
-	mutex                  *sync.Mutex
+type provider struct {
+	repositoriesColl *mgo.Collection
+	apiClient        *api.Client
+	repoStore        *social.GithubRepositoryStore
+	repoCache        []*api.Repository
+	checkpoint       int
+	applyAck         func()
+	mutex            *sync.Mutex
 }
 
-type GithubConfig struct {
+type Config struct {
 	GithubToken string
 	Database    string
 }
 
-func NewProvider(config *GithubConfig) core.RepoProvider {
+func NewProvider(config *Config) core.RepoProvider {
 	httpClient := http.DefaultClient
 	if config.GithubToken != "" {
 		token := &oauth2.Token{AccessToken: config.GithubToken}
 		httpClient = oauth2.NewClient(oauth2.NoContext, oauth2.StaticTokenSource(token))
 	} else {
-		log15.Warn("Creating anonymous http client. No GitHub token provided.")
+		log15.Warn("creating anonymous http client. No GitHub token provided")
 	}
 	apiClient := api.NewClient(httpClient)
 	repoStore := container.GetDomainModelsSocialGithubRepositoryStore()
 
-	return &githubProvider{
-		initializeCollection(config.Database),
+	return &provider{
+		initRepositoriesCollection(config.Database),
 		apiClient,
 		repoStore,
 		[]*api.Repository{},
@@ -69,7 +69,7 @@ func NewProvider(config *GithubConfig) core.RepoProvider {
 	}
 }
 
-func initializeCollection(database string) *mgo.Collection {
+func initRepositoriesCollection(database string) *mgo.Collection {
 	githubColl := core.NewClient(database).Collection(repositoryCollection)
 	index := mgo.Index{
 		Key: []string{
@@ -84,34 +84,34 @@ func initializeCollection(database string) *mgo.Collection {
 	return githubColl
 }
 
-func (gp *githubProvider) Name() string {
+func (gp *provider) Name() string {
 	return providerName
 }
 
-func (gp *githubProvider) Next() (*repository.Raw, error) {
+func (gp *provider) Next() (*repository.Raw, error) {
 	gp.mutex.Lock()
 	defer gp.mutex.Unlock()
 	switch len(gp.repoCache) {
 	case 0:
 		if gp.checkpoint == 0 {
-			log15.Info("Checkpoint empty, trying to get checkpoint")
+			log15.Info("checkpoint empty, trying to get checkpoint")
 			c, err := gp.getLastRepoId()
 			if err != nil {
-				log15.Error("Error getting checkpoint from database", "error", err)
+				log15.Error("error getting checkpoint from database", "error", err)
 				return nil, err
 			}
 			gp.checkpoint = c
 		}
-		log15.Info("No repositories into cache, getting more repositories", "checkpoint", gp.checkpoint)
+		log15.Info("no repositories into cache, getting more repositories", "checkpoint", gp.checkpoint)
 		repos, err := gp.requestNextPage(gp.checkpoint)
 		if err != nil {
-			log15.Error("Something bad happens getting more repositories", "error", err)
+			log15.Error("something bad happens getting more repositories", "error", err)
 			return nil, err
 		}
 		if len(repos) != 0 {
 			gp.repoCache = repos
 		} else {
-			log15.Info("No more repos, sending EOF")
+			log15.Info("no more repositories, sending EOF")
 			return nil, io.EOF
 		}
 	}
@@ -124,7 +124,7 @@ func (gp *githubProvider) Next() (*repository.Raw, error) {
 	return gp.repositoryRaw(*x.HTMLURL+".git", *x.Fork), nil
 }
 
-func (*githubProvider) repositoryRaw(repoUrl string, isFork bool) *repository.Raw {
+func (*provider) repositoryRaw(repoUrl string, isFork bool) *repository.Raw {
 	return &repository.Raw{
 		Status:   repository.Initial,
 		Provider: providerName,
@@ -134,7 +134,7 @@ func (*githubProvider) repositoryRaw(repoUrl string, isFork bool) *repository.Ra
 	}
 }
 
-func (gp *githubProvider) Ack(err error) error {
+func (gp *provider) Ack(err error) error {
 	gp.mutex.Lock()
 	defer gp.mutex.Unlock()
 	if err == nil {
@@ -142,22 +142,22 @@ func (gp *githubProvider) Ack(err error) error {
 			gp.applyAck()
 		}
 	} else {
-		log15.Warn("Error when watcher tried to send last url. Not applying ack", "error", err)
+		log15.Warn("error when watcher tried to send last url. Not applying ack", "error", err)
 	}
 
 	return nil
 }
 
-func (gp *githubProvider) Close() error {
+func (gp *provider) Close() error {
 	return nil
 }
 
-func (gp *githubProvider) requestNextPage(since int) ([]*api.Repository, error) {
+func (gp *provider) requestNextPage(since int) ([]*api.Repository, error) {
 	start := time.Now()
 	defer func() {
 		needsWait := minRequestDuration - time.Since(start)
 		if needsWait > 0 {
-			log15.Debug("Waiting", "duration", needsWait)
+			log15.Debug("waiting", "duration", needsWait)
 			time.Sleep(needsWait)
 		}
 	}()
@@ -168,15 +168,15 @@ func (gp *githubProvider) requestNextPage(since int) ([]*api.Repository, error) 
 	gp.checkpoint = resp.NextPage
 	gp.saveRepos(repos)
 	if resp.Remaining < 100 {
-		log15.Warn("Low remaining", "value", resp.Remaining)
+		log15.Warn("low remaining", "value", resp.Remaining)
 	}
 
 	return repos, nil
 }
 
-func (gp *githubProvider) getLastRepoId() (int, error) {
+func (gp *provider) getLastRepoId() (int, error) {
 	result := api.Repository{}
-	err := gp.repositoriesCollection.Find(nil).Sort("-_id").One(&result)
+	err := gp.repositoriesColl.Find(nil).Sort("-_id").One(&result)
 	if err == mgo.ErrNotFound {
 		return 0, nil
 	}
@@ -184,8 +184,8 @@ func (gp *githubProvider) getLastRepoId() (int, error) {
 	return *result.ID, err
 }
 
-func (gp *githubProvider) saveRepos(repositories []*api.Repository) error {
-	bulkOp := gp.repositoriesCollection.Bulk()
+func (gp *provider) saveRepos(repositories []*api.Repository) error {
+	bulkOp := gp.repositoriesColl.Bulk()
 	for _, repo := range repositories {
 		bulkOp.Insert(repo)
 	}

@@ -50,7 +50,7 @@ func (b *beanstalkQueue) connect() {
 		queue, err := lentil.Dial(b.connUrl)
 		if err != nil {
 			tts := b.connBackoff.Duration()
-			log15.Error("Beanstalk connection error",
+			log15.Error("beanstalk connection error",
 				"error", err,
 				"attempt", b.connBackoff.Attempt(),
 				"time to sleep", tts)
@@ -81,7 +81,7 @@ func (b *beanstalkQueue) Put(
 			}
 		default:
 			tts := b.putBackoff.Duration()
-			log15.Error("Beanstalk put error",
+			log15.Error("beanstalk put error",
 				"error", err,
 				"attempt", b.putBackoff.Attempt(),
 				"time to sleep", tts)
