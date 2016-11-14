@@ -6,6 +6,15 @@ import (
 	. "gopkg.in/check.v1"
 )
 
+const (
+	gitUrl   = "git://pkgs.fedoraproject.org/rpms/0ad.git"
+	sshUrl   = "ssh://pkgs.fedoraproject.org/rpms/0ad.git"
+	httpUrl  = "http://pkgs.fedoraproject.org/git/rpms/0ad.git"
+	httpsUrl = "https://pkgs.fedoraproject.org/git/rpms/0ad.git"
+	otherUrl = "other://pkgs.fedoraproject.org/git/rpms/0ad.git"
+	noResult = ""
+)
+
 type CgitScraperSuite struct {
 }
 
@@ -76,4 +85,25 @@ func (s *CgitScraperSuite) TestCgitScraper_repoPageWithNoHttpRepos(c *C) {
 	url, err := scraper.Next()
 	c.Assert(url, IsNil)
 	c.Assert(err, Equals, io.EOF)
+}
+
+func (s *CgitScraperSuite) TestCgitScraper_mainPage(c *C) {
+	scraper := newScraper("")
+
+	urlTests := []*inOutCase{
+		{in: []string{sshUrl, gitUrl, httpUrl, httpsUrl, otherUrl}, out: httpsUrl},
+		{in: []string{otherUrl}, out: noResult},
+		{in: []string{httpUrl}, out: httpUrl},
+		{in: []string{gitUrl, httpUrl}, out: gitUrl},
+		{in: nil, out: noResult},
+	}
+
+	for _, d := range urlTests {
+		c.Assert(scraper.mainUrl(d.in), Equals, d.out)
+	}
+}
+
+type inOutCase struct {
+	in  []string
+	out string
 }

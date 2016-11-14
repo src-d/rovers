@@ -28,15 +28,17 @@ const (
 	cgitURLField    = "cgiturl"
 	repositoryField = "url"
 	dateField       = "date"
+	aliasesField    = "aliases"
 
 	maxDurationToRetry = 16 * time.Second
 	minDurationToRetry = 1 * time.Second
 )
 
 type repository struct {
-	CgitUrl string
-	URL     string
-	Html    string
+	CgitURL string   `bson:",omitempty"`
+	URL     string   `bson:",omitempty"`
+	Aliases []string `bson:",omitempty"`
+	HTML    string   `bson:",omitempty"`
 }
 
 type url struct {
@@ -93,7 +95,7 @@ func initializeCgitUrlsCollection(database string) *mgo.Collection {
 func initRepositoriesCollection(database string) *mgo.Collection {
 	cgitColl := core.NewClient(database).Collection(repositoryCollection)
 	index := mgo.Index{
-		Key: []string{"$text:" + cgitURLField, "$text:" + repositoryField},
+		Key: []string{cgitURLField, repositoryField, aliasesField},
 	}
 	cgitColl.EnsureIndex(index)
 
@@ -105,17 +107,18 @@ func (cp *provider) setCheckpoint(cgitUrl string, cgitPage *page) error {
 
 	return cp.repositoriesColl.Insert(
 		&repository{
-			CgitUrl: cgitUrl,
+			CgitURL: cgitUrl,
 			URL:     cgitPage.RepositoryURL,
-			Html:    cgitPage.Html,
+			Aliases: cgitPage.Aliases,
+			HTML:    cgitPage.Html,
 		})
 }
 
 func (cp *provider) alreadyProcessed(cgitUrl string, cgitPage *page) (bool, error) {
 	c, err := cp.repositoriesColl.Find(
 		bson.M{
-			cgitURLField:    cgitUrl,
-			repositoryField: cgitPage.RepositoryURL,
+			cgitURLField: cgitUrl,
+			aliasesField: cgitPage.RepositoryURL,
 		}).Count()
 
 	return c > 0, err
@@ -187,7 +190,7 @@ func (cp *provider) Next() (*repositoryModel.Raw, error) {
 		log15.Warn("some error happens when try to call Ack(), returning the last repository again",
 			"repository", cp.lastPage.RepositoryURL)
 
-		return cp.repositoryRaw(cp.lastPage.RepositoryURL), nil
+		return cp.repositoryRaw(cp.lastPage), nil
 	}
 
 	if cp.isFirst() {
@@ -226,7 +229,7 @@ func (cp *provider) Next() (*repositoryModel.Raw, error) {
 				log15.Debug("repository already processed", "cgit URL", cgitUrl, "url", repoData.RepositoryURL)
 			} else {
 				cp.lastPage = repoData
-				return cp.repositoryRaw(repoData.RepositoryURL), nil
+				return cp.repositoryRaw(repoData), nil
 			}
 		}
 	}
@@ -245,11 +248,12 @@ func (cp *provider) handleRetries() {
 	}
 }
 
-func (*provider) repositoryRaw(repoUrl string) *repositoryModel.Raw {
+func (*provider) repositoryRaw(page *page) *repositoryModel.Raw {
 	return &repositoryModel.Raw{
 		Status:   repositoryModel.Initial,
 		Provider: cgitProviderName,
-		URL:      repoUrl,
+		URL:      page.RepositoryURL,
+		Aliases:  page.Aliases,
 		VCS:      vcsurl.Git,
 	}
 }
