@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/src-d/rovers/core"
+	"github.com/src-d/rovers/providers/bitbucket"
 	"github.com/src-d/rovers/providers/cgit"
 	"github.com/src-d/rovers/providers/github"
 	"gop.kg/src-d/domain@v6/models/repository"
@@ -15,12 +16,14 @@ import (
 )
 
 const (
-	githubProviderName = "github"
-	cgitProviderName   = "cgit"
-	priorityNormal     = 1024
+	githubProviderName    = "github"
+	cgitProviderName      = "cgit"
+	bitbucketProviderName = "bitbucket"
+
+	priorityNormal = 1024
 )
 
-var allowedProviders = []string{githubProviderName, cgitProviderName}
+var allowedProviders = []string{githubProviderName, cgitProviderName, bitbucketProviderName}
 
 type CmdRepoProviders struct {
 	CmdBase
@@ -63,6 +66,10 @@ func (c *CmdRepoProviders) Execute(args []string) error {
 				core.Config.MongoDb.Database.Cgit,
 			)
 			providers = append(providers, cgp)
+		case bitbucketProviderName:
+			log15.Info("Creating bitbucket provider")
+			bbp := bitbucket.NewProvider(core.Config.MongoDb.Database.Bitbucket)
+			providers = append(providers, bbp)
 		default:
 			return fmt.Errorf("Provider '%s' not found. Allowed providers: %v",
 				p, allowedProviders)
