@@ -4,7 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"net/url"
+	goURL "net/url"
 	"strings"
 
 	"github.com/src-d/rovers/utils"
@@ -91,7 +91,7 @@ func (cs *scraper) isStart() bool {
 
 func (cs *scraper) initialize() error {
 	log15.Debug("first execution, adding more page URLs", "cgit URL", cs.URL)
-	mainPage, err := mainPage(cs.URL,cs.goqueryClient)
+	mainPage, err := mainPage(cs.URL, cs.goqueryClient)
 	if err != nil {
 		return err
 	}
@@ -165,14 +165,14 @@ func mainPage(cgitUrl string, gqClient *utils.GoqueryClient) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	mainUrl := &url.URL{
+	mainUrl := &goURL.URL{
 		Scheme: urlType.Scheme,
 		Host:   urlType.Host,
 		Path:   href,
 	}
 	if mainUrl.String() != cgitUrl {
 		log15.Info("we are not in the main page, getting data from main page", "input URL", cgitUrl, "main URL", mainUrl)
-		return mainPage(mainUrl.String(),gqClient)
+		return mainPage(mainUrl.String(), gqClient)
 	} else {
 		return mainUrl.String(), nil
 	}

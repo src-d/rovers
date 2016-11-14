@@ -3,12 +3,12 @@ package cgit
 import (
 	"errors"
 	"io"
-	"net/url"
+	goURL "net/url"
 	"sync"
 
 	"github.com/src-d/rovers/core"
 
-	"gop.kg/src-d/domain@v6/models/repository"
+	repositoryModel "gop.kg/src-d/domain@v6/models/repository"
 	. "gopkg.in/check.v1"
 )
 
@@ -27,7 +27,7 @@ func (s *CgitProviderSuite) newProvider(cgitUrls ...string) *provider {
 
 	return &provider{
 		repositoriesColl:   initRepositoriesCollection(testDatabase),
-		cgitUrlsCollection: initializeCgitUrlsCollection(testDatabase),
+		urlsCollection: initializeCgitUrlsCollection(testDatabase),
 		searcher:           &dummySearcher{cgitUrls},
 		backoff:            getBackoff(),
 		scrapers:           []*scraper{},
@@ -39,7 +39,7 @@ func (s *CgitProviderSuite) TestCgitProvider_WhenFinishScraping(c *C) {
 	provider := s.newProvider("https://a3nm.net/git/")
 
 	var err error = nil
-	var url *repository.Raw = nil
+	var url *repositoryModel.Raw = nil
 	count := 0
 	for err == nil {
 		url, err = provider.Next()
@@ -144,21 +144,21 @@ func (s *CgitProviderSuite) TestCgitProvider_CgitUrlsNotDuplicated(c *C) {
 	_, err := provider.Next()
 	c.Assert(err, IsNil)
 
-	uCount, err := provider.cgitUrlsCollection.Find(nil).Count()
+	uCount, err := provider.urlsCollection.Find(nil).Count()
 	c.Assert(err, IsNil)
 	c.Assert(uCount, Equals, 2)
 
 	provider = s.newProvider("https://a3nm.net/git/")
 	_, err = provider.Next()
 	c.Assert(err, IsNil)
-	uCount, err = provider.cgitUrlsCollection.Find(nil).Count()
+	uCount, err = provider.urlsCollection.Find(nil).Count()
 	c.Assert(err, IsNil)
 	c.Assert(uCount, Equals, 2)
 
 	provider = s.newProvider("http://pkgs.fedoraproject.org/cgit/rpms/")
 	_, err = provider.Next()
 	c.Assert(err, IsNil)
-	uCount, err = provider.cgitUrlsCollection.Find(nil).Count()
+	uCount, err = provider.urlsCollection.Find(nil).Count()
 	c.Assert(err, IsNil)
 	c.Assert(uCount, Equals, 3)
 
@@ -172,10 +172,10 @@ type dummySearcher struct {
 	urls []string
 }
 
-func (d *dummySearcher) Search(query string) ([]*url.URL, error) {
-	result := []*url.URL{}
+func (d *dummySearcher) Search(query string) ([]*goURL.URL, error) {
+	result := []*goURL.URL{}
 	for _, s := range d.urls {
-		u, _ := url.Parse(s)
+		u, _ := goURL.Parse(s)
 		result = append(result, u)
 	}
 	return result, nil

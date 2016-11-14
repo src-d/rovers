@@ -12,7 +12,7 @@ import (
 
 	"github.com/jpillora/backoff"
 	"github.com/sourcegraph/go-vcsurl"
-	"gop.kg/src-d/domain@v6/models/repository"
+	repositoryModel "gop.kg/src-d/domain@v6/models/repository"
 	"gopkg.in/inconshreveable/log15.v2"
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
@@ -33,20 +33,20 @@ const (
 	minDurationToRetry = 1 * time.Second
 )
 
-type cgitRepository struct {
+type repository struct {
 	CgitUrl string
 	URL     string
 	Html    string
 }
 
-type cgitUrl struct {
+type url struct {
 	CgitUrl string
 	Date    time.Time
 }
 
 type provider struct {
 	repositoriesColl    *mgo.Collection
-	cgitUrlsCollection  *mgo.Collection
+	urlsCollection      *mgo.Collection
 	scrapers            []*scraper
 	searcher            websearch.Searcher
 	backoff             *backoff.Backoff
@@ -66,12 +66,12 @@ func getBackoff() *backoff.Backoff {
 
 func NewProvider(bingKey string, database string) core.RepoProvider {
 	p := &provider{
-		repositoriesColl:   initRepositoriesCollection(database),
-		cgitUrlsCollection: initializeCgitUrlsCollection(database),
-		scrapers:           []*scraper{},
-		searcher:           bing.New(bingKey),
-		backoff:            getBackoff(),
-		mutex:              &sync.Mutex{},
+		repositoriesColl: initRepositoriesCollection(database),
+		urlsCollection:   initializeCgitUrlsCollection(database),
+		scrapers:         []*scraper{},
+		searcher:         bing.New(bingKey),
+		backoff:          getBackoff(),
+		mutex:            &sync.Mutex{},
 	}
 
 	return p
@@ -104,7 +104,7 @@ func (cp *provider) setCheckpoint(cgitUrl string, cgitPage *page) error {
 	log15.Debug("adding new checkpoint url", "cgit URL", cgitUrl, "repository", cgitPage.RepositoryURL)
 
 	return cp.repositoriesColl.Insert(
-		&cgitRepository{
+		&repository{
 			CgitUrl: cgitUrl,
 			URL:     cgitPage.RepositoryURL,
 			Html:    cgitPage.Html,
@@ -122,8 +122,8 @@ func (cp *provider) alreadyProcessed(cgitUrl string, cgitPage *page) (bool, erro
 }
 
 func (cp *provider) getAllCgitUrlsAlreadyProcessed() ([]string, error) {
-	cgitUrls := []*cgitUrl{}
-	err := cp.cgitUrlsCollection.Find(nil).All(&cgitUrls)
+	cgitUrls := []*url{}
+	err := cp.urlsCollection.Find(nil).All(&cgitUrls)
 	result := []string{}
 	for _, cu := range cgitUrls {
 		result = append(result, cu.CgitUrl)
@@ -134,7 +134,7 @@ func (cp *provider) getAllCgitUrlsAlreadyProcessed() ([]string, error) {
 
 func (cp *provider) saveNewCgitUrls(urls []string) error {
 	for _, u := range urls {
-		err := cp.cgitUrlsCollection.Insert(&cgitUrl{CgitUrl: u, Date: time.Now()})
+		err := cp.urlsCollection.Insert(&url{CgitUrl: u, Date: time.Now()})
 		switch {
 		case err == nil:
 			log15.Debug("New inserted cgit URL", "url", u)
@@ -180,7 +180,7 @@ func (cp *provider) joinUnique(set map[string]struct{}, slices ...[]string) {
 	}
 }
 
-func (cp *provider) Next() (*repository.Raw, error) {
+func (cp *provider) Next() (*repositoryModel.Raw, error) {
 	cp.mutex.Lock()
 	defer cp.mutex.Unlock()
 	if cp.lastPage != nil {
@@ -245,9 +245,9 @@ func (cp *provider) handleRetries() {
 	}
 }
 
-func (*provider) repositoryRaw(repoUrl string) *repository.Raw {
-	return &repository.Raw{
-		Status:   repository.Initial,
+func (*provider) repositoryRaw(repoUrl string) *repositoryModel.Raw {
+	return &repositoryModel.Raw{
+		Status:   repositoryModel.Initial,
 		Provider: cgitProviderName,
 		URL:      repoUrl,
 		VCS:      vcsurl.Git,
