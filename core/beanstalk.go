@@ -6,6 +6,10 @@ import (
 	"github.com/ajnavarro/beanstalk"
 )
 
+const (
+	tcpNetwork = "tcp"
+)
+
 type beanstalkQueue struct {
 	conn *beanstalk.Conn
 	name string
@@ -18,7 +22,7 @@ func NewBeanstalkQueue(addr string, retries int, delay time.Duration, name strin
 	conn, err := beanstalk.Dial(&beanstalk.Config{
 		Addr:    addr,
 		Delay:   delay,
-		Network: "tcp",
+		Network: tcpNetwork,
 		Retries: retries,
 	})
 	if err != nil {
