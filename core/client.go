@@ -1,8 +1,8 @@
 package core
 
 import (
-	"gop.kg/src-d/domain@v6/container"
 	"gopkg.in/mgo.v2"
+	"srcd.works/domain.v6/container"
 )
 
 type Client struct {

@@ -1,6 +1,6 @@
 package core
 
-import "gop.kg/src-d/domain@v6/models/repository"
+import "srcd.works/domain.v6/models/repository"
 
 type RepoProvider interface {
 	Next() (*repository.Raw, error)

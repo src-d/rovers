@@ -5,8 +5,8 @@ import (
 	"io"
 	"time"
 
-	"gop.kg/src-d/domain@v6/models/repository"
 	"gopkg.in/inconshreveable/log15.v2"
+	"srcd.works/domain.v6/models/repository"
 )
 
 const (

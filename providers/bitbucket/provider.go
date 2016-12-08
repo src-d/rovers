@@ -6,10 +6,9 @@ import (
 
 	"github.com/src-d/rovers/core"
 
-	"github.com/sourcegraph/go-vcsurl"
-	"gop.kg/src-d/domain@v6/models/repository"
 	"gopkg.in/inconshreveable/log15.v2"
 	"gopkg.in/mgo.v2"
+	"srcd.works/domain.v6/models/repository"
 )
 
 const (
@@ -81,7 +80,7 @@ func (p *provider) repositoryRaw(r *bitbucketRepository) *repository.Raw {
 		Provider: providerName,
 		URL:      mainRepository,
 		IsFork:   r.Parent != nil,
-		VCS:      vcsurl.Git,
+		VCS:      repository.Git,
 		Aliases:  aliases,
 	}
 }
