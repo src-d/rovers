@@ -7,8 +7,8 @@ import (
 	"time"
 
 	"github.com/kr/beanstalk"
-	"github.com/sourcegraph/go-vcsurl"
-	"gop.kg/src-d/domain@v6/models/repository"
+	"srcd.works/domain.v6/models/repository"
+
 	. "gopkg.in/check.v1"
 )
 
@@ -35,7 +35,7 @@ func (s *CmdRepoProviderSuite) TestCmdRepoProvider_getPersistFunction_CorrectlyS
 		Provider: "test",
 		URL:      "https://some.repo.url.com",
 		IsFork:   true,
-		VCS:      vcsurl.Git,
+		VCS:      repository.Git,
 	}
 
 	f, err := s.cmdProviders.getPersistFunction()

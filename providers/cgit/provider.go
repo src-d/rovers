@@ -11,11 +11,10 @@ import (
 	"github.com/src-d/rovers/utils/websearch/bing"
 
 	"github.com/jpillora/backoff"
-	"github.com/sourcegraph/go-vcsurl"
-	repositoryModel "gop.kg/src-d/domain@v6/models/repository"
 	"gopkg.in/inconshreveable/log15.v2"
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
+	repositoryModel "srcd.works/domain.v6/models/repository"
 )
 
 const (
@@ -254,7 +253,7 @@ func (*provider) repositoryRaw(page *page) *repositoryModel.Raw {
 		Provider: cgitProviderName,
 		URL:      page.RepositoryURL,
 		Aliases:  page.Aliases,
-		VCS:      vcsurl.Git,
+		VCS:      repositoryModel.Git,
 	}
 }
 

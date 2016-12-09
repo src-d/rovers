@@ -7,9 +7,9 @@ import (
 	"testing"
 	"time"
 
-	"gop.kg/src-d/domain@v6/models/repository"
 	. "gopkg.in/check.v1"
 	"gopkg.in/inconshreveable/log15.v2"
+	"srcd.works/domain.v6/models/repository"
 )
 
 var persistFunction = func(rawRepo *repository.Raw) error {

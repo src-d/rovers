@@ -8,8 +8,8 @@ import (
 
 	"github.com/src-d/rovers/core"
 
-	repositoryModel "gop.kg/src-d/domain@v6/models/repository"
 	. "gopkg.in/check.v1"
+	repositoryModel "srcd.works/domain.v6/models/repository"
 )
 
 const testDatabase = "cgit-test"
@@ -26,12 +26,12 @@ func (s *CgitProviderSuite) SetUpTest(c *C) {
 func (s *CgitProviderSuite) newProvider(cgitUrls ...string) *provider {
 
 	return &provider{
-		repositoriesColl:   initRepositoriesCollection(testDatabase),
-		urlsCollection: initializeCgitUrlsCollection(testDatabase),
-		searcher:           &dummySearcher{cgitUrls},
-		backoff:            getBackoff(),
-		scrapers:           []*scraper{},
-		mutex:              &sync.Mutex{},
+		repositoriesColl: initRepositoriesCollection(testDatabase),
+		urlsCollection:   initializeCgitUrlsCollection(testDatabase),
+		searcher:         &dummySearcher{cgitUrls},
+		backoff:          getBackoff(),
+		scrapers:         []*scraper{},
+		mutex:            &sync.Mutex{},
 	}
 }
 

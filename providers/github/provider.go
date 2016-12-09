@@ -7,15 +7,14 @@ import (
 	"sync"
 	"time"
 
-	"github.com/sourcegraph/go-vcsurl"
 	api "github.com/src-d/go-github/github"
 	"github.com/src-d/rovers/core"
 	"golang.org/x/oauth2"
-	"gop.kg/src-d/domain@v6/container"
-	"gop.kg/src-d/domain@v6/models/repository"
-	"gop.kg/src-d/domain@v6/models/social"
 	"gopkg.in/inconshreveable/log15.v2"
 	"gopkg.in/mgo.v2"
+	"srcd.works/domain.v6/container"
+	"srcd.works/domain.v6/models/repository"
+	"srcd.works/domain.v6/models/social"
 )
 
 const (
@@ -130,7 +129,7 @@ func (*provider) repositoryRaw(repoUrl string, isFork bool) *repository.Raw {
 		Provider: providerName,
 		URL:      repoUrl,
 		IsFork:   isFork,
-		VCS:      vcsurl.Git,
+		VCS:      repository.Git,
 	}
 }
 
