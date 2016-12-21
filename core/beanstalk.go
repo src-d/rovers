@@ -3,7 +3,7 @@ package core
 import (
 	"time"
 
-	"github.com/ajnavarro/beanstalk"
+	"github.com/src-d/beanstalk"
 )
 
 const (
