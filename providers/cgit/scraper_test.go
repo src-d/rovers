@@ -30,14 +30,14 @@ func (s *CgitScraperSuite) TestCgitScraper_Next_CorrectMainPage(c *C) {
 }
 
 func (s *CgitScraperSuite) TestCgitScraper_Next_CorrectMainPageWithNoPages(c *C) {
-	scraper := newScraper("http://git.mate-desktop.org/")
+	scraper := newScraper("https://code.qt.io/cgit/")
 	u, err := scraper.Next()
 	c.Assert(err, IsNil)
 	c.Assert(u, NotNil)
 }
 
 func (s *CgitScraperSuite) TestCgitScraper_Next_IncorrectMainPage(c *C) {
-	scraper := newScraper("http://git.mate-desktop.org/libmateweather/")
+	scraper := newScraper("https://code.qt.io/cgit/meta")
 	u, err := scraper.Next()
 	c.Assert(err, IsNil)
 	c.Assert(u, NotNil)
