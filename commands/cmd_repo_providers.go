@@ -21,7 +21,13 @@ const (
 	cgitProviderName      = "cgit"
 	bitbucketProviderName = "bitbucket"
 
-	priorityNormal = 1024
+	timeToRetryACK = time.Second * 15
+
+	priorityNormal   = 1024
+	zeroTTR          = 0
+	putNoDelay       = 0
+	reconnectRetries = 10
+	reconnectDelay   = 2 * time.Second
 )
 
 var allowedProviders = []string{githubProviderName, cgitProviderName, bitbucketProviderName}
@@ -82,13 +88,16 @@ func (c *CmdRepoProviders) Execute(args []string) error {
 	if err != nil {
 		return err
 	}
-	watcher := core.NewWatcher(providers, f, c.WatcherTime, time.Second*15)
+	watcher := core.NewWatcher(providers, f, c.WatcherTime, timeToRetryACK)
 	watcher.Start()
 	return nil
 }
 
 func (c *CmdRepoProviders) getPersistFunction() (core.PersistFN, error) {
-	queue := core.NewBeanstalkQueue(c.Beanstalk, c.QueueName)
+	queue, err := core.NewBeanstalkQueue(c.Beanstalk, reconnectRetries, reconnectDelay, c.QueueName)
+	if err != nil {
+		return nil, err
+	}
 
 	return func(repo *repository.Raw) error {
 		var buf bytes.Buffer
@@ -96,9 +105,10 @@ func (c *CmdRepoProviders) getPersistFunction() (core.PersistFN, error) {
 		err := enc.Encode(repo)
 		if err != nil {
 			log15.Error("gob.Encode", "error", err)
-			return err
+			panic(fmt.Errorf("encode error: %v", err))
 		}
-		queue.Put(buf.Bytes(), priorityNormal, 0, 0)
-		return nil
+		_, err = queue.Put(buf.Bytes(), priorityNormal, putNoDelay, zeroTTR)
+
+		return err
 	}, nil
 }

@@ -1,95 +1,64 @@
 package core
 
 import (
-	"net"
 	"time"
 
-	"github.com/jpillora/backoff"
-	"github.com/nutrun/lentil"
-	"gopkg.in/inconshreveable/log15.v2"
+	"github.com/src-d/beanstalk"
 )
 
 const (
-	maxDurationToRetry = 1 * time.Minute
-	minDurationToRetry = 1 * time.Second
-
-	writeOp = "write"
+	tcpNetwork = "tcp"
 )
 
 type beanstalkQueue struct {
-	queue       *lentil.Beanstalkd
-	connUrl     string
-	name        string
-	connBackoff *backoff.Backoff
-	putBackoff  *backoff.Backoff
+	conn *beanstalk.Conn
+	name string
+
+	tube    *beanstalk.Tube
+	tubeSet *beanstalk.TubeSet
 }
 
-func NewBeanstalkQueue(connUrl string, name string) *beanstalkQueue {
-	b := &beanstalkQueue{
-		name:        name,
-		connUrl:     connUrl,
-		connBackoff: getBackoff(),
-		putBackoff:  getBackoff(),
+func NewBeanstalkQueue(addr string, retries int, delay time.Duration, name string) (*beanstalkQueue, error) {
+	conn, err := beanstalk.Dial(&beanstalk.Config{
+		Addr:    addr,
+		Delay:   delay,
+		Network: tcpNetwork,
+		Retries: retries,
+	})
+	if err != nil {
+		return nil, err
 	}
-	b.connect()
 
-	return b
-}
+	return &beanstalkQueue{
+		conn: conn,
+		name: name,
 
-func getBackoff() *backoff.Backoff {
-	return &backoff.Backoff{
-		Jitter: true,
-		Factor: 2,
-		Max:    maxDurationToRetry,
-		Min:    minDurationToRetry,
-	}
-}
-
-func (b *beanstalkQueue) connect() {
-	for {
-		queue, err := lentil.Dial(b.connUrl)
-		if err != nil {
-			tts := b.connBackoff.Duration()
-			log15.Error("beanstalk connection error",
-				"error", err,
-				"attempt", b.connBackoff.Attempt(),
-				"time to sleep", tts)
-			time.Sleep(tts)
-			continue
-		}
-		b.connBackoff.Reset()
-		queue.Use(b.name)
-		b.queue = queue
-		break
-	}
+		tube:    &beanstalk.Tube{conn, name},      // Put
+		tubeSet: beanstalk.NewTubeSet(conn, name), // Reserve
+	}, nil
 }
 
 func (b *beanstalkQueue) Put(
 	body []byte,
-	priority, delay, ttr int,
-) uint64 {
-	for {
-		id, err := b.queue.Put(priority, delay, ttr, body)
-		if err == nil {
-			b.putBackoff.Reset()
-			return id
-		}
-		switch specErr := err.(type) {
-		case *net.OpError:
-			if specErr.Op == writeOp {
-				b.connect()
-			}
-		default:
-			tts := b.putBackoff.Duration()
-			log15.Error("beanstalk put error",
-				"error", err,
-				"attempt", b.putBackoff.Attempt(),
-				"time to sleep", tts)
-			time.Sleep(tts)
-		}
-	}
+	priority uint32,
+	delay, ttr time.Duration,
+) (id uint64, err error) {
+
+	return b.tube.Put(body, priority, delay, ttr)
 }
 
 func (b *beanstalkQueue) QueueName() string {
 	return b.name
+}
+
+func (b *beanstalkQueue) Bury(id uint64, priority uint32) error {
+	return b.conn.Bury(id, priority)
+}
+
+func (b *beanstalkQueue) Delete(id uint64) error {
+	return b.conn.Delete(id)
+}
+
+func (b *beanstalkQueue) Reserve(timeout time.Duration) (id uint64, body []byte, err error) {
+	return b.tubeSet.Reserve(timeout)
 }
