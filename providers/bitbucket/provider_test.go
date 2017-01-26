@@ -43,7 +43,7 @@ func (s *ProviderSuite) TestProvider_Next(c *C) {
 	result := bitbucketRepository{}
 	err = s.c.Collection(repositoriesCollection).Find(nil).Sort("_id").One(&result)
 	c.Assert(err, IsNil)
-	c.Assert(result.Links.Clone[0].Href, Equals, r.URL)
+	c.Assert(result.Links.Clone[0].Href, Equals, r.Endpoint)
 }
 
 func (s *ProviderSuite) TestProvider_NextLast(c *C) {

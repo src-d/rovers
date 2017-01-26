@@ -8,7 +8,7 @@ import (
 
 	"gopkg.in/inconshreveable/log15.v2"
 	"gopkg.in/mgo.v2"
-	"srcd.works/domain.v6/models/repository"
+	"srcd.works/core.v0/models"
 )
 
 const (
@@ -62,7 +62,7 @@ func (p *provider) needsMoreData() bool {
 	return len(p.repositoriesCache) == 0
 }
 
-func (p *provider) repositoryRaw(r *bitbucketRepository) *repository.Raw {
+func (p *provider) repositoryRaw(r *bitbucketRepository) *models.Mention {
 	aliases := []string{}
 	mainRepository := ""
 	for _, c := range r.Links.Clone {
@@ -75,13 +75,9 @@ func (p *provider) repositoryRaw(r *bitbucketRepository) *repository.Raw {
 		log15.Error("no https repositories found", "clone urls", r.Links.Clone)
 	}
 
-	return &repository.Raw{
-		Status:   repository.Initial,
+	return &models.Mention{
+		Endpoint: mainRepository,
 		Provider: providerName,
-		URL:      mainRepository,
-		IsFork:   r.Parent != nil,
-		VCS:      repository.Git,
-		Aliases:  aliases,
 	}
 }
 
@@ -102,7 +98,7 @@ func (p *provider) initializeCheckpoint() error {
 	return nil
 }
 
-func (p *provider) Next() (*repository.Raw, error) {
+func (p *provider) Next() (*models.Mention, error) {
 	p.mutex.Lock()
 	defer p.mutex.Unlock()
 

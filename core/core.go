@@ -1,9 +1,9 @@
 package core
 
-import "srcd.works/domain.v6/models/repository"
+import "srcd.works/core.v0/models"
 
 type RepoProvider interface {
-	Next() (*repository.Raw, error)
+	Next() (*models.Mention, error)
 	Ack(error) error
 	Close() error
 	Name() string

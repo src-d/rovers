@@ -14,7 +14,7 @@ import (
 	"gopkg.in/inconshreveable/log15.v2"
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
-	repositoryModel "srcd.works/domain.v6/models/repository"
+	"srcd.works/core.v0/models"
 )
 
 const (
@@ -182,7 +182,7 @@ func (cp *provider) joinUnique(set map[string]struct{}, slices ...[]string) {
 	}
 }
 
-func (cp *provider) Next() (*repositoryModel.Raw, error) {
+func (cp *provider) Next() (*models.Mention, error) {
 	cp.mutex.Lock()
 	defer cp.mutex.Unlock()
 	if cp.lastPage != nil {
@@ -247,13 +247,11 @@ func (cp *provider) handleRetries() {
 	}
 }
 
-func (*provider) repositoryRaw(page *page) *repositoryModel.Raw {
-	return &repositoryModel.Raw{
-		Status:   repositoryModel.Initial,
+func (*provider) repositoryRaw(page *page) *models.Mention {
+	// TODO add aliases
+	return &models.Mention{
+		Endpoint: page.RepositoryURL,
 		Provider: cgitProviderName,
-		URL:      page.RepositoryURL,
-		Aliases:  page.Aliases,
-		VCS:      repositoryModel.Git,
 	}
 }
 

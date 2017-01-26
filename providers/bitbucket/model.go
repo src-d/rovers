@@ -1,5 +1,7 @@
 package bitbucket
 
+import "github.com/src-d/go-kallax"
+
 type response struct {
 	Pagelen      int          `json:"pagelen"`
 	Repositories repositories `json:"values"`
@@ -9,54 +11,57 @@ type response struct {
 type repositories []*bitbucketRepository
 
 type bitbucketRepository struct {
+	kallax.Model `table:"bitbucket"`
+	kallax.Timestamps
+
 	Next    string
-	Scm     string `json:"scm" bson:",omitempty"`
-	Website string `json:"website" bson:",omitempty"`
-	HasWiki bool   `json:"has_wiki" bson:"-"`
-	Name    string `json:"name" bson:",omitempty"`
+	Scm     string `json:"scm"`
+	Website string `json:"website"`
+	HasWiki bool   `json:"has_wiki" kallax:"-"`
+	Name    string `json:"name"`
 	Links   struct {
 		Watchers struct {
-			Href string `json:"href" bson:"-"`
-		} `json:"watchers" bson:"-"`
+			Href string `json:"href" kallax:"-"`
+		} `json:"watchers" kallax:"-"`
 		Branches struct {
-			Href string `json:"href" bson:"-"`
-		} `json:"branches" bson:"-"`
+			Href string `json:"href" kallax:"-"`
+		} `json:"branches" kallax:"-"`
 		Tags struct {
-			Href string `json:"href" bson:"-"`
-		} `json:"tags" bson:"-"`
+			Href string `json:"href" kallax:"-"`
+		} `json:"tags" kallax:"-"`
 		Commits struct {
-			Href string `json:"href" bson:"-"`
-		} `json:"commits" bson:"-"`
+			Href string `json:"href" kallax:"-"`
+		} `json:"commits" kallax:"-"`
 		Clone []struct {
-			Href string `json:"href" bson:",omitempty"`
-			Name string `json:"name" bson:",omitempty"`
-		} `json:"clone" bson:",omitempty"`
+			Href string `json:"href"`
+			Name string `json:"name"`
+		} `json:"clone"`
 		Self struct {
-			Href string `json:"href" bson:"-"`
-		} `json:"self" bson:"-"`
+			Href string `json:"href" kallax:"-"`
+		} `json:"self" kallax:"-"`
 		HTML struct {
-			Href string `json:"href" bson:"-"`
-		} `json:"html" bson:"-"`
+			Href string `json:"href" kallax:"-"`
+		} `json:"html" kallax:"-"`
 		Avatar struct {
-			Href string `json:"href" bson:"-"`
-		} `json:"avatar" bson:"-"`
+			Href string `json:"href" kallax:"-"`
+		} `json:"avatar" kallax:"-"`
 		Hooks struct {
-			Href string `json:"href" bson:"-"`
-		} `json:"hooks" bson:"-"`
+			Href string `json:"href" kallax:"-"`
+		} `json:"hooks" kallax:"-"`
 		Forks struct {
-			Href string `json:"href" bson:"-"`
-		} `json:"forks" bson:"-"`
+			Href string `json:"href" kallax:"-"`
+		} `json:"forks" kallax:"-"`
 		Downloads struct {
-			Href string `json:"href" bson:"-"`
-		} `json:"downloads" bson:"-"`
+			Href string `json:"href" kallax:"-"`
+		} `json:"downloads" kallax:"-"`
 		Pullrequests struct {
-			Href string `json:"href" bson:"-"`
-		} `json:"pullrequests" bson:"-"`
-	} `json:"links" bson:",omitempty"`
-	ForkPolicy string `json:"fork_policy" bson:",omitempty"`
-	UUID       string `json:"uuid" bson:",omitempty"`
-	Language   string `json:"language" bson:",omitempty"`
-	CreatedOn  string `json:"created_on" bson:",omitempty"`
+			Href string `json:"href" kallax:"-"`
+		} `json:"pullrequests" kallax:"-"`
+	} `json:"links"`
+	ForkPolicy string `json:"fork_policy"`
+	UUID       string `json:"uuid"`
+	Language   string `json:"language"`
+	CreatedOn  string `json:"created_on"`
 	Parent     *struct {
 		Links struct {
 			Self struct {
@@ -74,29 +79,29 @@ type bitbucketRepository struct {
 		FullName string `json:"full_name"`
 		UUID     string `json:"uuid"`
 	} `json:"parent"`
-	FullName  string `json:"full_name" bson:",omitempty"`
-	HasIssues bool   `json:"has_issues" bson:",omitempty"`
+	FullName  string `json:"full_name"`
+	HasIssues bool   `json:"has_issues"`
 	Owner     struct {
-		Username    string `json:"username" bson:",omitempty"`
-		DisplayName string `json:"display_name" bson:",omitempty"`
-		Type        string `json:"type" bson:",omitempty"`
-		UUID        string `json:"uuid" bson:",omitempty"`
+		Username    string `json:"username"`
+		DisplayName string `json:"display_name"`
+		Type        string `json:"type"`
+		UUID        string `json:"uuid"`
 		Links       struct {
 			Self struct {
-				Href string `json:"href" bson:"-"`
-			} `json:"self"  bson:"-"`
+				Href string `json:"href" kallax:"-"`
+			} `json:"self"  kallax:"-"`
 			HTML struct {
-				Href string `json:"href"  bson:"-"`
-			} `json:"html"  bson:"-"`
+				Href string `json:"href"  kallax:"-"`
+			} `json:"html"  kallax:"-"`
 			Avatar struct {
-				Href string `json:"href"  bson:"-"`
-			} `json:"avatar"  bson:"-"`
-		} `json:"links"  bson:"-"`
-	} `json:"owner" bson:",omitempty"`
-	UpdatedOn   string `json:"updated_on" bson:",omitempty"`
-	Size        int    `json:"size" bson:",omitempty"`
-	Type        string `json:"type" bson:",omitempty"`
-	Slug        string `json:"slug" bson:",omitempty"`
-	IsPrivate   bool   `json:"is_private" bson:",omitempty"`
-	Description string `json:"description" bson:",omitempty"`
+				Href string `json:"href"  kallax:"-"`
+			} `json:"avatar"  kallax:"-"`
+		} `json:"links"  kallax:"-"`
+	} `json:"owner"`
+	UpdatedOn   string `json:"updated_on"`
+	Size        int    `json:"size"`
+	Type        string `json:"type"`
+	Slug        string `json:"slug"`
+	IsPrivate   bool   `json:"is_private"`
+	Description string `json:"description"`
 }

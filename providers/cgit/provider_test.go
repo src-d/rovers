@@ -9,7 +9,7 @@ import (
 	"github.com/src-d/rovers/core"
 
 	. "gopkg.in/check.v1"
-	repositoryModel "srcd.works/domain.v6/models/repository"
+	"srcd.works/core.v0/models"
 )
 
 const testDatabase = "cgit-test"
@@ -39,7 +39,7 @@ func (s *CgitProviderSuite) TestCgitProvider_WhenFinishScraping(c *C) {
 	provider := s.newProvider("https://a3nm.net/git/")
 
 	var err error = nil
-	var url *repositoryModel.Raw = nil
+	var url *models.Mention = nil
 	count := 0
 	for err == nil {
 		url, err = provider.Next()

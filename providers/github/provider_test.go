@@ -5,7 +5,6 @@ import (
 	"io"
 	"testing"
 
-	"github.com/src-d/go-github/github"
 	"github.com/src-d/rovers/core"
 	. "gopkg.in/check.v1"
 )
@@ -51,7 +50,7 @@ func (s *GithubProviderSuite) TestGithubProvider_Next_FromStart_Repos(c *C) {
 		c.Assert(err, IsNil)
 	}
 
-	res := []github.Repository{}
+	res := []*Repository{}
 	err := s.client.Collection(repositoryCollection).Find(nil).All(&res)
 	c.Assert(err, IsNil)
 	c.Assert(len(res), Equals, 100)
@@ -66,7 +65,7 @@ func (s *GithubProviderSuite) TestGithubProvider_Next_FromStart_ReposTwoPages(c 
 		c.Assert(err, IsNil)
 	}
 
-	res := []github.Repository{}
+	res := []*Repository{}
 	err := s.client.Collection(repositoryCollection).Find(nil).All(&res)
 	c.Assert(err, IsNil)
 	c.Assert(len(res), Equals, 200)
@@ -74,8 +73,8 @@ func (s *GithubProviderSuite) TestGithubProvider_Next_FromStart_ReposTwoPages(c 
 
 func (s *GithubProviderSuite) TestGithubProvider_Next_End(c *C) {
 	lastRepoId := 99999999
-	repos := []*github.Repository{{
-		ID: &lastRepoId,
+	repos := []*Repository{{
+		ID: lastRepoId,
 	}}
 
 	// Simulate Ack

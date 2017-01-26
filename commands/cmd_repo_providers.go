@@ -11,7 +11,7 @@ import (
 	"github.com/src-d/rovers/providers/github"
 
 	"gopkg.in/inconshreveable/log15.v2"
-	"srcd.works/domain.v6/models/repository"
+	"srcd.works/core.v0/models"
 	"srcd.works/framework.v0/queue"
 )
 
@@ -97,7 +97,7 @@ func (c *CmdRepoProviders) getPersistFunction() (core.PersistFN, error) {
 		return nil, err
 	}
 
-	return func(repo *repository.Raw) error {
+	return func(repo *models.Mention) error {
 		j := queue.NewJob()
 
 		if err := j.Encode(repo); err != nil {
