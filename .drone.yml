@@ -29,8 +29,8 @@ publish:
       event: tag
 
 compose:
-  beanstalkd:
-    image: schickling/beanstalkd
+  rabbitmq:
+    image: rabbitmq
   mongodb:
     image: mongo:3.0
 

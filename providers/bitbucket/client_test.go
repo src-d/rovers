@@ -4,7 +4,7 @@ import (
 	. "gopkg.in/check.v1"
 )
 
-const secondPage = "2008-08-13T17:25:17.038951+00:00"
+const secondPage = "2008-08-13T20:24:13.972049+00:00"
 
 type ClientSuite struct {
 	c *client

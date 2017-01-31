@@ -1,8 +1,6 @@
 package commands
 
 import (
-	"bytes"
-	"encoding/gob"
 	"errors"
 	"fmt"
 	"time"
@@ -14,6 +12,7 @@ import (
 
 	"gopkg.in/inconshreveable/log15.v2"
 	"srcd.works/domain.v6/models/repository"
+	"srcd.works/framework.v0/queue"
 )
 
 const (
@@ -30,8 +29,8 @@ type CmdRepoProviders struct {
 	CmdBase
 	Providers   []string      `short:"p" long:"provider" optional:"yes" description:"list of providers to execute. (default: all)"`
 	WatcherTime time.Duration `short:"t" long:"watcher-time" optional:"no" default:"1h" description:"Time to try again to get new repos"`
-	QueueName   string        `short:"q" long:"queue" optional:"no" default:"new_repositories" description:"beanstalkd queue used to send repo urls"`
-	Beanstalk   string        `long:"beanstalk" default:"127.0.0.1:11300" description:"beanstalk url server"`
+	Queue       string        `long:"queue" default:"rovers" description:"queue name"`
+	Broker      string        `long:"broker" default:"amqp://localhost:5672" description:"broker URI"`
 }
 
 func (c *CmdRepoProviders) Execute(args []string) error {
@@ -88,17 +87,23 @@ func (c *CmdRepoProviders) Execute(args []string) error {
 }
 
 func (c *CmdRepoProviders) getPersistFunction() (core.PersistFN, error) {
-	queue := core.NewBeanstalkQueue(c.Beanstalk, c.QueueName)
+	broker, err := queue.NewBroker(c.Broker)
+	if err != nil {
+		return nil, err
+	}
+
+	q, err := broker.Queue(c.Queue)
+	if err != nil {
+		return nil, err
+	}
 
 	return func(repo *repository.Raw) error {
-		var buf bytes.Buffer
-		enc := gob.NewEncoder(&buf)
-		err := enc.Encode(repo)
-		if err != nil {
-			log15.Error("gob.Encode", "error", err)
+		j := queue.NewJob()
+
+		if err := j.Encode(repo); err != nil {
 			return err
 		}
-		queue.Put(buf.Bytes(), priorityNormal, 0, 0)
-		return nil
+
+		return q.Publish(j)
 	}, nil
 }
