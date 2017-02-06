@@ -1,15 +1,12 @@
 package commands
 
 import (
-	"bytes"
-	"encoding/gob"
 	"testing"
 	"time"
 
-	"github.com/kr/beanstalk"
-	"srcd.works/domain.v6/models/repository"
-
 	. "gopkg.in/check.v1"
+	"srcd.works/domain.v6/models/repository"
+	"srcd.works/framework.v0/queue"
 )
 
 func Test(t *testing.T) {
@@ -24,8 +21,8 @@ var _ = Suite(&CmdRepoProviderSuite{})
 
 func (s *CmdRepoProviderSuite) SetUpTest(c *C) {
 	s.cmdProviders = &CmdRepoProviders{
-		QueueName: "test",
-		Beanstalk: "127.0.0.1:11300",
+		Queue:  "test",
+		Broker: "amqp://guest:guest@localhost:5672/",
 	}
 }
 
@@ -43,14 +40,24 @@ func (s *CmdRepoProviderSuite) TestCmdRepoProvider_getPersistFunction_CorrectlyS
 	err = f(repositoryRaw)
 	c.Assert(err, IsNil)
 
-	conn, err := beanstalk.Dial("tcp", s.cmdProviders.Beanstalk)
+	broker, err := queue.NewBroker(s.cmdProviders.Broker)
 	c.Assert(err, IsNil)
-	tube := beanstalk.NewTubeSet(conn, s.cmdProviders.QueueName)
-	_, body, err := tube.Reserve(500 * time.Millisecond)
+	queue, err := broker.Queue(s.cmdProviders.Queue)
+	c.Assert(err, IsNil)
+	jobIter, err := queue.Consume()
+	c.Assert(err, IsNil)
+
+	job, err := jobIter.Next()
 	c.Assert(err, IsNil)
 
 	obtainedRepositoryRaw := &repository.Raw{}
-	err = gob.NewDecoder(bytes.NewReader(body)).Decode(obtainedRepositoryRaw)
+	err = job.Decode(obtainedRepositoryRaw)
 	c.Assert(err, IsNil)
+	testTime := time.Now()
+
+	obtainedRepositoryRaw.CreatedAt = testTime
+	obtainedRepositoryRaw.UpdatedAt = testTime
+	repositoryRaw.CreatedAt = testTime
+	repositoryRaw.UpdatedAt = testTime
 	c.Assert(repositoryRaw, DeepEquals, obtainedRepositoryRaw)
 }

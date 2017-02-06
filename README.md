@@ -11,12 +11,12 @@ Type `help` fore commands info.
 
 ## Usage
 
-This service uses MongoDB and Beanstalk.
+This service uses MongoDB and RabbitMQ.
 
-To execute test locally you need to run Beanstalk and MongoDB too:
+To execute test locally you need to run RabbitMQ and MongoDB too:
 
 ```shell
-  docker run -d -p 11300:11300 schickling/beanstalkd
+  docker run -d -p 5672:5672 rabbitmq:3
   docker run --name some-mongo -d -p 27017:27017 mongo
   go test ./...
 ```
