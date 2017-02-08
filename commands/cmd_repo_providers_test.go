@@ -29,7 +29,11 @@ func (s *CmdRepoProviderSuite) TestCmdRepoProvider_getPersistFunction_CorrectlyS
 	repositoryRaw := &models.Mention{
 		Provider: "test",
 		Endpoint: "https://some.repo.url.com",
+		VCS:      models.GIT,
+		Context:  make(map[string]string),
 	}
+
+	repositoryRaw.Context["test"] = "bla"
 
 	f, err := s.cmdProviders.getPersistFunction()
 	c.Assert(err, IsNil)

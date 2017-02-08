@@ -225,7 +225,7 @@ func (*provider) repositoryRaw(page *page) *coreModels.Mention {
 		Endpoint: page.RepositoryURL,
 		Provider: providerName,
 		VCS:      coreModels.GIT,
-		Context:  providers.NewCtx().Aliases(page.Aliases).Build(),
+		Context:  providers.ContextBuilder{}.Aliases(page.Aliases),
 	}
 }
 

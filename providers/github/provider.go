@@ -80,7 +80,7 @@ func (*provider) repositoryRaw(repoUrl string, isFork bool) *coreModels.Mention 
 		Provider: providerName,
 		Endpoint: repoUrl,
 		VCS:      coreModels.GIT,
-		Context:  providers.NewCtx().Fork(isFork).Build(),
+		Context:  providers.ContextBuilder{}.Fork(isFork),
 	}
 }
 

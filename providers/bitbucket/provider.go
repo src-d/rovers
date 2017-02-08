@@ -68,9 +68,9 @@ func (p *provider) repositoryRaw(r *models.Repository) *coreModels.Mention {
 		Endpoint: mainRepository,
 		Provider: providerName,
 		VCS:      coreModels.GIT,
-		Context: providers.NewCtx().
+		Context: providers.ContextBuilder{}.
 			Fork(r.Parent != nil).
-			Aliases(aliases).Build(),
+			Aliases(aliases),
 	}
 }
 
