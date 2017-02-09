@@ -6,12 +6,8 @@ import (
 	"strings"
 )
 
-type Client struct {
-	DB *sql.DB
-}
-
-func NewClient() (*Client, error) {
-	db, err := sql.Open("postgres", Config.Postgres.Url)
+func NewDB() (*sql.DB, error) {
+	db, err := sql.Open("postgres", Config.Postgres.URL)
 	if err != nil {
 		return nil, err
 	}
@@ -19,12 +15,12 @@ func NewClient() (*Client, error) {
 	db.SetMaxIdleConns(40)
 	db.SetMaxOpenConns(10)
 
-	return &Client{db}, nil
+	return db, nil
 }
 
-func (c *Client) DropTables(names ...string) error {
+func DropTables(DB *sql.DB, names ...string) error {
 	smt := fmt.Sprintf("DROP TABLE IF EXISTS %s;", strings.Join(names, ", "))
-	if _, err := c.DB.Exec(smt); err != nil {
+	if _, err := DB.Exec(smt); err != nil {
 		return err
 	}
 
@@ -32,8 +28,8 @@ func (c *Client) DropTables(names ...string) error {
 }
 
 // TODO temporal method to create cgit tables
-func (c *Client) CreateCgitTables() error {
-	_, err := c.DB.Exec(`CREATE TABLE IF NOT EXISTS cgit (
+func CreateCgitTables(DB *sql.DB) error {
+	_, err := DB.Exec(`CREATE TABLE IF NOT EXISTS cgit (
 	id uuid PRIMARY KEY,
 	created_at timestamptz,
 	updated_at timestamptz,
@@ -47,7 +43,7 @@ func (c *Client) CreateCgitTables() error {
 		return err
 	}
 
-	_, err = c.DB.Exec(`CREATE TABLE IF NOT EXISTS cgit_urls (
+	_, err = DB.Exec(`CREATE TABLE IF NOT EXISTS cgit_urls (
 	id uuid PRIMARY KEY,
 	created_at timestamptz,
 	updated_at timestamptz,
@@ -58,8 +54,8 @@ func (c *Client) CreateCgitTables() error {
 }
 
 // TODO temporal method to create bitbucket table
-func (c *Client) CreateBitbucketTable() error {
-	_, err := c.DB.Exec(`CREATE TABLE IF NOT EXISTS bitbucket (
+func CreateBitbucketTable(DB *sql.DB) error {
+	_, err := DB.Exec(`CREATE TABLE IF NOT EXISTS bitbucket (
 	id uuid PRIMARY KEY,
 	created_at timestamptz,
 	updated_at timestamptz,
@@ -88,8 +84,8 @@ func (c *Client) CreateBitbucketTable() error {
 }
 
 // TODO temporal method to create github table
-func (c *Client) CreateGithubTable() error {
-	_, err := c.DB.Exec(`CREATE TABLE IF NOT EXISTS github (
+func CreateGithubTable(DB *sql.DB) error {
+	_, err := DB.Exec(`CREATE TABLE IF NOT EXISTS github (
 	id uuid PRIMARY KEY,
 	created_at timestamptz,
 	updated_at timestamptz,

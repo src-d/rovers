@@ -1,6 +1,7 @@
 package cgit
 
 import (
+	"database/sql"
 	"errors"
 	"io"
 	goURL "net/url"
@@ -14,27 +15,27 @@ import (
 )
 
 type CgitProviderSuite struct {
-	c *core.Client
+	DB *sql.DB
 }
 
 var _ = Suite(&CgitProviderSuite{})
 
 func (s *CgitProviderSuite) SetUpTest(c *C) {
-	client, err := core.NewClient()
+	DB, err := core.NewDB()
 	c.Assert(err, IsNil)
-	s.c = client
+	s.DB = DB
 
-	err = client.DropTables(providerName, "cgit_urls")
+	err = core.DropTables(DB, providerName, "cgit_urls")
 	c.Assert(err, IsNil)
 
-	err = client.CreateCgitTables()
+	err = core.CreateCgitTables(DB)
 	c.Assert(err, IsNil)
 }
 
 func (s *CgitProviderSuite) newProvider(cgitUrls ...string) *provider {
 	return &provider{
-		repositoriesStore: models.NewRepositoryStore(s.c.DB),
-		urlsStore:         models.NewURLStore(s.c.DB),
+		repositoriesStore: models.NewRepositoryStore(s.DB),
+		urlsStore:         models.NewURLStore(s.DB),
 		searcher:          &dummySearcher{cgitUrls},
 		backoff:           getBackoff(),
 		scrapers:          []*scraper{},

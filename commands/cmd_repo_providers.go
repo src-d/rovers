@@ -42,7 +42,7 @@ func (c *CmdRepoProviders) Execute(args []string) error {
 		c.Providers = allowedProviders
 	}
 
-	client, err := core.NewClient()
+	DB, err := core.NewDB()
 	if err != nil {
 		return err
 	}
@@ -55,21 +55,18 @@ func (c *CmdRepoProviders) Execute(args []string) error {
 			if core.Config.Github.Token == "" {
 				return errors.New("Github api token must be provided.")
 			}
-			ghp := github.NewProvider(core.Config.Github.Token, client.DB)
+			ghp := github.NewProvider(core.Config.Github.Token, DB)
 			providers = append(providers, ghp)
 		case cgitProviderName:
 			log15.Info("Creating cgit provider")
 			if core.Config.Bing.Key == "" {
 				return errors.New("Bing search key are mandatory for cgit provider")
 			}
-			cgp := cgit.NewProvider(
-				core.Config.Bing.Key,
-				client.DB,
-			)
+			cgp := cgit.NewProvider(core.Config.Bing.Key, DB)
 			providers = append(providers, cgp)
 		case bitbucketProviderName:
 			log15.Info("Creating bitbucket provider")
-			bbp := bitbucket.NewProvider(client.DB)
+			bbp := bitbucket.NewProvider(DB)
 			providers = append(providers, bbp)
 		default:
 			return fmt.Errorf("Provider '%s' not found. Allowed providers: %v",

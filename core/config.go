@@ -17,7 +17,7 @@ type config struct {
 		Token string
 	}
 	Postgres struct {
-		Url string `default:"postgres://postgres:mysecretpassword@0.0.0.0:5432/postgres?sslmode=disable"`
+		URL string `default:"postgres://postgres:mysecretpassword@0.0.0.0:5432/postgres?sslmode=disable"`
 	}
 }
 

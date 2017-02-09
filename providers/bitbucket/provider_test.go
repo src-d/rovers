@@ -1,6 +1,7 @@
 package bitbucket
 
 import (
+	"database/sql"
 	"errors"
 	"io"
 	"testing"
@@ -22,24 +23,24 @@ func Test(t *testing.T) {
 }
 
 type ProviderSuite struct {
-	p core.RepoProvider
-	c *core.Client
+	p  core.RepoProvider
+	DB *sql.DB
 }
 
 var _ = Suite(&ProviderSuite{})
 
 func (s *ProviderSuite) SetUpTest(c *C) {
-	client, err := core.NewClient()
+	DB, err := core.NewDB()
 	c.Assert(err, IsNil)
-	s.c = client
+	s.DB = DB
 
-	err = s.c.DropTables(providerName)
-	c.Assert(err, IsNil)
-
-	err = s.c.CreateBitbucketTable()
+	err = core.DropTables(DB, providerName)
 	c.Assert(err, IsNil)
 
-	s.p = NewProvider(s.c.DB)
+	err = core.CreateBitbucketTable(DB)
+	c.Assert(err, IsNil)
+
+	s.p = NewProvider(s.DB)
 	bitbucketProvider, ok := s.p.(*provider)
 	c.Assert(ok, Equals, true)
 	bitbucketProvider.lastCheckpoint = firstCheckpointWithGitRepositories
@@ -50,7 +51,7 @@ func (s *ProviderSuite) TestProvider_Next(c *C) {
 	c.Assert(err, IsNil)
 	c.Assert(r, NotNil)
 
-	result, err := models.NewRepositoryStore(s.c.DB).FindOne(
+	result, err := models.NewRepositoryStore(s.DB).FindOne(
 		models.NewRepositoryQuery().
 			Order(kallax.Asc(models.Schema.Repository.CreatedAt)),
 	)

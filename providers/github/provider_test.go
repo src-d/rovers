@@ -1,6 +1,7 @@
 package github
 
 import (
+	"database/sql"
 	"errors"
 	"io"
 	"testing"
@@ -16,23 +17,23 @@ func Test(t *testing.T) {
 }
 
 type GithubProviderSuite struct {
-	client   *core.Client
+	DB       *sql.DB
 	provider core.RepoProvider
 }
 
 var _ = Suite(&GithubProviderSuite{})
 
 func (s *GithubProviderSuite) SetUpTest(c *C) {
-	client, err := core.NewClient()
+	DB, err := core.NewDB()
 	c.Assert(err, IsNil)
-	s.client = client
+	s.DB = DB
 
-	err = s.client.DropTables(providerName)
+	err = core.DropTables(DB, providerName)
 	c.Assert(err, IsNil)
-	err = s.client.CreateGithubTable()
+	err = core.CreateGithubTable(DB)
 	c.Assert(err, IsNil)
 
-	s.provider = NewProvider(core.Config.Github.Token, s.client.DB)
+	s.provider = NewProvider(core.Config.Github.Token, s.DB)
 
 }
 
@@ -55,7 +56,7 @@ func (s *GithubProviderSuite) TestGithubProvider_Next_FromStart_Repos(c *C) {
 		c.Assert(err, IsNil)
 	}
 
-	rs, err := models.NewRepositoryStore(s.client.DB).Find(models.NewRepositoryQuery())
+	rs, err := models.NewRepositoryStore(s.DB).Find(models.NewRepositoryQuery())
 	c.Assert(err, IsNil)
 	repos, err := rs.All()
 	c.Assert(err, IsNil)
@@ -72,7 +73,7 @@ func (s *GithubProviderSuite) TestGithubProvider_Next_FromStart_ReposTwoPages(c 
 		c.Assert(err, IsNil)
 	}
 
-	rs, err := models.NewRepositoryStore(s.client.DB).Find(models.NewRepositoryQuery())
+	rs, err := models.NewRepositoryStore(s.DB).Find(models.NewRepositoryQuery())
 	c.Assert(err, IsNil)
 	repos, err := rs.All()
 	c.Assert(err, IsNil)
