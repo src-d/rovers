@@ -1,34 +1,39 @@
 package github
 
 import (
+	"database/sql"
 	"errors"
 	"io"
 	"testing"
 
-	"github.com/src-d/go-github/github"
 	"github.com/src-d/rovers/core"
+	"github.com/src-d/rovers/providers/github/models"
+
 	. "gopkg.in/check.v1"
 )
-
-const testDatabase = "github-test"
 
 func Test(t *testing.T) {
 	TestingT(t)
 }
 
 type GithubProviderSuite struct {
-	client   *core.Client
+	DB       *sql.DB
 	provider core.RepoProvider
 }
 
-var _ = Suite(&GithubProviderSuite{
-	client: core.NewClient(testDatabase),
-})
+var _ = Suite(&GithubProviderSuite{})
 
 func (s *GithubProviderSuite) SetUpTest(c *C) {
-	s.client.DropDatabase()
-	config := &Config{GithubToken: core.Config.Github.Token, Database: testDatabase}
-	s.provider = NewProvider(config)
+	DB, err := core.NewDB()
+	c.Assert(err, IsNil)
+	s.DB = DB
+
+	err = core.DropTables(DB, providerName)
+	c.Assert(err, IsNil)
+	err = core.CreateGithubTable(DB)
+	c.Assert(err, IsNil)
+
+	s.provider = NewProvider(core.Config.Github.Token, s.DB)
 
 }
 
@@ -51,10 +56,12 @@ func (s *GithubProviderSuite) TestGithubProvider_Next_FromStart_Repos(c *C) {
 		c.Assert(err, IsNil)
 	}
 
-	res := []github.Repository{}
-	err := s.client.Collection(repositoryCollection).Find(nil).All(&res)
+	rs, err := models.NewRepositoryStore(s.DB).Find(models.NewRepositoryQuery())
 	c.Assert(err, IsNil)
-	c.Assert(len(res), Equals, 100)
+	repos, err := rs.All()
+	c.Assert(err, IsNil)
+
+	c.Assert(len(repos), Equals, 100)
 }
 
 func (s *GithubProviderSuite) TestGithubProvider_Next_FromStart_ReposTwoPages(c *C) {
@@ -66,17 +73,21 @@ func (s *GithubProviderSuite) TestGithubProvider_Next_FromStart_ReposTwoPages(c 
 		c.Assert(err, IsNil)
 	}
 
-	res := []github.Repository{}
-	err := s.client.Collection(repositoryCollection).Find(nil).All(&res)
+	rs, err := models.NewRepositoryStore(s.DB).Find(models.NewRepositoryQuery())
 	c.Assert(err, IsNil)
-	c.Assert(len(res), Equals, 200)
+	repos, err := rs.All()
+	c.Assert(err, IsNil)
+
+	c.Assert(len(repos), Equals, 200)
 }
 
 func (s *GithubProviderSuite) TestGithubProvider_Next_End(c *C) {
-	lastRepoId := 99999999
-	repos := []*github.Repository{{
-		ID: &lastRepoId,
-	}}
+	repo := models.NewRepository()
+	repo.GithubID = 99999999
+
+	repos := []*models.Repository{
+		repo,
+	}
 
 	// Simulate Ack
 	githubProvider, ok := s.provider.(*provider)

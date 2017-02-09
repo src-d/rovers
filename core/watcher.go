@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"gopkg.in/inconshreveable/log15.v2"
-	"srcd.works/domain.v6/models/repository"
+	"srcd.works/core.v0/models"
 )
 
 const (
@@ -14,7 +14,7 @@ const (
 	secondsBetweenRetries = 10
 )
 
-type PersistFN func(*repository.Raw) error
+type PersistFN func(*models.Mention) error
 
 var errBadAck = errors.New("error while executing ack")
 
@@ -51,7 +51,7 @@ func (w *Watcher) Start() {
 }
 
 func (w *Watcher) handleProviderResult(p RepoProvider) error {
-	repositoryRaw, err := p.Next()
+	mention, err := p.Next()
 	switch err {
 	case io.EOF:
 		log15.Info("no more repositories, "+
@@ -59,10 +59,10 @@ func (w *Watcher) handleProviderResult(p RepoProvider) error {
 			"time to sleep", w.timeToSleep)
 		time.Sleep(w.timeToSleep)
 	case nil:
-		log15.Info("getting new repository", "provider", p.Name(), "repository", repositoryRaw.URL)
-		err := w.persist(repositoryRaw)
+		log15.Info("getting new repository", "provider", p.Name(), "repository", mention.Endpoint)
+		err := w.persist(mention)
 		if err != nil {
-			log15.Error("error saving new repo", "error", err, "repository", repositoryRaw.URL)
+			log15.Error("error saving new repo", "error", err, "repository", mention.Endpoint)
 		}
 		retries := 0
 		for retries != maxRetries {

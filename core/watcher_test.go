@@ -9,10 +9,10 @@ import (
 
 	. "gopkg.in/check.v1"
 	"gopkg.in/inconshreveable/log15.v2"
-	"srcd.works/domain.v6/models/repository"
+	"srcd.works/core.v0/models"
 )
 
-var persistFunction = func(rawRepo *repository.Raw) error {
+var persistFunction = func(rawRepo *models.Mention) error {
 	log15.Debug("Persisting new url", "repoUrl", rawRepo)
 	return nil
 }
@@ -22,19 +22,18 @@ func Test(t *testing.T) {
 }
 
 type WatcherSuite struct {
-	rawRepo *repository.Raw
+	mention *models.Mention
 }
 
 var _ = Suite(&WatcherSuite{
-	rawRepo: &repository.Raw{
-		IsFork: true,
-		URL:    "SOME_REPO",
-		Status: repository.Initial,
+	mention: &models.Mention{
+		Endpoint: "SOME_REPO",
+		Provider: "SOME_PROVIDER",
 	},
 })
 
 func (s *WatcherSuite) TestWatcher_EOF(c *C) {
-	provider := &EOFProvider{Repo: s.rawRepo}
+	provider := &EOFProvider{Mention: s.mention}
 	providers := []RepoProvider{provider}
 	watcher := NewWatcher(providers, persistFunction, time.Second, time.Second)
 	watcher.Start()
@@ -46,7 +45,7 @@ func (s *WatcherSuite) TestWatcher_EOF(c *C) {
 func (s *WatcherSuite) TestWatcher_AckRetries(c *C) {
 	provider := &EOFProvider{
 		FailOnAck: true,
-		Repo:      s.rawRepo,
+		Mention:   s.mention,
 	}
 	providers := []RepoProvider{provider}
 	watcher := NewWatcher(providers, persistFunction, time.Second, time.Second)
@@ -64,17 +63,17 @@ type EOFProvider struct {
 	NumberOfCalls         int
 	NumberOfAckErrorCalls int
 	FailOnAck             bool
-	Repo                  *repository.Raw
+	Mention               *models.Mention
 }
 
-func (p *EOFProvider) Next() (*repository.Raw, error) {
+func (p *EOFProvider) Next() (*models.Mention, error) {
 	mutex.Lock()
 	defer mutex.Unlock()
 
 	p.NumberOfCalls++
 	switch p.NumberOfCalls {
 	case 1:
-		return p.Repo, nil
+		return p.Mention, nil
 	case 2:
 		return nil, errors.New("OTHER ERROR")
 	default:

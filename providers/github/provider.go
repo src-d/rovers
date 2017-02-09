@@ -1,93 +1,45 @@
 package github
 
 import (
-	"fmt"
+	"database/sql"
 	"io"
-	"net/http"
 	"sync"
-	"time"
 
-	api "github.com/src-d/go-github/github"
 	"github.com/src-d/rovers/core"
-	"golang.org/x/oauth2"
+	"github.com/src-d/rovers/providers"
+	"github.com/src-d/rovers/providers/github/models"
+
+	"github.com/src-d/go-kallax"
 	"gopkg.in/inconshreveable/log15.v2"
-	"gopkg.in/mgo.v2"
-	"srcd.works/domain.v6/container"
-	"srcd.works/domain.v6/models/repository"
-	"srcd.works/domain.v6/models/social"
+	coreModels "srcd.works/core.v0/models"
 )
 
 const (
-	minRequestDuration = time.Hour / 5000
-
-	providerName         = "github"
-	repositoryCollection = "repositories"
-
-	idField       = "id"
-	fullnameField = "fullname"
-	htmlurlField  = "htmlurl"
-	forkField     = "fork"
-
-	textIndexFormat = "$text:%s"
+	providerName = "github"
 )
 
 type provider struct {
-	repositoriesColl *mgo.Collection
-	apiClient        *api.Client
-	repoStore        *social.GithubRepositoryStore
-	repoCache        []*api.Repository
-	checkpoint       int
-	applyAck         func()
-	mutex            *sync.Mutex
+	repositoriesStore *models.RepositoryStore
+	apiClient         *client
+	repoCache         []*models.Repository
+	checkpoint        int
+	applyAck          func()
+	mutex             *sync.Mutex
 }
 
-type Config struct {
-	GithubToken string
-	Database    string
-}
-
-func NewProvider(config *Config) core.RepoProvider {
-	httpClient := http.DefaultClient
-	if config.GithubToken != "" {
-		token := &oauth2.Token{AccessToken: config.GithubToken}
-		httpClient = oauth2.NewClient(oauth2.NoContext, oauth2.StaticTokenSource(token))
-	} else {
-		log15.Warn("creating anonymous http client. No GitHub token provided")
-	}
-	apiClient := api.NewClient(httpClient)
-	repoStore := container.GetDomainModelsSocialGithubRepositoryStore()
-
+func NewProvider(githubToken string, DB *sql.DB) core.RepoProvider {
 	return &provider{
-		initRepositoriesCollection(config.Database),
-		apiClient,
-		repoStore,
-		[]*api.Repository{},
-		0,
-		nil,
-		&sync.Mutex{},
+		repositoriesStore: models.NewRepositoryStore(DB),
+		apiClient:         newClient(githubToken),
+		mutex:             &sync.Mutex{},
 	}
-}
-
-func initRepositoriesCollection(database string) *mgo.Collection {
-	githubColl := core.NewClient(database).Collection(repositoryCollection)
-	index := mgo.Index{
-		Key: []string{
-			fmt.Sprintf(textIndexFormat, fullnameField),
-			fmt.Sprintf(textIndexFormat, htmlurlField),
-			idField,
-			forkField,
-		},
-	}
-	githubColl.EnsureIndex(index)
-
-	return githubColl
 }
 
 func (gp *provider) Name() string {
 	return providerName
 }
 
-func (gp *provider) Next() (*repository.Raw, error) {
+func (gp *provider) Next() (*coreModels.Mention, error) {
 	gp.mutex.Lock()
 	defer gp.mutex.Unlock()
 	switch len(gp.repoCache) {
@@ -120,16 +72,15 @@ func (gp *provider) Next() (*repository.Raw, error) {
 		gp.repoCache = repoCache
 	}
 
-	return gp.repositoryRaw(*x.HTMLURL+".git", *x.Fork), nil
+	return gp.repositoryRaw(x.HTMLURL+".git", x.Fork), nil
 }
 
-func (*provider) repositoryRaw(repoUrl string, isFork bool) *repository.Raw {
-	return &repository.Raw{
-		Status:   repository.Initial,
+func (*provider) repositoryRaw(repoUrl string, isFork bool) *coreModels.Mention {
+	return &coreModels.Mention{
 		Provider: providerName,
-		URL:      repoUrl,
-		IsFork:   isFork,
-		VCS:      repository.Git,
+		Endpoint: repoUrl,
+		VCS:      coreModels.GIT,
+		Context:  providers.ContextBuilder{}.Fork(isFork),
 	}
 }
 
@@ -151,44 +102,45 @@ func (gp *provider) Close() error {
 	return nil
 }
 
-func (gp *provider) requestNextPage(since int) ([]*api.Repository, error) {
-	start := time.Now()
-	defer func() {
-		needsWait := minRequestDuration - time.Since(start)
-		if needsWait > 0 {
-			log15.Debug("waiting", "duration", needsWait)
-			time.Sleep(needsWait)
-		}
-	}()
-	repos, resp, err := gp.apiClient.Repositories.ListAll(&api.RepositoryListAllOptions{Since: since})
+func (gp *provider) requestNextPage(since int) ([]*models.Repository, error) {
+	resp, err := gp.apiClient.Repositories(since)
 	if err != nil {
 		return nil, err
 	}
-	gp.checkpoint = resp.NextPage
-	gp.saveRepos(repos)
-	if resp.Remaining < 100 {
-		log15.Warn("low remaining", "value", resp.Remaining)
+
+	gp.checkpoint = resp.Next
+
+	if err := gp.saveRepos(resp.Repositories); err != nil {
+		return nil, err
 	}
 
-	return repos, nil
+	return resp.Repositories, nil
 }
 
 func (gp *provider) getLastRepoId() (int, error) {
-	result := api.Repository{}
-	err := gp.repositoriesColl.Find(nil).Sort("-_id").One(&result)
-	if err == mgo.ErrNotFound {
+	result, err := gp.repositoriesStore.FindOne(models.NewRepositoryQuery().
+		Order(kallax.Desc(models.Schema.Repository.CreatedAt)))
+
+	if err == kallax.ErrNotFound {
 		return 0, nil
 	}
 
-	return *result.ID, err
+	if err != nil {
+		return 0, err
+	}
+
+	return result.GithubID, nil
 }
 
-func (gp *provider) saveRepos(repositories []*api.Repository) error {
-	bulkOp := gp.repositoriesColl.Bulk()
-	for _, repo := range repositories {
-		bulkOp.Insert(repo)
-	}
-	_, err := bulkOp.Run()
+func (gp *provider) saveRepos(repositories []*models.Repository) error {
+	return gp.repositoriesStore.Transaction(func(s *models.RepositoryStore) error {
+		for _, repo := range repositories {
+			err := s.Insert(repo)
+			if err != nil {
+				return err
+			}
+		}
 
-	return err
+		return nil
+	})
 }

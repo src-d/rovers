@@ -1,26 +1,103 @@
 package core
 
 import (
-	"gopkg.in/mgo.v2"
-	"srcd.works/domain.v6/container"
+	"database/sql"
+	"fmt"
+	"strings"
 )
 
-type Client struct {
-	dbName  string
-	session mgo.Session
-}
-
-func NewClient(dbName string) *Client {
-	return &Client{
-		dbName:  dbName,
-		session: *container.GetAnalysisMgoSession(),
+func NewDB() (*sql.DB, error) {
+	db, err := sql.Open("postgres", Config.Postgres.URL)
+	if err != nil {
+		return nil, err
 	}
+
+	db.SetMaxIdleConns(40)
+	db.SetMaxOpenConns(10)
+
+	return db, nil
 }
 
-func (c *Client) Collection(collection string) *mgo.Collection {
-	return c.session.DB(c.dbName).C(collection)
+func DropTables(DB *sql.DB, names ...string) error {
+	smt := fmt.Sprintf("DROP TABLE IF EXISTS %s;", strings.Join(names, ", "))
+	if _, err := DB.Exec(smt); err != nil {
+		return err
+	}
+
+	return nil
 }
 
-func (c *Client) DropDatabase() {
-	c.session.DB(c.dbName).DropDatabase()
+// TODO temporal method to create cgit tables
+func CreateCgitTables(DB *sql.DB) error {
+	_, err := DB.Exec(`CREATE TABLE IF NOT EXISTS cgit (
+	id uuid PRIMARY KEY,
+	created_at timestamptz,
+	updated_at timestamptz,
+        cgit_url varchar(255),
+	url varchar(255),
+	aliases text[],
+	html text
+	)`)
+
+	if err != nil {
+		return err
+	}
+
+	_, err = DB.Exec(`CREATE TABLE IF NOT EXISTS cgit_urls (
+	id uuid PRIMARY KEY,
+	created_at timestamptz,
+	updated_at timestamptz,
+        cgit_url varchar(255) UNIQUE NOT NULL
+	)`)
+
+	return err
+}
+
+// TODO temporal method to create bitbucket table
+func CreateBitbucketTable(DB *sql.DB) error {
+	_, err := DB.Exec(`CREATE TABLE IF NOT EXISTS bitbucket (
+	id uuid PRIMARY KEY,
+	created_at timestamptz,
+	updated_at timestamptz,
+	next varchar(255) not null,
+	scm varchar(255) not null,
+	website varchar(255) not null,
+	name varchar(255) not null,
+	links jsonb,
+	fork_policy varchar(255) not null,
+	uuid varchar(255) not null,
+	language varchar(255) not null,
+	created_on varchar(255) not null,
+	parent jsonb,
+	full_name varchar(255) not null,
+	has_issues boolean not null,
+	owner jsonb,
+	updated_on varchar(255) not null,
+	size int not null,
+	type varchar(255) not null,
+	slug varchar(255) not null,
+	is_private boolean not null,
+	description text not null
+	)`)
+
+	return err
+}
+
+// TODO temporal method to create github table
+func CreateGithubTable(DB *sql.DB) error {
+	_, err := DB.Exec(`CREATE TABLE IF NOT EXISTS github (
+	id uuid PRIMARY KEY,
+	created_at timestamptz,
+	updated_at timestamptz,
+	github_id int,
+	name varchar(255),
+	full_name varchar(511),
+	owner jsonb,
+	private boolean not null,
+	htmlurl varchar(1023),
+	description text,
+	fork boolean not null
+	)`)
+
+	return err
 }

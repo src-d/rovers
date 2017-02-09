@@ -31,8 +31,8 @@ publish:
 compose:
   rabbitmq:
     image: rabbitmq
-  mongodb:
-    image: mongo:3.0
+  postgres:
+    image: postgres:9
 
 notify:
   slack:

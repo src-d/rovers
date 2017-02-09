@@ -30,7 +30,16 @@ func (s *BingSuite) TestBing_Search(c *C) {
 
 	c.Assert(err, IsNil)
 	c.Assert(result, NotNil)
-	c.Assert(len(result) > 200, Equals, true)
+
+	contains := false
+	for _, u := range result {
+		if u.Host == "git.kernel.dk" {
+			contains = true
+			break
+		}
+	}
+
+	c.Assert(contains, Equals, true)
 }
 
 func (s *BingSuite) TestBing_BadKey(c *C) {

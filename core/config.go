@@ -16,12 +16,8 @@ type config struct {
 	Github struct {
 		Token string
 	}
-	MongoDb struct {
-		Database struct {
-			Github    string `default:"github"`
-			Cgit      string `default:"cgit"`
-			Bitbucket string `default:"bitbucket"`
-		}
+	Postgres struct {
+		URL string `default:"postgres://postgres:mysecretpassword@0.0.0.0:5432/postgres?sslmode=disable"`
 	}
 }
 

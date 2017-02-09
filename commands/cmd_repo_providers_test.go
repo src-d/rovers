@@ -2,10 +2,9 @@ package commands
 
 import (
 	"testing"
-	"time"
 
 	. "gopkg.in/check.v1"
-	"srcd.works/domain.v6/models/repository"
+	"srcd.works/core.v0/models"
 	"srcd.works/framework.v0/queue"
 )
 
@@ -27,13 +26,14 @@ func (s *CmdRepoProviderSuite) SetUpTest(c *C) {
 }
 
 func (s *CmdRepoProviderSuite) TestCmdRepoProvider_getPersistFunction_CorrectlySerialized(c *C) {
-	repositoryRaw := &repository.Raw{
-		Status:   repository.Initial,
+	repositoryRaw := &models.Mention{
 		Provider: "test",
-		URL:      "https://some.repo.url.com",
-		IsFork:   true,
-		VCS:      repository.Git,
+		Endpoint: "https://some.repo.url.com",
+		VCS:      models.GIT,
+		Context:  make(map[string]string),
 	}
+
+	repositoryRaw.Context["test"] = "bla"
 
 	f, err := s.cmdProviders.getPersistFunction()
 	c.Assert(err, IsNil)
@@ -50,14 +50,12 @@ func (s *CmdRepoProviderSuite) TestCmdRepoProvider_getPersistFunction_CorrectlyS
 	job, err := jobIter.Next()
 	c.Assert(err, IsNil)
 
-	obtainedRepositoryRaw := &repository.Raw{}
+	obtainedRepositoryRaw := &models.Mention{}
 	err = job.Decode(obtainedRepositoryRaw)
 	c.Assert(err, IsNil)
-	testTime := time.Now()
 
-	obtainedRepositoryRaw.CreatedAt = testTime
-	obtainedRepositoryRaw.UpdatedAt = testTime
-	repositoryRaw.CreatedAt = testTime
-	repositoryRaw.UpdatedAt = testTime
+	// TODO Duration types are not serialized correctly
+	obtainedRepositoryRaw.CreatedAt = repositoryRaw.CreatedAt
+	obtainedRepositoryRaw.UpdatedAt = repositoryRaw.UpdatedAt
 	c.Assert(repositoryRaw, DeepEquals, obtainedRepositoryRaw)
 }
