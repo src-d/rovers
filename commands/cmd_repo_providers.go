@@ -42,6 +42,11 @@ func (c *CmdRepoProviders) Execute(args []string) error {
 		c.Providers = allowedProviders
 	}
 
+	client, err := core.NewClient()
+	if err != nil {
+		return err
+	}
+
 	providers := []core.RepoProvider{}
 	for _, p := range c.Providers {
 		switch p {
@@ -50,11 +55,7 @@ func (c *CmdRepoProviders) Execute(args []string) error {
 			if core.Config.Github.Token == "" {
 				return errors.New("Github api token must be provided.")
 			}
-			ghp := github.NewProvider(
-				&github.Config{
-					GithubToken: core.Config.Github.Token,
-					Database:    core.Config.MongoDb.Database.Github,
-				})
+			ghp := github.NewProvider(core.Config.Github.Token, client.DB)
 			providers = append(providers, ghp)
 		case cgitProviderName:
 			log15.Info("Creating cgit provider")
@@ -63,12 +64,12 @@ func (c *CmdRepoProviders) Execute(args []string) error {
 			}
 			cgp := cgit.NewProvider(
 				core.Config.Bing.Key,
-				core.Config.MongoDb.Database.Cgit,
+				client.DB,
 			)
 			providers = append(providers, cgp)
 		case bitbucketProviderName:
 			log15.Info("Creating bitbucket provider")
-			bbp := bitbucket.NewProvider(core.Config.MongoDb.Database.Bitbucket)
+			bbp := bitbucket.NewProvider(client.DB)
 			providers = append(providers, bbp)
 		default:
 			return fmt.Errorf("Provider '%s' not found. Allowed providers: %v",

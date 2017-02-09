@@ -6,12 +6,13 @@ import (
 	"testing"
 
 	"github.com/src-d/rovers/core"
+	"github.com/src-d/rovers/providers/bitbucket/models"
 
+	"github.com/src-d/go-kallax"
 	. "gopkg.in/check.v1"
 )
 
 const (
-	testDatabase                       = "bitbucket-test"
 	lastPage                           = "3000-01-00T17:25:17.038951+00:00"
 	firstCheckpointWithGitRepositories = "2011-08-10T00:42:35.509559+00:00"
 )
@@ -25,11 +26,20 @@ type ProviderSuite struct {
 	c *core.Client
 }
 
-var _ = Suite(&ProviderSuite{c: core.NewClient(testDatabase)})
+var _ = Suite(&ProviderSuite{})
 
 func (s *ProviderSuite) SetUpTest(c *C) {
-	s.c.DropDatabase()
-	s.p = NewProvider(testDatabase)
+	client, err := core.NewClient()
+	c.Assert(err, IsNil)
+	s.c = client
+
+	err = s.c.DropTables(providerName)
+	c.Assert(err, IsNil)
+
+	err = s.c.CreateBitbucketTable()
+	c.Assert(err, IsNil)
+
+	s.p = NewProvider(s.c.DB)
 	bitbucketProvider, ok := s.p.(*provider)
 	c.Assert(ok, Equals, true)
 	bitbucketProvider.lastCheckpoint = firstCheckpointWithGitRepositories
@@ -40,8 +50,11 @@ func (s *ProviderSuite) TestProvider_Next(c *C) {
 	c.Assert(err, IsNil)
 	c.Assert(r, NotNil)
 
-	result := bitbucketRepository{}
-	err = s.c.Collection(repositoriesCollection).Find(nil).Sort("_id").One(&result)
+	result, err := models.NewRepositoryStore(s.c.DB).FindOne(
+		models.NewRepositoryQuery().
+			Order(kallax.Asc(models.Schema.Repository.CreatedAt)),
+	)
+
 	c.Assert(err, IsNil)
 	c.Assert(result.Links.Clone[0].Href, Equals, r.Endpoint)
 }

@@ -8,6 +8,8 @@ import (
 	"path"
 	"strconv"
 	"time"
+
+	"github.com/src-d/rovers/providers/bitbucket/models"
 )
 
 const (
@@ -21,6 +23,12 @@ const (
 
 	pagelenValue = 100
 )
+
+type response struct {
+	Pagelen      int                 `json:"pagelen"`
+	Repositories models.Repositories `json:"values"`
+	Next         string              `json:"next"`
+}
 
 type client struct {
 	c *http.Client

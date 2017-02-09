@@ -3,6 +3,7 @@ package github
 import (
 	"encoding/json"
 	"fmt"
+	"golang.org/x/oauth2"
 	"io"
 	"net/http"
 	"net/url"
@@ -10,7 +11,7 @@ import (
 	"strings"
 	"time"
 
-	"golang.org/x/oauth2"
+	"github.com/src-d/rovers/providers/github/models"
 )
 
 const (
@@ -26,7 +27,7 @@ const (
 
 type response struct {
 	Next         int
-	Repositories []*Repository
+	Repositories []*models.Repository
 
 	Total     int
 	Remaining int
@@ -134,8 +135,8 @@ func (c *client) toInt(s string) int {
 	return i
 }
 
-func (c *client) decode(body io.Reader) ([]*Repository, error) {
-	var record []*Repository
+func (c *client) decode(body io.Reader) ([]*models.Repository, error) {
+	var record []*models.Repository
 	if err := json.NewDecoder(body).Decode(&record); err != nil {
 		return nil, err
 	}

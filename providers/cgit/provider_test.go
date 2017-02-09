@@ -7,39 +7,46 @@ import (
 	"sync"
 
 	"github.com/src-d/rovers/core"
+	"github.com/src-d/rovers/providers/cgit/models"
 
 	. "gopkg.in/check.v1"
-	"srcd.works/core.v0/models"
+	coreModels "srcd.works/core.v0/models"
 )
 
-const testDatabase = "cgit-test"
-
 type CgitProviderSuite struct {
+	c *core.Client
 }
 
 var _ = Suite(&CgitProviderSuite{})
 
 func (s *CgitProviderSuite) SetUpTest(c *C) {
-	core.NewClient(testDatabase).DropDatabase()
+	client, err := core.NewClient()
+	c.Assert(err, IsNil)
+	s.c = client
+
+	err = client.DropTables(providerName, "cgit_urls")
+	c.Assert(err, IsNil)
+
+	err = client.CreateCgitTables()
+	c.Assert(err, IsNil)
 }
 
 func (s *CgitProviderSuite) newProvider(cgitUrls ...string) *provider {
-
 	return &provider{
-		repositoriesColl: initRepositoriesCollection(testDatabase),
-		urlsCollection:   initializeCgitUrlsCollection(testDatabase),
-		searcher:         &dummySearcher{cgitUrls},
-		backoff:          getBackoff(),
-		scrapers:         []*scraper{},
-		mutex:            &sync.Mutex{},
+		repositoriesStore: models.NewRepositoryStore(s.c.DB),
+		urlsStore:         models.NewURLStore(s.c.DB),
+		searcher:          &dummySearcher{cgitUrls},
+		backoff:           getBackoff(),
+		scrapers:          []*scraper{},
+		mutex:             &sync.Mutex{},
 	}
 }
 
 func (s *CgitProviderSuite) TestCgitProvider_WhenFinishScraping(c *C) {
 	provider := s.newProvider("https://a3nm.net/git/")
 
-	var err error = nil
-	var url *models.Mention = nil
+	var err error
+	var url *coreModels.Mention
 	count := 0
 	for err == nil {
 		url, err = provider.Next()
@@ -144,23 +151,23 @@ func (s *CgitProviderSuite) TestCgitProvider_CgitUrlsNotDuplicated(c *C) {
 	_, err := provider.Next()
 	c.Assert(err, IsNil)
 
-	uCount, err := provider.urlsCollection.Find(nil).Count()
+	uCount, err := provider.urlsStore.Count(models.NewURLQuery())
 	c.Assert(err, IsNil)
-	c.Assert(uCount, Equals, 2)
+	c.Assert(uCount, Equals, int64(2))
 
 	provider = s.newProvider("https://a3nm.net/git/")
 	_, err = provider.Next()
 	c.Assert(err, IsNil)
-	uCount, err = provider.urlsCollection.Find(nil).Count()
+	uCount, err = provider.urlsStore.Count(models.NewURLQuery())
 	c.Assert(err, IsNil)
-	c.Assert(uCount, Equals, 2)
+	c.Assert(uCount, Equals, int64(2))
 
 	provider = s.newProvider("http://pkgs.fedoraproject.org/cgit/rpms/")
 	_, err = provider.Next()
 	c.Assert(err, IsNil)
-	uCount, err = provider.urlsCollection.Find(nil).Count()
+	uCount, err = provider.urlsStore.Count(models.NewURLQuery())
 	c.Assert(err, IsNil)
-	c.Assert(uCount, Equals, 3)
+	c.Assert(uCount, Equals, int64(3))
 
 	provider = s.newProvider()
 	_, err = provider.Next()

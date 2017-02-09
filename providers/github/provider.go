@@ -1,77 +1,45 @@
 package github
 
 import (
-	"fmt"
+	"database/sql"
 	"io"
 	"sync"
 
 	"github.com/src-d/rovers/core"
+	"github.com/src-d/rovers/providers"
+	"github.com/src-d/rovers/providers/github/models"
 
+	"github.com/src-d/go-kallax"
 	"gopkg.in/inconshreveable/log15.v2"
-	"gopkg.in/mgo.v2"
-	"srcd.works/core.v0/models"
-	"srcd.works/domain.v6/container"
-	"srcd.works/domain.v6/models/social"
+	coreModels "srcd.works/core.v0/models"
 )
 
 const (
-	providerName         = "github"
-	repositoryCollection = "repositories"
-
-	idField       = "github_id"
-	fullnameField = "fullname"
-	htmlurlField  = "htmlurl"
-	forkField     = "fork"
-
-	textIndexFormat = "$text:%s"
+	providerName = "github"
 )
 
 type provider struct {
-	repositoriesColl *mgo.Collection
-	apiClient        *client
-	repoStore        *social.GithubRepositoryStore
-	repoCache        []*Repository
-	checkpoint       int
-	applyAck         func()
-	mutex            *sync.Mutex
+	repositoriesStore *models.RepositoryStore
+	apiClient         *client
+	repoCache         []*models.Repository
+	checkpoint        int
+	applyAck          func()
+	mutex             *sync.Mutex
 }
 
-type Config struct {
-	GithubToken string
-	Database    string
-}
-
-func NewProvider(config *Config) core.RepoProvider {
-	repoStore := container.GetDomainModelsSocialGithubRepositoryStore()
-
+func NewProvider(githubToken string, DB *sql.DB) core.RepoProvider {
 	return &provider{
-		repositoriesColl: initRepositoriesCollection(config.Database),
-		apiClient:        newClient(config.GithubToken),
-		repoStore:        repoStore,
-		mutex:            &sync.Mutex{},
+		repositoriesStore: models.NewRepositoryStore(DB),
+		apiClient:         newClient(githubToken),
+		mutex:             &sync.Mutex{},
 	}
-}
-
-func initRepositoriesCollection(database string) *mgo.Collection {
-	githubColl := core.NewClient(database).Collection(repositoryCollection)
-	index := mgo.Index{
-		Key: []string{
-			fmt.Sprintf(textIndexFormat, fullnameField),
-			fmt.Sprintf(textIndexFormat, htmlurlField),
-			idField,
-			forkField,
-		},
-	}
-	githubColl.EnsureIndex(index)
-
-	return githubColl
 }
 
 func (gp *provider) Name() string {
 	return providerName
 }
 
-func (gp *provider) Next() (*models.Mention, error) {
+func (gp *provider) Next() (*coreModels.Mention, error) {
 	gp.mutex.Lock()
 	defer gp.mutex.Unlock()
 	switch len(gp.repoCache) {
@@ -107,10 +75,12 @@ func (gp *provider) Next() (*models.Mention, error) {
 	return gp.repositoryRaw(x.HTMLURL+".git", x.Fork), nil
 }
 
-func (*provider) repositoryRaw(repoUrl string, isFork bool) *models.Mention {
-	return &models.Mention{
+func (*provider) repositoryRaw(repoUrl string, isFork bool) *coreModels.Mention {
+	return &coreModels.Mention{
 		Provider: providerName,
 		Endpoint: repoUrl,
+		VCS:      coreModels.GIT,
+		Context:  providers.NewCtx().Fork(isFork).Build(),
 	}
 }
 
@@ -132,7 +102,7 @@ func (gp *provider) Close() error {
 	return nil
 }
 
-func (gp *provider) requestNextPage(since int) ([]*Repository, error) {
+func (gp *provider) requestNextPage(since int) ([]*models.Repository, error) {
 	resp, err := gp.apiClient.Repositories(since)
 	if err != nil {
 		return nil, err
@@ -148,22 +118,29 @@ func (gp *provider) requestNextPage(since int) ([]*Repository, error) {
 }
 
 func (gp *provider) getLastRepoId() (int, error) {
-	result := Repository{}
-	err := gp.repositoriesColl.Find(nil).Sort("-_id").One(&result)
-	fmt.Println("RESULT:", result)
-	if err == mgo.ErrNotFound {
+	result, err := gp.repositoriesStore.FindOne(models.NewRepositoryQuery().
+		Order(kallax.Desc(models.Schema.Repository.CreatedAt)))
+
+	if err == kallax.ErrNotFound {
 		return 0, nil
 	}
 
-	return result.ID, err
+	if err != nil {
+		return 0, err
+	}
+
+	return result.GithubID, nil
 }
 
-func (gp *provider) saveRepos(repositories []*Repository) error {
-	bulkOp := gp.repositoriesColl.Bulk()
-	for _, repo := range repositories {
-		bulkOp.Insert(repo)
-	}
-	_, err := bulkOp.Run()
+func (gp *provider) saveRepos(repositories []*models.Repository) error {
+	return gp.repositoriesStore.Transaction(func(s *models.RepositoryStore) error {
+		for _, repo := range repositories {
+			err := s.Insert(repo)
+			if err != nil {
+				return err
+			}
+		}
 
-	return err
+		return nil
+	})
 }

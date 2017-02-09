@@ -1,25 +1,21 @@
 package bitbucket
 
 import (
+	"database/sql"
 	"sync"
 	"time"
 
 	"github.com/src-d/rovers/core"
+	"github.com/src-d/rovers/providers"
+	"github.com/src-d/rovers/providers/bitbucket/models"
 
+	"github.com/src-d/go-kallax"
 	"gopkg.in/inconshreveable/log15.v2"
-	"gopkg.in/mgo.v2"
-	"srcd.works/core.v0/models"
+	coreModels "srcd.works/core.v0/models"
 )
 
 const (
 	providerName = "bitbucket"
-
-	repositoriesCollection = "repositories"
-
-	idDescKey = "-_id"
-
-	scmField      = "scm"
-	fullNameField = "fullname"
 
 	gitScm        = "git"
 	httpsCloneKey = "https"
@@ -29,29 +25,22 @@ const (
 )
 
 type provider struct {
-	repoCollection *mgo.Collection
-	client         *client
+	repositoryStore *models.RepositoryStore
+	client          *client
 
 	mutex             *sync.Mutex
-	repositoriesCache repositories
+	repositoriesCache models.Repositories
 	lastCheckpoint    string
 	applyAck          func()
 }
 
-func NewProvider(database string) core.RepoProvider {
+func NewProvider(database *sql.DB) core.RepoProvider {
 	return &provider{
-		repoCollection: initializeRepositoriesCollection(database),
-		client:         newClient(),
-		mutex:          &sync.Mutex{},
-		lastCheckpoint: firstCheckpoint,
+		repositoryStore: models.NewRepositoryStore(database),
+		client:          newClient(),
+		mutex:           &sync.Mutex{},
+		lastCheckpoint:  firstCheckpoint,
 	}
-}
-
-func initializeRepositoriesCollection(database string) *mgo.Collection {
-	coll := core.NewClient(database).Collection(repositoriesCollection)
-	coll.EnsureIndexKey(scmField, fullNameField)
-
-	return coll
 }
 
 func (p *provider) isInit() bool {
@@ -62,7 +51,7 @@ func (p *provider) needsMoreData() bool {
 	return len(p.repositoriesCache) == 0
 }
 
-func (p *provider) repositoryRaw(r *bitbucketRepository) *models.Mention {
+func (p *provider) repositoryRaw(r *models.Repository) *coreModels.Mention {
 	aliases := []string{}
 	mainRepository := ""
 	for _, c := range r.Links.Clone {
@@ -75,21 +64,27 @@ func (p *provider) repositoryRaw(r *bitbucketRepository) *models.Mention {
 		log15.Error("no https repositories found", "clone urls", r.Links.Clone)
 	}
 
-	return &models.Mention{
+	return &coreModels.Mention{
 		Endpoint: mainRepository,
 		Provider: providerName,
+		VCS:      coreModels.GIT,
+		Context: providers.NewCtx().
+			Fork(r.Parent != nil).
+			Aliases(aliases).Build(),
 	}
 }
 
 func (p *provider) initializeCheckpoint() error {
-	result := bitbucketRepository{}
-	err := p.repoCollection.Find(nil).Sort(idDescKey).One(&result)
+	result, err := p.repositoryStore.FindOne(
+		models.NewRepositoryQuery().
+			Order(kallax.Asc(models.Schema.Repository.CreatedAt)),
+	)
 
 	switch err {
 	case nil:
 		log15.Info("checkpoint found", "checkpoint", result.Next)
 		p.lastCheckpoint = result.Next
-	case mgo.ErrNotFound:
+	case kallax.ErrNotFound:
 		p.lastCheckpoint = firstCheckpoint
 	default:
 		return err
@@ -98,7 +93,7 @@ func (p *provider) initializeCheckpoint() error {
 	return nil
 }
 
-func (p *provider) Next() (*models.Mention, error) {
+func (p *provider) Next() (*coreModels.Mention, error) {
 	p.mutex.Lock()
 	defer p.mutex.Unlock()
 
@@ -152,14 +147,17 @@ func (p *provider) requestNextPage() error {
 }
 
 func (p *provider) saveRepositories(resp *response) error {
-	bulkOp := p.repoCollection.Bulk()
-	for _, repo := range resp.Repositories {
-		repo.Next = resp.Next
-		bulkOp.Insert(repo)
-	}
-	_, err := bulkOp.Run()
+	return p.repositoryStore.Transaction(func(store *models.RepositoryStore) error {
+		// TODO implements bulk operations in kallax
+		for _, repo := range resp.Repositories {
+			repo.Next = resp.Next
+			if _, err := store.Save(repo); err != nil {
+				return err
+			}
+		}
 
-	return err
+		return nil
+	})
 }
 
 func (p *provider) Ack(err error) error {

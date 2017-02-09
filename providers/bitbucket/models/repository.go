@@ -1,18 +1,12 @@
-package bitbucket
+package models
 
 import "github.com/src-d/go-kallax"
 
-type response struct {
-	Pagelen      int          `json:"pagelen"`
-	Repositories repositories `json:"values"`
-	Next         string       `json:"next"`
-}
+type Repositories []*Repository
 
-type repositories []*bitbucketRepository
-
-type bitbucketRepository struct {
+type Repository struct {
 	kallax.Model `table:"bitbucket"`
-	kallax.Timestamps
+	kallax.Timestamps `kallax:",inline"`
 
 	Next    string
 	Scm     string `json:"scm"`
@@ -58,30 +52,14 @@ type bitbucketRepository struct {
 			Href string `json:"href" kallax:"-"`
 		} `json:"pullrequests" kallax:"-"`
 	} `json:"links"`
-	ForkPolicy string `json:"fork_policy"`
-	UUID       string `json:"uuid"`
-	Language   string `json:"language"`
-	CreatedOn  string `json:"created_on"`
-	Parent     *struct {
-		Links struct {
-			Self struct {
-				Href string `json:"href"`
-			} `json:"self"`
-			HTML struct {
-				Href string `json:"href"`
-			} `json:"html"`
-			Avatar struct {
-				Href string `json:"href"`
-			} `json:"avatar"`
-		} `json:"links"`
-		Type     string `json:"type"`
-		Name     string `json:"name"`
-		FullName string `json:"full_name"`
-		UUID     string `json:"uuid"`
-	} `json:"parent"`
-	FullName  string `json:"full_name"`
-	HasIssues bool   `json:"has_issues"`
-	Owner     struct {
+	ForkPolicy string  `json:"fork_policy"`
+	UUID       string  `json:"uuid"`
+	Language   string  `json:"language"`
+	CreatedOn  string  `json:"created_on"`
+	Parent     *Parent `json:"parent"`
+	FullName   string  `json:"full_name"`
+	HasIssues  bool    `json:"has_issues"`
+	Owner      struct {
 		Username    string `json:"username"`
 		DisplayName string `json:"display_name"`
 		Type        string `json:"type"`
