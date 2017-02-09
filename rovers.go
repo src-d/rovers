@@ -18,25 +18,7 @@ func main() {
 	parser := flags.NewNamedParser("rovers", flags.Default)
 
 	var err error
-	_, err = parser.AddCommand("augur", "Augur Insights API crawler", "", &commands.CmdAugur{})
-	PanicIf(err)
-	_, err = parser.AddCommand("bitbucket", "Bitbucket API repository crawler", "", &commands.CmdBitbucket{})
-	PanicIf(err)
-	cmd, err := parser.AddCommand("github", "GitHub commands for crawling profiles, repositories and users", "", &commands.CmdGitHub{})
-	PanicIf(err)
-	_, err = cmd.AddCommand("profiles", "GitHub web crawler", "", &commands.CmdGitHubProfiles{})
-	PanicIf(err)
-	_, err = cmd.AddCommand("repos", "GitHub API repository crawler", "", &commands.CmdGitHubAPIRepos{})
-	PanicIf(err)
-	_, err = cmd.AddCommand("users", "GitHub API users crawler", "", &commands.CmdGitHubAPIUsers{})
-	PanicIf(err)
-	cmd, err = parser.AddCommand("linkedin", "LinkedIn Company Employees crawler", "", &commands.CmdNoop{})
-	PanicIf(err)
-	_, err = cmd.AddCommand("update",
-		"Updates one or more company employee lists, see --mode", "",
-		&commands.CmdLinkedInUpdate{})
-	PanicIf(err)
-	_, err = parser.AddCommand("twitter", "Twitter web crawler", "", &commands.CmdTwitter{})
+	_, err = parser.AddCommand("repos", "Get repos from internet", "", &commands.CmdRepoProviders{})
 	PanicIf(err)
 
 	_, err = parser.Parse()
@@ -47,4 +29,6 @@ func main() {
 
 		os.Exit(1)
 	}
+
+	select {}
 }

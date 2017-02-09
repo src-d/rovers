@@ -1,22 +1,22 @@
 # source{d} rovers [![Build Status](http://drone.srcd.host/api/badges/src-d/rovers/status.svg)](http://drone.srcd.host/src-d/rovers) [![codecov.io](https://codecov.io/github/src-d/rovers/coverage.svg?branch=master&token=ObiptJsBpW)](https://codecov.io/github/src-d/rovers?branch=master)
 
-Source{d} rovers defines (sub)commands for retrieving different external services.
+Source{d} rovers defines (sub)commands for retrieving repositories urls from different external services.
+
+Type `help` fore commands info.
 
 ## Services
 
-- `augur`: Augur API crawler, takes all emails from sourced.people collection and fetches whatever info Augur may have about them. It works incrementally. For every email we save when was the last time we fetched its info. **WARNING:** This is a very very long process, it should take about 44 days.
-- `bitbucket`: Bitbucket API crawler for Bitbucket repositories.
-- `github`: web crawler for GitHub profiles. Requires `augur` data, GitHub profile URL.
-- `github-api`: GitHub API crawler for GitHub repositories.
-- `github-api-users`: GitHub API crawler for GitHub users.
-- `linkedin`: LinkedIn company employees importer.
-- `twitter`: Twitter web crawler for Twitter profiles (followers, following, tweets, location, bio, ...). Requires `augur` data, Twitter profile URL.
+- `github`: GitHub API crawler for GitHub repositories.
+- `cgit`: Cgit urls scraper.
 
 ## Usage
 
-- `github` and `twitter` commands require `augur` command to be run first.
-- Both `github-api` and `github-api-users` require a local Mongo.
+This service uses MongoDB and RabbitMQ.
 
-## Utilities
+To execute test locally you need to run RabbitMQ and MongoDB too:
 
-The `utils` directory contains scripts that **require having a Go toolchain installed** but simplify usage of a certain pipeline.
+```shell
+  docker run -d -p 5672:5672 rabbitmq:3
+  docker run --name some-mongo -d -p 27017:27017 mongo
+  go test ./...
+```

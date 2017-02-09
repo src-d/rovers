@@ -4,6 +4,9 @@ build:
     commands:
       - make dependencies
       - make test-coverage
+    environment:
+      - CONFIG_GITHUB_TOKEN=$$GITHUB_TOKEN
+      - CONFIG_BING_KEY=$$BING_KEY
   packages:
     image: golang:1.6
     commands:
@@ -26,10 +29,10 @@ publish:
       event: tag
 
 compose:
-  beanstalkd:
-    image: schickling/beanstalkd
-  mongodb:
-    image: mongo:3.0
+  rabbitmq:
+    image: rabbitmq
+  postgres:
+    image: postgres:9
 
 notify:
   slack:

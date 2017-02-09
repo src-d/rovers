@@ -17,12 +17,10 @@ func (c *CmdBase) ChangeLogLevel() {
 		panic(fmt.Sprintf("unknown level name %q", c.LogLevel))
 	}
 
-	handler := log15.StdoutHandler
+	handlers := []log15.Handler{log15.CallerFileHandler(log15.StdoutHandler)}
 	if c.LogFile != "" {
-		handler = log15.MultiHandler(
-			log15.StdoutHandler,
-			log15.Must.FileHandler(c.LogFile, log15.LogfmtFormat()),
-		)
+		handlers = append(handlers,
+			log15.CallerFileHandler(log15.Must.FileHandler(c.LogFile, log15.LogfmtFormat())))
 	}
-	log15.Root().SetHandler(log15.LvlFilterHandler(lvl, handler))
+	log15.Root().SetHandler(log15.LvlFilterHandler(lvl, log15.MultiHandler(handlers...)))
 }
