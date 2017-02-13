@@ -7,11 +7,11 @@ import (
 
 	"github.com/src-d/rovers/core"
 	"github.com/src-d/rovers/providers"
-	"github.com/src-d/rovers/providers/github/models"
+	"github.com/src-d/rovers/providers/github/model"
 
 	"github.com/src-d/go-kallax"
 	"gopkg.in/inconshreveable/log15.v2"
-	coreModels "srcd.works/core.v0/models"
+	coreModels "srcd.works/core.v0/model"
 )
 
 const (
@@ -19,9 +19,9 @@ const (
 )
 
 type provider struct {
-	repositoriesStore *models.RepositoryStore
+	repositoriesStore *model.RepositoryStore
 	apiClient         *client
-	repoCache         []*models.Repository
+	repoCache         []*model.Repository
 	checkpoint        int
 	applyAck          func()
 	mutex             *sync.Mutex
@@ -29,7 +29,7 @@ type provider struct {
 
 func NewProvider(githubToken string, DB *sql.DB) core.RepoProvider {
 	return &provider{
-		repositoriesStore: models.NewRepositoryStore(DB),
+		repositoriesStore: model.NewRepositoryStore(DB),
 		apiClient:         newClient(githubToken),
 		mutex:             &sync.Mutex{},
 	}
@@ -102,7 +102,7 @@ func (gp *provider) Close() error {
 	return nil
 }
 
-func (gp *provider) requestNextPage(since int) ([]*models.Repository, error) {
+func (gp *provider) requestNextPage(since int) ([]*model.Repository, error) {
 	resp, err := gp.apiClient.Repositories(since)
 	if err != nil {
 		return nil, err
@@ -118,8 +118,8 @@ func (gp *provider) requestNextPage(since int) ([]*models.Repository, error) {
 }
 
 func (gp *provider) getLastRepoId() (int, error) {
-	result, err := gp.repositoriesStore.FindOne(models.NewRepositoryQuery().
-		Order(kallax.Desc(models.Schema.Repository.CreatedAt)))
+	result, err := gp.repositoriesStore.FindOne(model.NewRepositoryQuery().
+		Order(kallax.Desc(model.Schema.Repository.CreatedAt)))
 
 	if err == kallax.ErrNotFound {
 		return 0, nil
@@ -132,8 +132,8 @@ func (gp *provider) getLastRepoId() (int, error) {
 	return result.GithubID, nil
 }
 
-func (gp *provider) saveRepos(repositories []*models.Repository) error {
-	return gp.repositoriesStore.Transaction(func(s *models.RepositoryStore) error {
+func (gp *provider) saveRepos(repositories []*model.Repository) error {
+	return gp.repositoriesStore.Transaction(func(s *model.RepositoryStore) error {
 		for _, repo := range repositories {
 			err := s.Insert(repo)
 			if err != nil {

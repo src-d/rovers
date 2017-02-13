@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"github.com/src-d/rovers/core"
-	"github.com/src-d/rovers/providers/bitbucket/models"
+	"github.com/src-d/rovers/providers/bitbucket/model"
 
 	"github.com/src-d/go-kallax"
 	. "gopkg.in/check.v1"
@@ -51,9 +51,9 @@ func (s *ProviderSuite) TestProvider_Next(c *C) {
 	c.Assert(err, IsNil)
 	c.Assert(r, NotNil)
 
-	result, err := models.NewRepositoryStore(s.DB).FindOne(
-		models.NewRepositoryQuery().
-			Order(kallax.Asc(models.Schema.Repository.CreatedAt)),
+	result, err := model.NewRepositoryStore(s.DB).FindOne(
+		model.NewRepositoryQuery().
+			Order(kallax.Asc(model.Schema.Repository.CreatedAt)),
 	)
 
 	c.Assert(err, IsNil)

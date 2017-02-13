@@ -9,10 +9,10 @@ import (
 
 	. "gopkg.in/check.v1"
 	"gopkg.in/inconshreveable/log15.v2"
-	"srcd.works/core.v0/models"
+	"srcd.works/core.v0/model"
 )
 
-var persistFunction = func(rawRepo *models.Mention) error {
+var persistFunction = func(rawRepo *model.Mention) error {
 	log15.Debug("Persisting new url", "repoUrl", rawRepo)
 	return nil
 }
@@ -22,11 +22,11 @@ func Test(t *testing.T) {
 }
 
 type WatcherSuite struct {
-	mention *models.Mention
+	mention *model.Mention
 }
 
 var _ = Suite(&WatcherSuite{
-	mention: &models.Mention{
+	mention: &model.Mention{
 		Endpoint: "SOME_REPO",
 		Provider: "SOME_PROVIDER",
 	},
@@ -63,10 +63,10 @@ type EOFProvider struct {
 	NumberOfCalls         int
 	NumberOfAckErrorCalls int
 	FailOnAck             bool
-	Mention               *models.Mention
+	Mention               *model.Mention
 }
 
-func (p *EOFProvider) Next() (*models.Mention, error) {
+func (p *EOFProvider) Next() (*model.Mention, error) {
 	mutex.Lock()
 	defer mutex.Unlock()
 

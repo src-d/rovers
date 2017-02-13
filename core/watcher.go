@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"gopkg.in/inconshreveable/log15.v2"
-	"srcd.works/core.v0/models"
+	"srcd.works/core.v0/model"
 )
 
 const (
@@ -14,7 +14,7 @@ const (
 	secondsBetweenRetries = 10
 )
 
-type PersistFN func(*models.Mention) error
+type PersistFN func(*model.Mention) error
 
 var errBadAck = errors.New("error while executing ack")
 

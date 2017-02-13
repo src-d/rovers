@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	. "gopkg.in/check.v1"
-	"srcd.works/core.v0/models"
+	"srcd.works/core.v0/model"
 	"srcd.works/framework.v0/queue"
 )
 
@@ -26,10 +26,10 @@ func (s *CmdRepoProviderSuite) SetUpTest(c *C) {
 }
 
 func (s *CmdRepoProviderSuite) TestCmdRepoProvider_getPersistFunction_CorrectlySerialized(c *C) {
-	repositoryRaw := &models.Mention{
+	repositoryRaw := &model.Mention{
 		Provider: "test",
 		Endpoint: "https://some.repo.url.com",
-		VCS:      models.GIT,
+		VCS:      model.GIT,
 		Context:  make(map[string]string),
 	}
 
@@ -50,7 +50,7 @@ func (s *CmdRepoProviderSuite) TestCmdRepoProvider_getPersistFunction_CorrectlyS
 	job, err := jobIter.Next()
 	c.Assert(err, IsNil)
 
-	obtainedRepositoryRaw := &models.Mention{}
+	obtainedRepositoryRaw := &model.Mention{}
 	err = job.Decode(obtainedRepositoryRaw)
 	c.Assert(err, IsNil)
 

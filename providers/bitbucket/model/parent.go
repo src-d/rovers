@@ -1,4 +1,4 @@
-package models
+package model
 
 type Parent struct {
 	Links struct {

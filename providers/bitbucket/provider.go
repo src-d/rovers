@@ -7,11 +7,11 @@ import (
 
 	"github.com/src-d/rovers/core"
 	"github.com/src-d/rovers/providers"
-	"github.com/src-d/rovers/providers/bitbucket/models"
+	"github.com/src-d/rovers/providers/bitbucket/model"
 
 	"github.com/src-d/go-kallax"
 	"gopkg.in/inconshreveable/log15.v2"
-	coreModels "srcd.works/core.v0/models"
+	coreModels "srcd.works/core.v0/model"
 )
 
 const (
@@ -25,18 +25,18 @@ const (
 )
 
 type provider struct {
-	repositoryStore *models.RepositoryStore
-	client          *client
+	repositoryStore   *model.RepositoryStore
+	client            *client
 
 	mutex             *sync.Mutex
-	repositoriesCache models.Repositories
+	repositoriesCache model.Repositories
 	lastCheckpoint    string
 	applyAck          func()
 }
 
 func NewProvider(database *sql.DB) core.RepoProvider {
 	return &provider{
-		repositoryStore: models.NewRepositoryStore(database),
+		repositoryStore: model.NewRepositoryStore(database),
 		client:          newClient(),
 		mutex:           &sync.Mutex{},
 		lastCheckpoint:  firstCheckpoint,
@@ -51,7 +51,7 @@ func (p *provider) needsMoreData() bool {
 	return len(p.repositoriesCache) == 0
 }
 
-func (p *provider) repositoryRaw(r *models.Repository) *coreModels.Mention {
+func (p *provider) repositoryRaw(r *model.Repository) *coreModels.Mention {
 	aliases := []string{}
 	mainRepository := ""
 	for _, c := range r.Links.Clone {
@@ -76,8 +76,8 @@ func (p *provider) repositoryRaw(r *models.Repository) *coreModels.Mention {
 
 func (p *provider) initializeCheckpoint() error {
 	result, err := p.repositoryStore.FindOne(
-		models.NewRepositoryQuery().
-			Order(kallax.Asc(models.Schema.Repository.CreatedAt)),
+		model.NewRepositoryQuery().
+			Order(kallax.Asc(model.Schema.Repository.CreatedAt)),
 	)
 
 	switch err {
@@ -147,7 +147,7 @@ func (p *provider) requestNextPage() error {
 }
 
 func (p *provider) saveRepositories(resp *response) error {
-	return p.repositoryStore.Transaction(func(store *models.RepositoryStore) error {
+	return p.repositoryStore.Transaction(func(store *model.RepositoryStore) error {
 		// TODO implements bulk operations in kallax
 		for _, repo := range resp.Repositories {
 			repo.Next = resp.Next
