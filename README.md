@@ -11,12 +11,12 @@ Type `help` fore commands info.
 
 ## Usage
 
-This service uses MongoDB and RabbitMQ.
+This service uses PostgreSQL and RabbitMQ.
 
-To execute test locally you need to run RabbitMQ and MongoDB too:
+To execute test locally you need to run RabbitMQ and PostgreSQL too:
 
 ```shell
   docker run -d -p 5672:5672 rabbitmq:3
-  docker run --name some-mongo -d -p 27017:27017 mongo
+  docker run --name some-postgres -d -p 5432:5432 library/postgres
   go test ./...
 ```
