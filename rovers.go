@@ -20,6 +20,9 @@ func main() {
 	var err error
 	_, err = parser.AddCommand("repos", "Get repos from internet", "", &commands.CmdRepoProviders{})
 	PanicIf(err)
+	_, err = parser.AddCommand("initdb", "Create tables",
+		"Create the necessary tables used by the providers into the database", &commands.CmdCreateTables{})
+	PanicIf(err)
 
 	_, err = parser.Parse()
 	if err != nil {
