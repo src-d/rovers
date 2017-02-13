@@ -1,4 +1,4 @@
-package models
+package model
 
 type Owner struct {
 	Login             string `json:"login"`

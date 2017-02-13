@@ -2,7 +2,7 @@
 // Please, do not touch the code below, and if you do, do it under your own
 // risk. Take into account that all the code you write here will be completely
 // erased from earth the next time you generate the kallax models.
-package models
+package model
 
 import (
 	"database/sql"

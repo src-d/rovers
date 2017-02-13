@@ -9,7 +9,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/src-d/rovers/providers/bitbucket/models"
+	"github.com/src-d/rovers/providers/bitbucket/model"
 )
 
 const (
@@ -26,7 +26,7 @@ const (
 
 type response struct {
 	Pagelen      int                 `json:"pagelen"`
-	Repositories models.Repositories `json:"values"`
+	Repositories model.Repositories `json:"values"`
 	Next         string              `json:"next"`
 }
 

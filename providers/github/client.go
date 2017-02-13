@@ -11,7 +11,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/src-d/rovers/providers/github/models"
+	"github.com/src-d/rovers/providers/github/model"
 )
 
 const (
@@ -27,7 +27,7 @@ const (
 
 type response struct {
 	Next         int
-	Repositories []*models.Repository
+	Repositories []*model.Repository
 
 	Total     int
 	Remaining int
@@ -135,8 +135,8 @@ func (c *client) toInt(s string) int {
 	return i
 }
 
-func (c *client) decode(body io.Reader) ([]*models.Repository, error) {
-	var record []*models.Repository
+func (c *client) decode(body io.Reader) ([]*model.Repository, error) {
+	var record []*model.Repository
 	if err := json.NewDecoder(body).Decode(&record); err != nil {
 		return nil, err
 	}

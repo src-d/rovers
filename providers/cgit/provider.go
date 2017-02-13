@@ -9,7 +9,7 @@ import (
 
 	"github.com/src-d/rovers/core"
 	"github.com/src-d/rovers/providers"
-	"github.com/src-d/rovers/providers/cgit/models"
+	"github.com/src-d/rovers/providers/cgit/model"
 	"github.com/src-d/rovers/utils"
 	"github.com/src-d/rovers/utils/websearch"
 	"github.com/src-d/rovers/utils/websearch/bing"
@@ -17,7 +17,7 @@ import (
 	"github.com/jpillora/backoff"
 	"github.com/src-d/go-kallax"
 	"gopkg.in/inconshreveable/log15.v2"
-	coreModels "srcd.works/core.v0/models"
+	coreModels "srcd.works/core.v0/model"
 )
 
 const (
@@ -30,8 +30,8 @@ const (
 )
 
 type provider struct {
-	repositoriesStore   *models.RepositoryStore
-	urlsStore           *models.URLStore
+	repositoriesStore   *model.RepositoryStore
+	urlsStore           *model.URLStore
 	scrapers            []*scraper
 	searcher            websearch.Searcher
 	backoff             *backoff.Backoff
@@ -51,8 +51,8 @@ func getBackoff() *backoff.Backoff {
 
 func NewProvider(bingKey string, DB *sql.DB) core.RepoProvider {
 	p := &provider{
-		repositoriesStore: models.NewRepositoryStore(DB),
-		urlsStore:         models.NewURLStore(DB),
+		repositoriesStore: model.NewRepositoryStore(DB),
+		urlsStore:         model.NewURLStore(DB),
 		scrapers:          []*scraper{},
 		searcher:          bing.New(bingKey),
 		backoff:           getBackoff(),
@@ -66,7 +66,7 @@ func (cp *provider) setCheckpoint(cgitUrl string, cgitPage *page) error {
 	log15.Debug("adding new checkpoint url", "cgit URL", cgitUrl, "repository", cgitPage.RepositoryURL)
 
 	return cp.repositoriesStore.Insert(
-		&models.Repository{
+		&model.Repository{
 			CgitURL: cgitUrl,
 			URL:     cgitPage.RepositoryURL,
 			Aliases: cgitPage.Aliases,
@@ -76,10 +76,10 @@ func (cp *provider) setCheckpoint(cgitUrl string, cgitPage *page) error {
 
 func (cp *provider) alreadyProcessed(cgitUrl string, cgitPage *page) (bool, error) {
 	c, err := cp.repositoriesStore.Count(
-		models.NewRepositoryQuery().Where(
+		model.NewRepositoryQuery().Where(
 			kallax.And(
-				kallax.Eq(models.Schema.Repository.CgitURL, cgitUrl),
-				kallax.ArrayContains(models.Schema.Repository.Aliases,
+				kallax.Eq(model.Schema.Repository.CgitURL, cgitUrl),
+				kallax.ArrayContains(model.Schema.Repository.Aliases,
 					cgitPage.RepositoryURL),
 			),
 		),
@@ -89,13 +89,13 @@ func (cp *provider) alreadyProcessed(cgitUrl string, cgitPage *page) (bool, erro
 }
 
 func (cp *provider) getAllCgitUrlsAlreadyProcessed() ([]string, error) {
-	rs, err := cp.urlsStore.Find(models.NewURLQuery())
+	rs, err := cp.urlsStore.Find(model.NewURLQuery())
 	if err != nil {
 		return nil, err
 	}
 
 	result := []string{}
-	if err := rs.ForEach(func(cu *models.URL) error {
+	if err := rs.ForEach(func(cu *model.URL) error {
 		result = append(result, cu.CgitUrl)
 
 		return nil
@@ -108,7 +108,7 @@ func (cp *provider) getAllCgitUrlsAlreadyProcessed() ([]string, error) {
 
 func (cp *provider) saveNewCgitUrls(urls []string) error {
 	for _, u := range urls {
-		err := cp.urlsStore.Insert(&models.URL{CgitUrl: u})
+		err := cp.urlsStore.Insert(&model.URL{CgitUrl: u})
 		switch {
 		case err == nil:
 			log15.Debug("New inserted cgit URL", "url", u)

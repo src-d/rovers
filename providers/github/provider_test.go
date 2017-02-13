@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"github.com/src-d/rovers/core"
-	"github.com/src-d/rovers/providers/github/models"
+	"github.com/src-d/rovers/providers/github/model"
 
 	. "gopkg.in/check.v1"
 )
@@ -56,7 +56,7 @@ func (s *GithubProviderSuite) TestGithubProvider_Next_FromStart_Repos(c *C) {
 		c.Assert(err, IsNil)
 	}
 
-	rs, err := models.NewRepositoryStore(s.DB).Find(models.NewRepositoryQuery())
+	rs, err := model.NewRepositoryStore(s.DB).Find(model.NewRepositoryQuery())
 	c.Assert(err, IsNil)
 	repos, err := rs.All()
 	c.Assert(err, IsNil)
@@ -73,7 +73,7 @@ func (s *GithubProviderSuite) TestGithubProvider_Next_FromStart_ReposTwoPages(c 
 		c.Assert(err, IsNil)
 	}
 
-	rs, err := models.NewRepositoryStore(s.DB).Find(models.NewRepositoryQuery())
+	rs, err := model.NewRepositoryStore(s.DB).Find(model.NewRepositoryQuery())
 	c.Assert(err, IsNil)
 	repos, err := rs.All()
 	c.Assert(err, IsNil)
@@ -82,10 +82,10 @@ func (s *GithubProviderSuite) TestGithubProvider_Next_FromStart_ReposTwoPages(c 
 }
 
 func (s *GithubProviderSuite) TestGithubProvider_Next_End(c *C) {
-	repo := models.NewRepository()
+	repo := model.NewRepository()
 	repo.GithubID = 99999999
 
-	repos := []*models.Repository{
+	repos := []*model.Repository{
 		repo,
 	}
 
