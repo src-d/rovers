@@ -33,8 +33,8 @@ func CreateCgitTables(DB *sql.DB) error {
 	id uuid PRIMARY KEY,
 	created_at timestamptz,
 	updated_at timestamptz,
-        cgit_url varchar(255),
-	url varchar(255),
+        cgit_url varchar(1500),
+	url varchar(1500),
 	aliases text[],
 	html text
 	)`)
@@ -47,7 +47,7 @@ func CreateCgitTables(DB *sql.DB) error {
 	id uuid PRIMARY KEY,
 	created_at timestamptz,
 	updated_at timestamptz,
-        cgit_url varchar(255) UNIQUE NOT NULL
+        cgit_url varchar(1500) UNIQUE NOT NULL
 	)`)
 
 	return err
@@ -73,7 +73,7 @@ func CreateBitbucketTable(DB *sql.DB) error {
 	has_issues boolean not null,
 	owner jsonb,
 	updated_on varchar(255) not null,
-	size int not null,
+	size bigint not null,
 	type varchar(255) not null,
 	slug varchar(255) not null,
 	is_private boolean not null,
@@ -89,7 +89,7 @@ func CreateGithubTable(DB *sql.DB) error {
 	id uuid PRIMARY KEY,
 	created_at timestamptz,
 	updated_at timestamptz,
-	github_id int,
+	github_id bigint,
 	name varchar(255),
 	full_name varchar(511),
 	owner jsonb,
