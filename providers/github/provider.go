@@ -135,6 +135,7 @@ func (gp *provider) getLastRepoId() (int, error) {
 func (gp *provider) saveRepos(repositories []*model.Repository) error {
 	return gp.repositoriesStore.Transaction(func(s *model.RepositoryStore) error {
 		for _, repo := range repositories {
+			repo.ID = kallax.NewULID()
 			err := s.Insert(repo)
 			if err != nil {
 				return err

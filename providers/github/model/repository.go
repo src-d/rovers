@@ -2,7 +2,12 @@ package model
 
 import "github.com/src-d/go-kallax"
 
+func newRepository() *Repository {
+	return &Repository{ID: kallax.NewULID()}
+}
+
 type Repository struct {
+	ID                kallax.ULID `json:"-" pk:""`
 	kallax.Model      `json:"-" table:"github"`
 	kallax.Timestamps `json:"-" kallax:",inline"`
 
