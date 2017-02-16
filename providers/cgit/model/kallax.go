@@ -17,17 +17,19 @@ var _ fmt.Formatter
 
 // NewRepository returns a new instance of Repository.
 func NewRepository() (record *Repository) {
-	record = &Repository{}
-	if record != nil {
-		record.SetID(kallax.NewID())
-	}
-	return
+	return newRepository()
 }
 
+// GetID returns the primary key of the model.
+func (r *Repository) GetID() kallax.Identifier {
+	return (*kallax.ULID)(&r.ID)
+}
+
+// ColumnAddress returns the pointer to the value of the given column.
 func (r *Repository) ColumnAddress(col string) (interface{}, error) {
 	switch col {
 	case "id":
-		return &r.Model.ID, nil
+		return (*kallax.ULID)(&r.ID), nil
 	case "created_at":
 		return &r.Timestamps.CreatedAt, nil
 	case "updated_at":
@@ -46,10 +48,11 @@ func (r *Repository) ColumnAddress(col string) (interface{}, error) {
 	}
 }
 
+// Value returns the value of the given column.
 func (r *Repository) Value(col string) (interface{}, error) {
 	switch col {
 	case "id":
-		return r.Model.ID, nil
+		return r.ID, nil
 	case "created_at":
 		return r.Timestamps.CreatedAt, nil
 	case "updated_at":
@@ -68,10 +71,13 @@ func (r *Repository) Value(col string) (interface{}, error) {
 	}
 }
 
+// NewRelationshipRecord returns a new record for the relatiobship in the given
+// field.
 func (r *Repository) NewRelationshipRecord(field string) (kallax.Record, error) {
 	return nil, fmt.Errorf("kallax: model Repository has no relationships")
 }
 
+// SetRelationship sets the given relationship in the given field.
 func (r *Repository) SetRelationship(field string, rel interface{}) error {
 	return fmt.Errorf("kallax: model Repository has no relationships")
 }
@@ -400,17 +406,19 @@ func (rs *RepositoryResultSet) Close() error {
 
 // NewURL returns a new instance of URL.
 func NewURL() (record *URL) {
-	record = &URL{}
-	if record != nil {
-		record.SetID(kallax.NewID())
-	}
-	return
+	return newURL()
 }
 
+// GetID returns the primary key of the model.
+func (r *URL) GetID() kallax.Identifier {
+	return (*kallax.ULID)(&r.ID)
+}
+
+// ColumnAddress returns the pointer to the value of the given column.
 func (r *URL) ColumnAddress(col string) (interface{}, error) {
 	switch col {
 	case "id":
-		return &r.Model.ID, nil
+		return (*kallax.ULID)(&r.ID), nil
 	case "created_at":
 		return &r.Timestamps.CreatedAt, nil
 	case "updated_at":
@@ -423,10 +431,11 @@ func (r *URL) ColumnAddress(col string) (interface{}, error) {
 	}
 }
 
+// Value returns the value of the given column.
 func (r *URL) Value(col string) (interface{}, error) {
 	switch col {
 	case "id":
-		return r.Model.ID, nil
+		return r.ID, nil
 	case "created_at":
 		return r.Timestamps.CreatedAt, nil
 	case "updated_at":
@@ -439,10 +448,13 @@ func (r *URL) Value(col string) (interface{}, error) {
 	}
 }
 
+// NewRelationshipRecord returns a new record for the relatiobship in the given
+// field.
 func (r *URL) NewRelationshipRecord(field string) (kallax.Record, error) {
 	return nil, fmt.Errorf("kallax: model URL has no relationships")
 }
 
+// SetRelationship sets the given relationship in the given field.
 func (r *URL) SetRelationship(field string, rel interface{}) error {
 	return fmt.Errorf("kallax: model URL has no relationships")
 }
@@ -803,6 +815,7 @@ var Schema = &schema{
 			func() kallax.Record {
 				return new(Repository)
 			},
+			false,
 			kallax.NewSchemaField("id"),
 			kallax.NewSchemaField("created_at"),
 			kallax.NewSchemaField("updated_at"),
@@ -828,6 +841,7 @@ var Schema = &schema{
 			func() kallax.Record {
 				return new(URL)
 			},
+			false,
 			kallax.NewSchemaField("id"),
 			kallax.NewSchemaField("created_at"),
 			kallax.NewSchemaField("updated_at"),

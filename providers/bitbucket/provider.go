@@ -25,8 +25,8 @@ const (
 )
 
 type provider struct {
-	repositoryStore   *model.RepositoryStore
-	client            *client
+	repositoryStore *model.RepositoryStore
+	client          *client
 
 	mutex             *sync.Mutex
 	repositoriesCache model.Repositories
@@ -150,6 +150,7 @@ func (p *provider) saveRepositories(resp *response) error {
 	return p.repositoryStore.Transaction(func(store *model.RepositoryStore) error {
 		// TODO implements bulk operations in kallax
 		for _, repo := range resp.Repositories {
+			repo.ID = kallax.NewULID()
 			repo.Next = resp.Next
 			if _, err := store.Save(repo); err != nil {
 				return err

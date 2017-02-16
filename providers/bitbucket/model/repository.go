@@ -4,8 +4,13 @@ import "github.com/src-d/go-kallax"
 
 type Repositories []*Repository
 
+func newRepository() *Repository {
+	return &Repository{ID: kallax.NewULID()}
+}
+
 type Repository struct {
-	kallax.Model `table:"bitbucket"`
+	ID                kallax.ULID `pk:""`
+	kallax.Model      `table:"bitbucket"`
 	kallax.Timestamps `kallax:",inline"`
 
 	Next    string

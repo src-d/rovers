@@ -67,6 +67,7 @@ func (cp *provider) setCheckpoint(cgitUrl string, cgitPage *page) error {
 
 	return cp.repositoriesStore.Insert(
 		&model.Repository{
+			ID:      kallax.NewULID(),
 			CgitURL: cgitUrl,
 			URL:     cgitPage.RepositoryURL,
 			Aliases: cgitPage.Aliases,
@@ -108,7 +109,7 @@ func (cp *provider) getAllCgitUrlsAlreadyProcessed() ([]string, error) {
 
 func (cp *provider) saveNewCgitUrls(urls []string) error {
 	for _, u := range urls {
-		err := cp.urlsStore.Insert(&model.URL{CgitUrl: u})
+		err := cp.urlsStore.Insert(&model.URL{CgitUrl: u, ID: kallax.NewULID()})
 		switch {
 		case err == nil:
 			log15.Debug("New inserted cgit URL", "url", u)
