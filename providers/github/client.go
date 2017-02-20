@@ -6,9 +6,7 @@ import (
 	"golang.org/x/oauth2"
 	"io"
 	"net/http"
-	"net/url"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/src-d/rovers/providers/github/model"
@@ -20,9 +18,6 @@ const (
 
 	rateLimitLimitHeader     = "X-RateLimit-Limit"
 	rateLimitRemainingHeader = "X-RateLimit-Remaining"
-	// Link contains the next and first urls of the API endpoint. Example:
-	// <https://api.github.com/repositories?since=367>; rel="next", <https://api.github.com/repositories{?since}>; rel="first"
-	linkHeader = "Link"
 )
 
 type response struct {
@@ -79,7 +74,10 @@ func (c *client) Repositories(since int) (*response, error) {
 		}
 	}()
 
-	next := c.next(res)
+	next := 0
+	if len(repositories) != 0 {
+		next = repositories[len(repositories)-1].GithubID
+	}
 
 	return &response{
 		Next:         next,
@@ -87,47 +85,6 @@ func (c *client) Repositories(since int) (*response, error) {
 		Total:        total,
 		Remaining:    remaining,
 	}, nil
-}
-
-// next parses the HTTP Link response headers and populates the
-// various pagination link values in the Response.
-func (c *client) next(res *http.Response) int {
-	var next int
-	if links, ok := res.Header[linkHeader]; ok && len(links) > 0 {
-		for _, link := range strings.Split(links[0], ",") {
-			segments := strings.Split(strings.TrimSpace(link), ";")
-
-			// link must at least have href and rel
-			if len(segments) < 2 {
-				continue
-			}
-
-			// ensure href is properly formatted
-			if !strings.HasPrefix(segments[0], "<") || !strings.HasSuffix(segments[0], ">") {
-				continue
-			}
-
-			// try to pull out page parameter
-			u, err := url.Parse(segments[0][1 : len(segments[0])-1])
-			if err != nil {
-				continue
-			}
-			page := u.Query().Get("page")
-			if page == "" {
-				continue
-			}
-
-			for _, segment := range segments[1:] {
-				switch strings.TrimSpace(segment) {
-				case `rel="next"`:
-					next = c.toInt(page)
-				}
-
-			}
-		}
-	}
-
-	return next
 }
 
 func (c *client) toInt(s string) int {
