@@ -11,6 +11,7 @@ import (
 	"github.com/src-d/rovers/providers/cgit/model"
 
 	. "gopkg.in/check.v1"
+	ocore "srcd.works/core.v0"
 	coreModels "srcd.works/core.v0/model"
 )
 
@@ -21,11 +22,10 @@ type CgitProviderSuite struct {
 var _ = Suite(&CgitProviderSuite{})
 
 func (s *CgitProviderSuite) SetUpTest(c *C) {
-	DB, err := core.NewDB()
-	c.Assert(err, IsNil)
+	DB := ocore.Database()
 	s.DB = DB
 
-	err = core.DropTables(DB, providerName, "cgit_urls")
+	err := core.DropTables(DB, providerName, "cgit_urls")
 	c.Assert(err, IsNil)
 
 	err = core.CreateCgitTables(DB)

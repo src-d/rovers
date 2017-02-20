@@ -11,6 +11,7 @@ import (
 	"github.com/src-d/rovers/providers/github"
 
 	"gopkg.in/inconshreveable/log15.v2"
+	ocore "srcd.works/core.v0"
 	"srcd.works/core.v0/model"
 	"srcd.works/framework.v0/queue"
 )
@@ -30,7 +31,6 @@ type CmdRepoProviders struct {
 	Providers   []string      `short:"p" long:"provider" optional:"yes" description:"list of providers to execute. (default: all)"`
 	WatcherTime time.Duration `short:"t" long:"watcher-time" optional:"no" default:"1h" description:"Time to try again to get new repos"`
 	Queue       string        `long:"queue" default:"rovers" description:"queue name"`
-	Broker      string        `long:"broker" default:"amqp://localhost:5672" description:"broker URI"`
 }
 
 func (c *CmdRepoProviders) Execute(args []string) error {
@@ -42,10 +42,7 @@ func (c *CmdRepoProviders) Execute(args []string) error {
 		c.Providers = allowedProviders
 	}
 
-	DB, err := core.NewDB()
-	if err != nil {
-		return err
-	}
+	DB := ocore.Database()
 
 	providers := []core.RepoProvider{}
 	for _, p := range c.Providers {
@@ -85,7 +82,7 @@ func (c *CmdRepoProviders) Execute(args []string) error {
 }
 
 func (c *CmdRepoProviders) getPersistFunction() (core.PersistFN, error) {
-	broker, err := queue.NewBroker(c.Broker)
+	broker, err := queue.NewBroker(core.Config.Broker.URL)
 	if err != nil {
 		return nil, err
 	}

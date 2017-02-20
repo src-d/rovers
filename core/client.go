@@ -6,18 +6,6 @@ import (
 	"strings"
 )
 
-func NewDB() (*sql.DB, error) {
-	db, err := sql.Open("postgres", Config.Postgres.URL)
-	if err != nil {
-		return nil, err
-	}
-
-	db.SetMaxIdleConns(40)
-	db.SetMaxOpenConns(10)
-
-	return db, nil
-}
-
 func DropTables(DB *sql.DB, names ...string) error {
 	smt := fmt.Sprintf("DROP TABLE IF EXISTS %s;", strings.Join(names, ", "))
 	if _, err := DB.Exec(smt); err != nil {

@@ -16,8 +16,8 @@ type config struct {
 	Github struct {
 		Token string
 	}
-	Postgres struct {
-		URL string `default:"postgres://postgres:mysecretpassword@0.0.0.0:5432/postgres?sslmode=disable"`
+	Broker struct {
+		URL string `default:"amqp://guest:guest@localhost:5672/"`
 	}
 }
 
