@@ -10,6 +10,7 @@ import (
 	"github.com/src-d/rovers/providers/github/model"
 
 	. "gopkg.in/check.v1"
+	ocore "srcd.works/core.v0"
 )
 
 func Test(t *testing.T) {
@@ -24,11 +25,10 @@ type GithubProviderSuite struct {
 var _ = Suite(&GithubProviderSuite{})
 
 func (s *GithubProviderSuite) SetUpTest(c *C) {
-	DB, err := core.NewDB()
-	c.Assert(err, IsNil)
+	DB := ocore.Database()
 	s.DB = DB
 
-	err = core.DropTables(DB, providerName)
+	err := core.DropTables(DB, providerName)
 	c.Assert(err, IsNil)
 	err = core.CreateGithubTable(DB)
 	c.Assert(err, IsNil)

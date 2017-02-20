@@ -1,6 +1,10 @@
 package commands
 
-import "github.com/src-d/rovers/core"
+import (
+	"github.com/src-d/rovers/core"
+
+	ocore "srcd.works/core.v0"
+)
 
 type CmdCreateTables struct {
 	CmdBase
@@ -9,12 +13,9 @@ type CmdCreateTables struct {
 func (c *CmdCreateTables) Execute(args []string) error {
 	c.ChangeLogLevel()
 
-	db, err := core.NewDB()
-	if err != nil {
-		return err
-	}
+	db := ocore.Database()
 
-	err = core.CreateBitbucketTable(db)
+	err := core.CreateBitbucketTable(db)
 	if err != nil {
 		return err
 	}

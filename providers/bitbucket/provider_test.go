@@ -11,6 +11,7 @@ import (
 
 	"github.com/src-d/go-kallax"
 	. "gopkg.in/check.v1"
+	ocore "srcd.works/core.v0"
 )
 
 const (
@@ -30,11 +31,10 @@ type ProviderSuite struct {
 var _ = Suite(&ProviderSuite{})
 
 func (s *ProviderSuite) SetUpTest(c *C) {
-	DB, err := core.NewDB()
-	c.Assert(err, IsNil)
+	DB := ocore.Database()
 	s.DB = DB
 
-	err = core.DropTables(DB, providerName)
+	err := core.DropTables(DB, providerName)
 	c.Assert(err, IsNil)
 
 	err = core.CreateBitbucketTable(DB)

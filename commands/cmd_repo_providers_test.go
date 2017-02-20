@@ -3,6 +3,8 @@ package commands
 import (
 	"testing"
 
+	"github.com/src-d/rovers/core"
+
 	. "gopkg.in/check.v1"
 	"srcd.works/core.v0/model"
 	"srcd.works/framework.v0/queue"
@@ -20,8 +22,7 @@ var _ = Suite(&CmdRepoProviderSuite{})
 
 func (s *CmdRepoProviderSuite) SetUpTest(c *C) {
 	s.cmdProviders = &CmdRepoProviders{
-		Queue:  "test",
-		Broker: "amqp://guest:guest@localhost:5672/",
+		Queue: "test",
 	}
 }
 
@@ -40,7 +41,7 @@ func (s *CmdRepoProviderSuite) TestCmdRepoProvider_getPersistFunction_CorrectlyS
 	err = f(repositoryRaw)
 	c.Assert(err, IsNil)
 
-	broker, err := queue.NewBroker(s.cmdProviders.Broker)
+	broker, err := queue.NewBroker(core.Config.Broker.URL)
 	c.Assert(err, IsNil)
 	queue, err := broker.Queue(s.cmdProviders.Queue)
 	c.Assert(err, IsNil)
