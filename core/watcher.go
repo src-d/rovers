@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"gopkg.in/inconshreveable/log15.v2"
-	"srcd.works/core.v0/model"
+	"srcd.works/core-retrieval.v0/model"
 )
 
 const (

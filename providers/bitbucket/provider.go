@@ -9,9 +9,9 @@ import (
 	"github.com/src-d/rovers/providers"
 	"github.com/src-d/rovers/providers/bitbucket/model"
 
-	"github.com/src-d/go-kallax"
 	"gopkg.in/inconshreveable/log15.v2"
-	coreModels "srcd.works/core.v0/model"
+	"gopkg.in/src-d/go-kallax.v1"
+	rmodel "srcd.works/core-retrieval.v0/model"
 )
 
 const (
@@ -51,7 +51,7 @@ func (p *provider) needsMoreData() bool {
 	return len(p.repositoriesCache) == 0
 }
 
-func (p *provider) repositoryRaw(r *model.Repository) *coreModels.Mention {
+func (p *provider) repositoryRaw(r *model.Repository) *rmodel.Mention {
 	aliases := []string{}
 	mainRepository := ""
 	for _, c := range r.Links.Clone {
@@ -64,10 +64,10 @@ func (p *provider) repositoryRaw(r *model.Repository) *coreModels.Mention {
 		log15.Error("no https repositories found", "clone urls", r.Links.Clone)
 	}
 
-	return &coreModels.Mention{
+	return &rmodel.Mention{
 		Endpoint: mainRepository,
 		Provider: providerName,
-		VCS:      coreModels.GIT,
+		VCS:      rmodel.GIT,
 		Context: providers.ContextBuilder{}.
 			Fork(r.Parent != nil).
 			Aliases(aliases),
@@ -93,7 +93,7 @@ func (p *provider) initializeCheckpoint() error {
 	return nil
 }
 
-func (p *provider) Next() (*coreModels.Mention, error) {
+func (p *provider) Next() (*rmodel.Mention, error) {
 	p.mutex.Lock()
 	defer p.mutex.Unlock()
 

@@ -12,7 +12,7 @@ import (
 
 	"gopkg.in/inconshreveable/log15.v2"
 	ocore "srcd.works/core.v0"
-	"srcd.works/core.v0/model"
+	"srcd.works/core-retrieval.v0/model"
 	"srcd.works/framework.v0/queue"
 )
 

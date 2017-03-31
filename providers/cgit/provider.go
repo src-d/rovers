@@ -15,9 +15,9 @@ import (
 	"github.com/src-d/rovers/utils/websearch/bing"
 
 	"github.com/jpillora/backoff"
-	"github.com/src-d/go-kallax"
 	"gopkg.in/inconshreveable/log15.v2"
-	coreModels "srcd.works/core.v0/model"
+	"gopkg.in/src-d/go-kallax.v1"
+	rmodel "srcd.works/core-retrieval.v0/model"
 )
 
 const (
@@ -156,7 +156,7 @@ func (cp *provider) joinUnique(set map[string]struct{}, slices ...[]string) {
 	}
 }
 
-func (cp *provider) Next() (*coreModels.Mention, error) {
+func (cp *provider) Next() (*rmodel.Mention, error) {
 	cp.mutex.Lock()
 	defer cp.mutex.Unlock()
 	if cp.lastPage != nil {
@@ -221,11 +221,11 @@ func (cp *provider) handleRetries() {
 	}
 }
 
-func (*provider) repositoryRaw(page *page) *coreModels.Mention {
-	return &coreModels.Mention{
+func (*provider) repositoryRaw(page *page) *rmodel.Mention {
+	return &rmodel.Mention{
 		Endpoint: page.RepositoryURL,
 		Provider: providerName,
-		VCS:      coreModels.GIT,
+		VCS:      rmodel.GIT,
 		Context:  providers.ContextBuilder{}.Aliases(page.Aliases),
 	}
 }

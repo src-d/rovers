@@ -11,8 +11,8 @@ import (
 	"github.com/src-d/rovers/providers/cgit/model"
 
 	. "gopkg.in/check.v1"
+	rmodel "srcd.works/core-retrieval.v0/model"
 	ocore "srcd.works/core.v0"
-	coreModels "srcd.works/core.v0/model"
 )
 
 type CgitProviderSuite struct {
@@ -47,7 +47,7 @@ func (s *CgitProviderSuite) TestCgitProvider_WhenFinishScraping(c *C) {
 	provider := s.newProvider("https://a3nm.net/git/")
 
 	var err error
-	var url *coreModels.Mention
+	var url *rmodel.Mention
 	count := 0
 	for err == nil {
 		url, err = provider.Next()

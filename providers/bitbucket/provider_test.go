@@ -9,7 +9,7 @@ import (
 	"github.com/src-d/rovers/core"
 	"github.com/src-d/rovers/providers/bitbucket/model"
 
-	"github.com/src-d/go-kallax"
+	"gopkg.in/src-d/go-kallax.v1"
 	. "gopkg.in/check.v1"
 	ocore "srcd.works/core.v0"
 )

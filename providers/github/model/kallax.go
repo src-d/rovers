@@ -7,9 +7,10 @@ package model
 import (
 	"database/sql"
 	"fmt"
+	"time"
 
-	"github.com/src-d/go-kallax"
-	"github.com/src-d/go-kallax/types"
+	"gopkg.in/src-d/go-kallax.v1"
+	"gopkg.in/src-d/go-kallax.v1/types"
 )
 
 var _ types.SQLType
@@ -310,6 +311,73 @@ func (q *RepositoryQuery) Offset(n uint64) *RepositoryQuery {
 func (q *RepositoryQuery) Where(cond kallax.Condition) *RepositoryQuery {
 	q.BaseQuery.Where(cond)
 	return q
+}
+
+// FindByID adds a new filter to the query that will require that
+// the ID property is equal to one of the passed values; if no passed values, it will do nothing
+func (q *RepositoryQuery) FindByID(v ...kallax.ULID) *RepositoryQuery {
+	if len(v) == 0 {
+		return q
+	}
+	values := make([]interface{}, len(v))
+	for i, val := range v {
+		values[i] = val
+	}
+	return q.Where(kallax.In(Schema.Repository.ID, values...))
+}
+
+// FindByCreatedAt adds a new filter to the query that will require that
+// the CreatedAt property is equal to the passed value
+func (q *RepositoryQuery) FindByCreatedAt(cond kallax.ScalarCond, v time.Time) *RepositoryQuery {
+	return q.Where(cond(Schema.Repository.CreatedAt, v))
+}
+
+// FindByUpdatedAt adds a new filter to the query that will require that
+// the UpdatedAt property is equal to the passed value
+func (q *RepositoryQuery) FindByUpdatedAt(cond kallax.ScalarCond, v time.Time) *RepositoryQuery {
+	return q.Where(cond(Schema.Repository.UpdatedAt, v))
+}
+
+// FindByGithubID adds a new filter to the query that will require that
+// the GithubID property is equal to the passed value
+func (q *RepositoryQuery) FindByGithubID(cond kallax.ScalarCond, v int) *RepositoryQuery {
+	return q.Where(cond(Schema.Repository.GithubID, v))
+}
+
+// FindByName adds a new filter to the query that will require that
+// the Name property is equal to the passed value
+func (q *RepositoryQuery) FindByName(v string) *RepositoryQuery {
+	return q.Where(kallax.Eq(Schema.Repository.Name, v))
+}
+
+// FindByFullName adds a new filter to the query that will require that
+// the FullName property is equal to the passed value
+func (q *RepositoryQuery) FindByFullName(v string) *RepositoryQuery {
+	return q.Where(kallax.Eq(Schema.Repository.FullName, v))
+}
+
+// FindByPrivate adds a new filter to the query that will require that
+// the Private property is equal to the passed value
+func (q *RepositoryQuery) FindByPrivate(v bool) *RepositoryQuery {
+	return q.Where(kallax.Eq(Schema.Repository.Private, v))
+}
+
+// FindByHTMLURL adds a new filter to the query that will require that
+// the HTMLURL property is equal to the passed value
+func (q *RepositoryQuery) FindByHTMLURL(v string) *RepositoryQuery {
+	return q.Where(kallax.Eq(Schema.Repository.HTMLURL, v))
+}
+
+// FindByDescription adds a new filter to the query that will require that
+// the Description property is equal to the passed value
+func (q *RepositoryQuery) FindByDescription(v string) *RepositoryQuery {
+	return q.Where(kallax.Eq(Schema.Repository.Description, v))
+}
+
+// FindByFork adds a new filter to the query that will require that
+// the Fork property is equal to the passed value
+func (q *RepositoryQuery) FindByFork(v bool) *RepositoryQuery {
+	return q.Where(kallax.Eq(Schema.Repository.Fork, v))
 }
 
 // RepositoryResultSet is the set of results returned by a query to the
