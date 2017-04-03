@@ -9,9 +9,9 @@ import (
 	"github.com/src-d/rovers/providers"
 	"github.com/src-d/rovers/providers/github/model"
 
-	"github.com/src-d/go-kallax"
 	"gopkg.in/inconshreveable/log15.v2"
-	coreModels "srcd.works/core.v0/model"
+	"gopkg.in/src-d/go-kallax.v1"
+	rmodel "srcd.works/core-retrieval.v0/model"
 )
 
 const (
@@ -39,7 +39,7 @@ func (gp *provider) Name() string {
 	return providerName
 }
 
-func (gp *provider) Next() (*coreModels.Mention, error) {
+func (gp *provider) Next() (*rmodel.Mention, error) {
 	gp.mutex.Lock()
 	defer gp.mutex.Unlock()
 	switch len(gp.repoCache) {
@@ -75,11 +75,11 @@ func (gp *provider) Next() (*coreModels.Mention, error) {
 	return gp.repositoryRaw(x.HTMLURL+".git", x.Fork), nil
 }
 
-func (*provider) repositoryRaw(repoUrl string, isFork bool) *coreModels.Mention {
-	return &coreModels.Mention{
+func (*provider) repositoryRaw(repoUrl string, isFork bool) *rmodel.Mention {
+	return &rmodel.Mention{
 		Provider: providerName,
 		Endpoint: repoUrl,
-		VCS:      coreModels.GIT,
+		VCS:      rmodel.GIT,
 		Context:  providers.ContextBuilder{}.Fork(isFork),
 	}
 }

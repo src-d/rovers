@@ -7,9 +7,10 @@ package model
 import (
 	"database/sql"
 	"fmt"
+	"time"
 
-	"github.com/src-d/go-kallax"
-	"github.com/src-d/go-kallax/types"
+	"gopkg.in/src-d/go-kallax.v1"
+	"gopkg.in/src-d/go-kallax.v1/types"
 )
 
 var _ types.SQLType
@@ -294,6 +295,62 @@ func (q *RepositoryQuery) Offset(n uint64) *RepositoryQuery {
 func (q *RepositoryQuery) Where(cond kallax.Condition) *RepositoryQuery {
 	q.BaseQuery.Where(cond)
 	return q
+}
+
+// FindByID adds a new filter to the query that will require that
+// the ID property is equal to one of the passed values; if no passed values, it will do nothing
+func (q *RepositoryQuery) FindByID(v ...kallax.ULID) *RepositoryQuery {
+	if len(v) == 0 {
+		return q
+	}
+	values := make([]interface{}, len(v))
+	for i, val := range v {
+		values[i] = val
+	}
+	return q.Where(kallax.In(Schema.Repository.ID, values...))
+}
+
+// FindByCreatedAt adds a new filter to the query that will require that
+// the CreatedAt property is equal to the passed value
+func (q *RepositoryQuery) FindByCreatedAt(cond kallax.ScalarCond, v time.Time) *RepositoryQuery {
+	return q.Where(cond(Schema.Repository.CreatedAt, v))
+}
+
+// FindByUpdatedAt adds a new filter to the query that will require that
+// the UpdatedAt property is equal to the passed value
+func (q *RepositoryQuery) FindByUpdatedAt(cond kallax.ScalarCond, v time.Time) *RepositoryQuery {
+	return q.Where(cond(Schema.Repository.UpdatedAt, v))
+}
+
+// FindByCgitURL adds a new filter to the query that will require that
+// the CgitURL property is equal to the passed value
+func (q *RepositoryQuery) FindByCgitURL(v string) *RepositoryQuery {
+	return q.Where(kallax.Eq(Schema.Repository.CgitURL, v))
+}
+
+// FindByURL adds a new filter to the query that will require that
+// the URL property is equal to the passed value
+func (q *RepositoryQuery) FindByURL(v string) *RepositoryQuery {
+	return q.Where(kallax.Eq(Schema.Repository.URL, v))
+}
+
+// FindByAliases adds a new filter to the query that will require that
+// the Aliases property contains all the passed values; if no passed values, it will do nothing
+func (q *RepositoryQuery) FindByAliases(v ...string) *RepositoryQuery {
+	if len(v) == 0 {
+		return q
+	}
+	values := make([]interface{}, len(v))
+	for i, val := range v {
+		values[i] = val
+	}
+	return q.Where(kallax.ArrayContains(Schema.Repository.Aliases, values...))
+}
+
+// FindByHTML adds a new filter to the query that will require that
+// the HTML property is equal to the passed value
+func (q *RepositoryQuery) FindByHTML(v string) *RepositoryQuery {
+	return q.Where(kallax.Eq(Schema.Repository.HTML, v))
 }
 
 // RepositoryResultSet is the set of results returned by a query to the
@@ -671,6 +728,37 @@ func (q *URLQuery) Offset(n uint64) *URLQuery {
 func (q *URLQuery) Where(cond kallax.Condition) *URLQuery {
 	q.BaseQuery.Where(cond)
 	return q
+}
+
+// FindByID adds a new filter to the query that will require that
+// the ID property is equal to one of the passed values; if no passed values, it will do nothing
+func (q *URLQuery) FindByID(v ...kallax.ULID) *URLQuery {
+	if len(v) == 0 {
+		return q
+	}
+	values := make([]interface{}, len(v))
+	for i, val := range v {
+		values[i] = val
+	}
+	return q.Where(kallax.In(Schema.URL.ID, values...))
+}
+
+// FindByCreatedAt adds a new filter to the query that will require that
+// the CreatedAt property is equal to the passed value
+func (q *URLQuery) FindByCreatedAt(cond kallax.ScalarCond, v time.Time) *URLQuery {
+	return q.Where(cond(Schema.URL.CreatedAt, v))
+}
+
+// FindByUpdatedAt adds a new filter to the query that will require that
+// the UpdatedAt property is equal to the passed value
+func (q *URLQuery) FindByUpdatedAt(cond kallax.ScalarCond, v time.Time) *URLQuery {
+	return q.Where(cond(Schema.URL.UpdatedAt, v))
+}
+
+// FindByCgitUrl adds a new filter to the query that will require that
+// the CgitUrl property is equal to the passed value
+func (q *URLQuery) FindByCgitUrl(v string) *URLQuery {
+	return q.Where(kallax.Eq(Schema.URL.CgitUrl, v))
 }
 
 // URLResultSet is the set of results returned by a query to the

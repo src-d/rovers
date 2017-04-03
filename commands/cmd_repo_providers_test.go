@@ -6,7 +6,7 @@ import (
 	"github.com/src-d/rovers/core"
 
 	. "gopkg.in/check.v1"
-	"srcd.works/core.v0/model"
+	rmodel "srcd.works/core-retrieval.v0/model"
 	"srcd.works/framework.v0/queue"
 )
 
@@ -27,10 +27,10 @@ func (s *CmdRepoProviderSuite) SetUpTest(c *C) {
 }
 
 func (s *CmdRepoProviderSuite) TestCmdRepoProvider_getPersistFunction_CorrectlySerialized(c *C) {
-	repositoryRaw := &model.Mention{
+	repositoryRaw := &rmodel.Mention{
 		Provider: "test",
 		Endpoint: "https://some.repo.url.com",
-		VCS:      model.GIT,
+		VCS:      rmodel.GIT,
 		Context:  make(map[string]string),
 	}
 
@@ -51,7 +51,7 @@ func (s *CmdRepoProviderSuite) TestCmdRepoProvider_getPersistFunction_CorrectlyS
 	job, err := jobIter.Next()
 	c.Assert(err, IsNil)
 
-	obtainedRepositoryRaw := &model.Mention{}
+	obtainedRepositoryRaw := &rmodel.Mention{}
 	err = job.Decode(obtainedRepositoryRaw)
 	c.Assert(err, IsNil)
 
