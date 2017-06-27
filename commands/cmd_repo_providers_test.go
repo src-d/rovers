@@ -45,7 +45,7 @@ func (s *CmdRepoProviderSuite) TestCmdRepoProvider_getPersistFunction_CorrectlyS
 	c.Assert(err, IsNil)
 	queue, err := broker.Queue(s.cmdProviders.Queue)
 	c.Assert(err, IsNil)
-	jobIter, err := queue.Consume()
+	jobIter, err := queue.Consume(1)
 	c.Assert(err, IsNil)
 
 	job, err := jobIter.Next()
