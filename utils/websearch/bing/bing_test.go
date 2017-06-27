@@ -33,7 +33,7 @@ func (s *BingSuite) TestBing_Search(c *C) {
 
 	contains := false
 	for _, u := range result {
-		if u.Host == "git.kernel.dk" {
+		if u.Host == "git.netfilter.org" {
 			contains = true
 			break
 		}
