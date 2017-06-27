@@ -11,9 +11,9 @@ import (
 	"github.com/src-d/rovers/providers/github"
 
 	"gopkg.in/inconshreveable/log15.v2"
-	ocore "srcd.works/core.v0"
-	"srcd.works/core-retrieval.v0/model"
-	"srcd.works/framework.v0/queue"
+	"gopkg.in/src-d/core-retrieval.v0/model"
+	ocore "gopkg.in/src-d/core.v0"
+	"gopkg.in/src-d/framework.v0/queue"
 )
 
 const (

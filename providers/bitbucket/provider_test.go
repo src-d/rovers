@@ -9,9 +9,9 @@ import (
 	"github.com/src-d/rovers/core"
 	"github.com/src-d/rovers/providers/bitbucket/model"
 
-	"gopkg.in/src-d/go-kallax.v1"
 	. "gopkg.in/check.v1"
-	ocore "srcd.works/core.v0"
+	ocore "gopkg.in/src-d/core.v0"
+	"gopkg.in/src-d/go-kallax.v1"
 )
 
 const (
