@@ -1,0 +1,113 @@
+hash: 89877ac6caef369ae701ff1f5f5aa2cde118f2381b718e399d825537b41555fc
+updated: 2017-06-28T10:40:30.422165246+02:00
+imports:
+- name: github.com/andybalholm/cascadia
+  version: 349dd0209470eabd9514242c688c403c0926d266
+- name: github.com/golang/protobuf
+  version: 6e4cc92cc905d5f4a73041c1b8228ea08f4c6147
+  subpackages:
+  - proto
+- name: github.com/jessevdk/go-flags
+  version: 48cf8722c3375517aba351d1f7577c40663a4407
+- name: github.com/jpillora/backoff
+  version: 06c7a16c845dc8e0bf575fafeeca0f5462f5eb4d
+- name: github.com/lann/builder
+  version: f22ce00fd9394014049dad11c244859432bd6820
+- name: github.com/lann/ps
+  version: 62de8c46ede02a7675c4c79c84883eb164cb71e3
+- name: github.com/lib/pq
+  version: 8837942c3e09574accbc5f150e2c5e057189cace
+  subpackages:
+  - oid
+- name: github.com/Masterminds/squirrel
+  version: 20f192218cf52a73397fa2df45bdda720f3e47c8
+- name: github.com/mattn/go-colorable
+  version: ded68f7a9561c023e790de24279db7ebf473ea80
+- name: github.com/mattn/go-isatty
+  version: fc9e8d8ef48496124e79ae0df75490096eccf6fe
+- name: github.com/mcuadros/go-defaults
+  version: e1c978be3307be96ef03a0bd25d719ab50d277e4
+- name: github.com/oklog/ulid
+  version: 66bb6560562feca7045b23db1ae85b01260f87c5
+- name: github.com/PuerkitoBio/goquery
+  version: 8806ada2a4ab225c06e9106f9631be80932db7ce
+- name: github.com/satori/go.uuid
+  version: 879c5887cd475cd7864858769793b2ceb0d44feb
+- name: github.com/serenize/snaker
+  version: 1c7f65329f6524115af8ca01ab604c00cddf5558
+- name: github.com/src-d/envconfig
+  version: 34ca5bb0e3815d60fe5008b1dd188beb83e2e7df
+- name: github.com/streadway/amqp
+  version: dfe15e36048539f4cda41f240b27a5ca25b9cd46
+- name: golang.org/x/net
+  version: 3da985ce5951d99de868be4385f21ea6c2b22f24
+  subpackages:
+  - context
+  - html
+  - html/atom
+- name: golang.org/x/oauth2
+  version: f047394b6d14284165300fd82dad67edb3a4d7f6
+  subpackages:
+  - internal
+- name: golang.org/x/sys
+  version: 8f0908ab3b2457e2e15403d3697c9ef5cb4b57a9
+  subpackages:
+  - unix
+- name: google.golang.org/appengine
+  version: a2f4131514e563cedfdb6e7d267df9ad48591e93
+  subpackages:
+  - datastore
+  - internal
+  - internal/app_identity
+  - internal/base
+  - internal/datastore
+  - internal/log
+  - internal/modules
+  - internal/remote_api
+  - internal/urlfetch
+  - urlfetch
+- name: gopkg.in/inconshreveable/log15.v2
+  version: b105bd37f74e5d9dc7b6ad7806715c7a2b83fd3f
+  subpackages:
+  - stack
+  - term
+- name: gopkg.in/mgo.v2
+  version: 3f83fa5005286a7fe593b055f0d7771a7dce4655
+  subpackages:
+  - bson
+  - internal/json
+- name: gopkg.in/src-d/core-retrieval.v0
+  version: e5ce5c85bef486a9c34de6787acf9d3ce241606f
+  subpackages:
+  - model
+- name: gopkg.in/src-d/core.v0
+  version: e2db1e8d9ca0e77302b5c8f181dbad90e65cedc8
+  subpackages:
+  - model
+- name: gopkg.in/src-d/framework.v0
+  version: 06c61f8f6a8913f3d4d465bab758ff06c0b3d920
+  subpackages:
+  - configurable
+  - database
+  - queue
+- name: gopkg.in/src-d/go-billy.v3
+  version: e501c17e5a47cc1adfdf16fbf54e60e6dafb92c2
+  subpackages:
+  - helper/chroot
+  - helper/polyfill
+  - osfs
+- name: gopkg.in/src-d/go-git.v4
+  version: ad02bf020460c210660db4fffda7f926b6aae95a
+  subpackages:
+  - plumbing
+- name: gopkg.in/src-d/go-kallax.v1
+  version: 7e544e6cdbd0137fc9d4527c8ec4c7e97c7aef72
+  subpackages:
+  - types
+- name: gopkg.in/vmihailenco/msgpack.v2
+  version: f4f8982de4ef0de18be76456617cc3f5d8d8141e
+  subpackages:
+  - codes
+testImports:
+- name: gopkg.in/check.v1
+  version: 20d25e2804050c1cd24a7eea1e7a6447dd0e74ec
