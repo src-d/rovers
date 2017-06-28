@@ -26,6 +26,10 @@ func (s *BingSuite) SetUpTest(c *C) {
 }
 
 func (s *BingSuite) TestBing_Search(c *C) {
+	if core.Config.Bing.Key == "" {
+		c.Skip("CONFIG_BING_KEY not set")
+	}
+
 	result, err := s.bing.Search(s.query)
 
 	c.Assert(err, IsNil)
@@ -33,7 +37,7 @@ func (s *BingSuite) TestBing_Search(c *C) {
 
 	contains := false
 	for _, u := range result {
-		if u.Host == "git.kernel.dk" {
+		if u.Host == "git.netfilter.org" {
 			contains = true
 			break
 		}

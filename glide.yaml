@@ -1,0 +1,21 @@
+package: github.com/src-d/rovers
+import:
+- package: github.com/PuerkitoBio/goquery
+- package: github.com/jessevdk/go-flags
+- package: github.com/jpillora/backoff
+- package: github.com/mcuadros/go-defaults
+- package: github.com/src-d/envconfig
+- package: golang.org/x/oauth2
+- package: gopkg.in/inconshreveable/log15.v2
+- package: gopkg.in/src-d/go-kallax.v1
+  subpackages:
+  - types
+- package: gopkg.in/src-d/core-retrieval.v0
+  subpackages:
+  - model
+- package: gopkg.in/src-d/core.v0
+- package: gopkg.in/src-d/framework.v0
+  subpackages:
+  - queue
+testImport:
+- package: gopkg.in/check.v1
