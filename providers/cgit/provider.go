@@ -16,8 +16,8 @@ import (
 
 	"github.com/jpillora/backoff"
 	"gopkg.in/inconshreveable/log15.v2"
+	rmodel "gopkg.in/src-d/core-retrieval.v0/model"
 	"gopkg.in/src-d/go-kallax.v1"
-	rmodel "srcd.works/core-retrieval.v0/model"
 )
 
 const (

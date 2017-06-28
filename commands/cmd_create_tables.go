@@ -3,7 +3,7 @@ package commands
 import (
 	"github.com/src-d/rovers/core"
 
-	ocore "srcd.works/core.v0"
+	ocore "gopkg.in/src-d/core.v0"
 )
 
 type CmdCreateTables struct {

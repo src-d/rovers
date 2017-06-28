@@ -11,8 +11,8 @@ import (
 	"github.com/src-d/rovers/providers/cgit/model"
 
 	. "gopkg.in/check.v1"
-	rmodel "srcd.works/core-retrieval.v0/model"
-	ocore "srcd.works/core.v0"
+	rmodel "gopkg.in/src-d/core-retrieval.v0/model"
+	ocore "gopkg.in/src-d/core.v0"
 )
 
 type CgitProviderSuite struct {

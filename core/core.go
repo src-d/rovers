@@ -1,6 +1,6 @@
 package core
 
-import "srcd.works/core-retrieval.v0/model"
+import "gopkg.in/src-d/core-retrieval.v0/model"
 
 type RepoProvider interface {
 	Next() (*model.Mention, error)

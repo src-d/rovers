@@ -6,8 +6,8 @@ import (
 	"github.com/src-d/rovers/core"
 
 	. "gopkg.in/check.v1"
-	rmodel "srcd.works/core-retrieval.v0/model"
-	"srcd.works/framework.v0/queue"
+	rmodel "gopkg.in/src-d/core-retrieval.v0/model"
+	"gopkg.in/src-d/framework.v0/queue"
 )
 
 func Test(t *testing.T) {

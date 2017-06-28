@@ -10,7 +10,7 @@ import (
 	"github.com/src-d/rovers/providers/github/model"
 
 	. "gopkg.in/check.v1"
-	ocore "srcd.works/core.v0"
+	ocore "gopkg.in/src-d/core.v0"
 )
 
 func Test(t *testing.T) {
