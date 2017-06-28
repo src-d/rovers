@@ -26,6 +26,10 @@ func (s *BingSuite) SetUpTest(c *C) {
 }
 
 func (s *BingSuite) TestBing_Search(c *C) {
+	if core.Config.Bing.Key == "" {
+		c.Skip("CONFIG_BING_KEY not set")
+	}
+
 	result, err := s.bing.Search(s.query)
 
 	c.Assert(err, IsNil)
