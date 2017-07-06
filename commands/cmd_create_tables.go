@@ -3,7 +3,7 @@ package commands
 import (
 	"github.com/src-d/rovers/core"
 
-	ocore "gopkg.in/src-d/core.v0"
+	rcore "gopkg.in/src-d/core-retrieval.v0"
 )
 
 type CmdCreateTables struct {
@@ -13,7 +13,7 @@ type CmdCreateTables struct {
 func (c *CmdCreateTables) Execute(args []string) error {
 	c.ChangeLogLevel()
 
-	db := ocore.Database()
+	db := rcore.Database()
 
 	err := core.CreateBitbucketTable(db)
 	if err != nil {
