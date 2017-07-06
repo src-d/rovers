@@ -11,9 +11,9 @@ import:
   subpackages:
   - types
 - package: gopkg.in/src-d/core-retrieval.v0
+  version: 0f889725e717bdc83045700bb73409b27c8f7b6e
   subpackages:
   - model
-- package: gopkg.in/src-d/core.v0
 - package: gopkg.in/src-d/framework.v0
   subpackages:
   - queue

@@ -11,8 +11,8 @@ import (
 	"github.com/src-d/rovers/providers/github"
 
 	"gopkg.in/inconshreveable/log15.v2"
+	rcore "gopkg.in/src-d/core-retrieval.v0"
 	"gopkg.in/src-d/core-retrieval.v0/model"
-	ocore "gopkg.in/src-d/core.v0"
 	"gopkg.in/src-d/framework.v0/queue"
 )
 
@@ -42,7 +42,7 @@ func (c *CmdRepoProviders) Execute(args []string) error {
 		c.Providers = allowedProviders
 	}
 
-	DB := ocore.Database()
+	DB := rcore.Database()
 
 	providers := []core.RepoProvider{}
 	for _, p := range c.Providers {

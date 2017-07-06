@@ -10,7 +10,7 @@ import (
 	"github.com/src-d/rovers/providers/bitbucket/model"
 
 	. "gopkg.in/check.v1"
-	ocore "gopkg.in/src-d/core.v0"
+	rcore "gopkg.in/src-d/core-retrieval.v0"
 	"gopkg.in/src-d/go-kallax.v1"
 )
 
@@ -31,7 +31,7 @@ type ProviderSuite struct {
 var _ = Suite(&ProviderSuite{})
 
 func (s *ProviderSuite) SetUpTest(c *C) {
-	DB := ocore.Database()
+	DB := rcore.Database()
 	s.DB = DB
 
 	err := core.DropTables(DB, providerName)
