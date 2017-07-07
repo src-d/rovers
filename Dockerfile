@@ -1,6 +1,6 @@
-FROM quay.io/srcd/basic:latest
+FROM alpine:3.6
 MAINTAINER source{d}
 
-ADD bin /bin
+ADD build/rovers_linux_amd64/rovers /bin/
 
 CMD ["rovers","repos"]
