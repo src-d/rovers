@@ -2,6 +2,7 @@ package github
 
 import (
 	"database/sql"
+	"fmt"
 	"io"
 	"sync"
 
@@ -15,6 +16,10 @@ import (
 
 const (
 	providerName = "github"
+
+	httpsUrl = "https://github.com/%s.git"
+	sshUrl   = "git@github.com:%s.git"
+	gitUrl   = "git://github.com/%s"
 )
 
 type provider struct {
@@ -71,14 +76,18 @@ func (gp *provider) Next() (*rmodel.Mention, error) {
 		gp.repoCache = repoCache
 	}
 
-	return gp.repositoryRaw(x.HTMLURL+".git", x.Fork), nil
+	return gp.repositoryRaw(x.FullName, x.Fork), nil
 }
 
-func (*provider) repositoryRaw(repoUrl string, isFork bool) *rmodel.Mention {
+func (*provider) repositoryRaw(repoName string, isFork bool) *rmodel.Mention {
+	gu := fmt.Sprintf(gitUrl, repoName)
+	su := fmt.Sprintf(sshUrl, repoName)
+	hu := fmt.Sprintf(httpsUrl, repoName)
 	return &rmodel.Mention{
 		Provider: providerName,
-		Endpoint: repoUrl,
+		Endpoint: gu,
 		VCS:      rmodel.GIT,
+		Aliases:  []string{gu, su, hu},
 		IsFork:   &isFork,
 	}
 }

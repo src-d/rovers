@@ -42,6 +42,7 @@ func (s *GithubProviderSuite) TestGithubProvider_Next_FromStart(c *C) {
 		repoUrl, err := s.provider.Next()
 		c.Assert(err, IsNil)
 		c.Assert(repoUrl, NotNil)
+		c.Assert(len(repoUrl.Aliases), Equals, 3)
 		err = s.provider.Ack(nil)
 		c.Assert(err, IsNil)
 	}
