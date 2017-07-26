@@ -25,7 +25,7 @@ func (s *CgitProviderSuite) SetUpTest(c *C) {
 	DB := rcore.Database()
 	s.DB = DB
 
-	err := core.DropTables(DB, providerName, "cgit_urls")
+	err := core.DropTables(DB, core.CgitProviderName, "cgit_urls")
 	c.Assert(err, IsNil)
 
 	err = core.CreateCgitTables(DB)

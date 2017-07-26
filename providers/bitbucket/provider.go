@@ -14,8 +14,6 @@ import (
 )
 
 const (
-	providerName = "bitbucket"
-
 	gitScm        = "git"
 	httpsCloneKey = "https"
 
@@ -66,7 +64,7 @@ func (p *provider) repositoryRaw(r *model.Repository) *rmodel.Mention {
 	isFork := r.Parent != nil
 	return &rmodel.Mention{
 		Endpoint: mainRepository,
-		Provider: providerName,
+		Provider: core.BitbucketProviderName,
 		VCS:      rmodel.GIT,
 		IsFork:   &isFork,
 		Aliases:  aliases,
@@ -179,5 +177,5 @@ func (p *provider) Close() error {
 }
 
 func (p *provider) Name() string {
-	return providerName
+	return core.BitbucketProviderName
 }

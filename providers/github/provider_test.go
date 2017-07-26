@@ -28,7 +28,7 @@ func (s *GithubProviderSuite) SetUpTest(c *C) {
 	DB := rcore.Database()
 	s.DB = DB
 
-	err := core.DropTables(DB, providerName)
+	err := core.DropTables(DB, core.GithubProviderName)
 	c.Assert(err, IsNil)
 	err = core.CreateGithubTable(DB)
 	c.Assert(err, IsNil)

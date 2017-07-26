@@ -22,7 +22,9 @@ var _ = Suite(&CmdRepoProviderSuite{})
 
 func (s *CmdRepoProviderSuite) SetUpTest(c *C) {
 	s.cmdProviders = &CmdRepoProviders{
-		Queue: "test",
+		CmdQueue: CmdQueue{
+			Queue: "test",
+		},
 	}
 }
 

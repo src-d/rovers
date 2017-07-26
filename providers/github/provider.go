@@ -2,7 +2,6 @@ package github
 
 import (
 	"database/sql"
-	"fmt"
 	"io"
 	"sync"
 
@@ -12,14 +11,6 @@ import (
 	"gopkg.in/inconshreveable/log15.v2"
 	rmodel "gopkg.in/src-d/core-retrieval.v0/model"
 	"gopkg.in/src-d/go-kallax.v1"
-)
-
-const (
-	providerName = "github"
-
-	httpsUrl = "https://github.com/%s.git"
-	sshUrl   = "git@github.com:%s.git"
-	gitUrl   = "git://github.com/%s"
 )
 
 type provider struct {
@@ -40,7 +31,7 @@ func NewProvider(githubToken string, DB *sql.DB) core.RepoProvider {
 }
 
 func (gp *provider) Name() string {
-	return providerName
+	return core.GithubProviderName
 }
 
 func (gp *provider) Next() (*rmodel.Mention, error) {
@@ -76,20 +67,7 @@ func (gp *provider) Next() (*rmodel.Mention, error) {
 		gp.repoCache = repoCache
 	}
 
-	return gp.repositoryRaw(x.FullName, x.Fork), nil
-}
-
-func (*provider) repositoryRaw(repoName string, isFork bool) *rmodel.Mention {
-	gu := fmt.Sprintf(gitUrl, repoName)
-	su := fmt.Sprintf(sshUrl, repoName)
-	hu := fmt.Sprintf(httpsUrl, repoName)
-	return &rmodel.Mention{
-		Provider: providerName,
-		Endpoint: gu,
-		VCS:      rmodel.GIT,
-		Aliases:  []string{gu, su, hu},
-		IsFork:   &isFork,
-	}
+	return getMention(x.FullName, x.Fork), nil
 }
 
 func (gp *provider) Ack(err error) error {

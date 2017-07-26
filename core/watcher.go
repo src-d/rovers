@@ -16,7 +16,10 @@ const (
 
 type PersistFN func(*model.Mention) error
 
-var errBadAck = errors.New("error while executing ack")
+var (
+	errBadAck         = errors.New("error while executing ack")
+	NoErrStopProvider = errors.New("this provider will not return more mentions")
+)
 
 type Watcher struct {
 	providers      []RepoProvider
@@ -42,7 +45,7 @@ func (w *Watcher) Start() {
 	for _, provider := range w.providers {
 		go func(p RepoProvider) {
 			for {
-				if err := w.handleProviderResult(p); err == errBadAck {
+				if err := w.handleProviderResult(p); err == errBadAck || err == NoErrStopProvider {
 					break
 				}
 			}
@@ -58,6 +61,12 @@ func (w *Watcher) handleProviderResult(p RepoProvider) error {
 			"waiting for more...",
 			"time to sleep", w.timeToSleep)
 		time.Sleep(w.timeToSleep)
+	case NoErrStopProvider:
+		log15.Info("shutting down provider", "provider", p.Name())
+		if err := p.Close(); err != nil {
+			log15.Error("error closing provider", "error", err)
+		}
+		return NoErrStopProvider
 	case nil:
 		log15.Info("getting new repository", "provider", p.Name(), "repository", mention.Endpoint)
 		err := w.persist(mention)

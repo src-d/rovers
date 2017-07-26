@@ -34,7 +34,7 @@ func (s *ProviderSuite) SetUpTest(c *C) {
 	DB := rcore.Database()
 	s.DB = DB
 
-	err := core.DropTables(DB, providerName)
+	err := core.DropTables(DB, core.BitbucketProviderName)
 	c.Assert(err, IsNil)
 
 	err = core.CreateBitbucketTable(DB)
