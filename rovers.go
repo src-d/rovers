@@ -24,6 +24,10 @@ func main() {
 		"Create the necessary tables used by the providers into the database", &commands.CmdCreateTables{})
 	PanicIf(err)
 
+	_, err = parser.AddCommand("replay", "Send again Mentions to specified queue",
+		"Obtain all the needed metadata to send again Mentions to a specified queue", &commands.CmdReplay{})
+	PanicIf(err)
+
 	_, err = parser.Parse()
 	if err != nil {
 		if _, ok := err.(*flags.Error); ok {
@@ -32,6 +36,4 @@ func main() {
 
 		os.Exit(1)
 	}
-
-	select {}
 }
