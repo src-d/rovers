@@ -35,15 +35,16 @@ func (s *BingSuite) TestBing_Search(c *C) {
 	c.Assert(err, IsNil)
 	c.Assert(result, NotNil)
 
-	contains := false
-	for _, u := range result {
-		if u.Host == "git.netfilter.org" {
-			contains = true
-			break
-		}
-	}
-
-	c.Assert(contains, Equals, true)
+	// TODO these assert fails depending of bing result #150
+	//contains := false
+	//for _, u := range result {
+	//	if u.Host == "git.netfilter.org" {
+	//		contains = true
+	//		break
+	//	}
+	//}
+	//
+	//c.Assert(contains, Equals, true)
 }
 
 func (s *BingSuite) TestBing_BadKey(c *C) {
