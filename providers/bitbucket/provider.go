@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/src-d/rovers/core"
-	"github.com/src-d/rovers/providers"
 	"github.com/src-d/rovers/providers/bitbucket/model"
 
 	"gopkg.in/inconshreveable/log15.v2"
@@ -64,13 +63,13 @@ func (p *provider) repositoryRaw(r *model.Repository) *rmodel.Mention {
 		log15.Error("no https repositories found", "clone urls", r.Links.Clone)
 	}
 
+	isFork := r.Parent != nil
 	return &rmodel.Mention{
 		Endpoint: mainRepository,
 		Provider: providerName,
 		VCS:      rmodel.GIT,
-		Context: providers.ContextBuilder{}.
-			Fork(r.Parent != nil).
-			Aliases(aliases),
+		IsFork:   &isFork,
+		Aliases:  aliases,
 	}
 }
 

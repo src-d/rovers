@@ -27,14 +27,14 @@ func (s *CmdRepoProviderSuite) SetUpTest(c *C) {
 }
 
 func (s *CmdRepoProviderSuite) TestCmdRepoProvider_getPersistFunction_CorrectlySerialized(c *C) {
+	isFork := false
 	repositoryRaw := &rmodel.Mention{
 		Provider: "test",
 		Endpoint: "https://some.repo.url.com",
 		VCS:      rmodel.GIT,
-		Context:  make(map[string]string),
+		Aliases:  []string{"a", "b", "c"},
+		IsFork:   &isFork,
 	}
-
-	repositoryRaw.Context["test"] = "bla"
 
 	f, err := s.cmdProviders.getPersistFunction()
 	c.Assert(err, IsNil)

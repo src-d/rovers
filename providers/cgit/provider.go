@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/src-d/rovers/core"
-	"github.com/src-d/rovers/providers"
 	"github.com/src-d/rovers/providers/cgit/model"
 	"github.com/src-d/rovers/utils"
 	"github.com/src-d/rovers/utils/websearch"
@@ -226,7 +225,7 @@ func (*provider) repositoryRaw(page *page) *rmodel.Mention {
 		Endpoint: page.RepositoryURL,
 		Provider: providerName,
 		VCS:      rmodel.GIT,
-		Context:  providers.ContextBuilder{}.Aliases(page.Aliases),
+		Aliases:  page.Aliases,
 	}
 }
 

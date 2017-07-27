@@ -11,11 +11,13 @@ import:
   subpackages:
   - types
 - package: gopkg.in/src-d/core-retrieval.v0
-  version: 0f889725e717bdc83045700bb73409b27c8f7b6e
+  version: c43ab14d37c0bf2c31537ec91dae607b83749789
   subpackages:
   - model
 - package: gopkg.in/src-d/framework.v0
   subpackages:
   - queue
+- package: golang.org/x/crypto/ssh
+  version: master
 testImport:
 - package: gopkg.in/check.v1

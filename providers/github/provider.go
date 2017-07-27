@@ -6,7 +6,6 @@ import (
 	"sync"
 
 	"github.com/src-d/rovers/core"
-	"github.com/src-d/rovers/providers"
 	"github.com/src-d/rovers/providers/github/model"
 
 	"gopkg.in/inconshreveable/log15.v2"
@@ -80,7 +79,7 @@ func (*provider) repositoryRaw(repoUrl string, isFork bool) *rmodel.Mention {
 		Provider: providerName,
 		Endpoint: repoUrl,
 		VCS:      rmodel.GIT,
-		Context:  providers.ContextBuilder{}.Fork(isFork),
+		IsFork:   &isFork,
 	}
 }
 
