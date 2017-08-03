@@ -25,9 +25,9 @@ const (
 )
 
 type response struct {
-	Pagelen      int                 `json:"pagelen"`
+	Pagelen      int                `json:"pagelen"`
 	Repositories model.Repositories `json:"values"`
-	Next         string              `json:"next"`
+	Next         string             `json:"next"`
 }
 
 type client struct {

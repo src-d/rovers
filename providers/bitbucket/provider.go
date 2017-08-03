@@ -14,8 +14,7 @@ import (
 )
 
 const (
-	gitScm        = "git"
-	httpsCloneKey = "https"
+	gitScm = "git"
 
 	firstCheckpoint    = ""
 	minRequestDuration = time.Hour / 1000
@@ -46,29 +45,6 @@ func (p *provider) isInit() bool {
 
 func (p *provider) needsMoreData() bool {
 	return len(p.repositoriesCache) == 0
-}
-
-func (p *provider) repositoryRaw(r *model.Repository) *rmodel.Mention {
-	aliases := []string{}
-	mainRepository := ""
-	for _, c := range r.Links.Clone {
-		if c.Name == httpsCloneKey {
-			mainRepository = c.Href
-		}
-		aliases = append(aliases, c.Href)
-	}
-	if mainRepository == "" {
-		log15.Error("no https repositories found", "clone urls", r.Links.Clone)
-	}
-
-	isFork := r.Parent != nil
-	return &rmodel.Mention{
-		Endpoint: mainRepository,
-		Provider: core.BitbucketProviderName,
-		VCS:      rmodel.GIT,
-		IsFork:   &isFork,
-		Aliases:  aliases,
-	}
 }
 
 func (p *provider) initializeCheckpoint() error {
@@ -115,7 +91,7 @@ func (p *provider) Next() (*rmodel.Mention, error) {
 				p.repositoriesCache = repositories
 			}
 
-			return p.repositoryRaw(r), nil
+			return getMention(r), nil
 		} else {
 			log15.Debug("non git repository found", "repository", r.FullName, "scm", r.Scm)
 			p.repositoriesCache = repositories
