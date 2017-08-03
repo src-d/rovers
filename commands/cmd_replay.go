@@ -7,6 +7,7 @@ import (
 	"github.com/src-d/rovers/core"
 
 	"github.com/jessevdk/go-flags"
+	"github.com/src-d/rovers/providers/cgit"
 	"github.com/src-d/rovers/providers/github"
 	rcore "gopkg.in/src-d/core-retrieval.v0"
 )
@@ -32,6 +33,8 @@ func (c *CmdReplay) Execute(args []string) error {
 		switch rep {
 		case core.GithubProviderName:
 			replayers = append(replayers, github.NewReplayer(DB))
+		case core.CgitProviderName:
+			replayers = append(replayers, cgit.NewReplayer(DB))
 		default:
 			return &flags.Error{
 				Type:    flags.ErrInvalidChoice,
