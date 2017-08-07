@@ -5,10 +5,12 @@ import (
 	"time"
 
 	"github.com/src-d/rovers/core"
-
-	"github.com/jessevdk/go-flags"
+	"github.com/src-d/rovers/providers/bitbucket"
 	"github.com/src-d/rovers/providers/cgit"
 	"github.com/src-d/rovers/providers/github"
+
+	"github.com/jessevdk/go-flags"
+
 	rcore "gopkg.in/src-d/core-retrieval.v0"
 )
 
@@ -35,6 +37,8 @@ func (c *CmdReplay) Execute(args []string) error {
 			replayers = append(replayers, github.NewReplayer(DB))
 		case core.CgitProviderName:
 			replayers = append(replayers, cgit.NewReplayer(DB))
+		case core.BitbucketProviderName:
+			replayers = append(replayers, bitbucket.NewReplayer(DB))
 		default:
 			return &flags.Error{
 				Type:    flags.ErrInvalidChoice,
