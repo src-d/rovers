@@ -1,5 +1,5 @@
-hash: f3d5b95b7bcde6f644684fd4a85a350086329141878c18aafb06f277001172d3
-updated: 2017-07-27T09:24:40.689487884+02:00
+hash: 75a755fb9a63ad670d36fccc649d3264e0f4385e6136bd8e1ad0d7e69b986aa2
+updated: 2017-08-09T14:44:07.008838472+02:00
 imports:
 - name: github.com/andybalholm/cascadia
   version: 349dd0209470eabd9514242c688c403c0926d266
@@ -221,3 +221,5 @@ imports:
 testImports:
 - name: gopkg.in/check.v1
   version: 20d25e2804050c1cd24a7eea1e7a6447dd0e74ec
+- name: gopkg.in/jarcoal/httpmock.v1
+  version: cf52904a3cf0f78f199ecade6a6df8e245d5b25a

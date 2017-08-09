@@ -94,10 +94,10 @@ func (c *client) Repositories(after string) (*response, error) {
 	}
 
 	res, err := c.c.Do(req)
-	defer res.Body.Close()
 	if err != nil {
 		return nil, err
 	}
+	defer res.Body.Close()
 
 	response, err := c.decode(res.Body)
 	if err != nil {

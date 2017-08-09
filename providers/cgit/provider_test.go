@@ -9,8 +9,10 @@ import (
 
 	"github.com/src-d/rovers/core"
 	"github.com/src-d/rovers/providers/cgit/model"
+	"github.com/src-d/rovers/test"
 
 	. "gopkg.in/check.v1"
+	"gopkg.in/jarcoal/httpmock.v1"
 	rcore "gopkg.in/src-d/core-retrieval.v0"
 	rmodel "gopkg.in/src-d/core-retrieval.v0/model"
 )
@@ -22,6 +24,12 @@ type CgitProviderSuite struct {
 var _ = Suite(&CgitProviderSuite{})
 
 func (s *CgitProviderSuite) SetUpTest(c *C) {
+	httpmock.Activate()
+
+	test.LoadAsset("https://a3nm.net", "assets/a3nm", c)
+	test.LoadAsset("https://ongardie.net", "assets/ongardie", c)
+	test.LoadAsset("http://cgit.openembedded.org", "assets/openembedded", c)
+
 	DB := rcore.Database()
 	s.DB = DB
 
@@ -30,6 +38,10 @@ func (s *CgitProviderSuite) SetUpTest(c *C) {
 
 	err = core.CreateCgitTables(DB)
 	c.Assert(err, IsNil)
+}
+
+func (s *CgitProviderSuite) TearDownTest(c *C) {
+	httpmock.DeactivateAndReset()
 }
 
 func (s *CgitProviderSuite) newProvider(cgitUrls ...string) *provider {
@@ -163,7 +175,7 @@ func (s *CgitProviderSuite) TestCgitProvider_CgitUrlsNotDuplicated(c *C) {
 	c.Assert(err, IsNil)
 	c.Assert(uCount, Equals, int64(2))
 
-	provider = s.newProvider("http://pkgs.fedoraproject.org/cgit/rpms/")
+	provider = s.newProvider("http://cgit.openembedded.org/")
 	_, err = provider.Next()
 	c.Assert(err, IsNil)
 	uCount, err = provider.urlsStore.Count(model.NewURLQuery())
