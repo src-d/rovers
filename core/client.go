@@ -85,7 +85,16 @@ func CreateGithubTable(DB *sql.DB) error {
 	htmlurl varchar(1023),
 	description text,
 	fork boolean not null
-	)`)
+	);`)
+
+	if err != nil {
+		return err
+	}
+
+	_, err = DB.Exec(`CREATE INDEX IF NOT EXISTS idx_github_created_at
+	ON github
+	USING BTREE
+	(created_at DESC NULLS LAST);`)
 
 	return err
 }
