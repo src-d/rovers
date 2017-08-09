@@ -4,8 +4,11 @@ import (
 	"testing"
 
 	"github.com/src-d/rovers/core"
+	"github.com/src-d/rovers/test"
 	"github.com/src-d/rovers/utils/websearch"
+
 	. "gopkg.in/check.v1"
+	"gopkg.in/jarcoal/httpmock.v1"
 )
 
 type BingSuite struct {
@@ -22,32 +25,46 @@ var _ = Suite(&BingSuite{
 })
 
 func (s *BingSuite) SetUpTest(c *C) {
+	httpmock.Activate()
+	responder := test.ResponderByFile(c, "assets/1.json")
+	httpmock.RegisterResponder(
+		"GET",
+		"https://api.cognitive.microsoft.com/bing/v5.0/search"+
+			"?count=50&"+
+			"offset=0&"+
+			"q=%22powered+by+cgit%22%7C%7C%22generated+by+cgit%22%7C%7C%22Commits+per+author+per+week%22&"+
+			"responseFilter=Webpages",
+		responder,
+	)
+
 	s.bing = New(core.Config.Bing.Key)
 }
 
+func (s *BingSuite) TearDownTest(c *C) {
+	httpmock.DeactivateAndReset()
+}
+
 func (s *BingSuite) TestBing_Search(c *C) {
-	if core.Config.Bing.Key == "" {
-		c.Skip("CONFIG_BING_KEY not set")
-	}
 
 	result, err := s.bing.Search(s.query)
 
 	c.Assert(err, IsNil)
 	c.Assert(result, NotNil)
 
-	// TODO these assert fails depending of bing result #150
-	//contains := false
-	//for _, u := range result {
-	//	if u.Host == "git.netfilter.org" {
-	//		contains = true
-	//		break
-	//	}
-	//}
-	//
-	//c.Assert(contains, Equals, true)
+	contains := false
+	for _, u := range result {
+		if u.Host == "sources.busybox.net" {
+			contains = true
+			break
+		}
+	}
+
+	c.Assert(contains, Equals, true)
 }
 
 func (s *BingSuite) TestBing_BadKey(c *C) {
+	httpmock.DeactivateAndReset()
+
 	bing := New("BAD_KEY")
 	result, err := bing.Search(s.query)
 

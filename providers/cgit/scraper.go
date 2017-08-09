@@ -229,7 +229,6 @@ func (cs *scraper) repoPageUrls(pageUrl string) ([]string, error) {
 	return cs.scrapeMain(pageUrl, pagesUrlSelector,
 		func(s *goquery.Selection, baseUrl string) string {
 			repoPageUrlPath, exists := s.Attr(hrefAttr)
-			return baseUrl + repoPageUrlPath
 			if exists {
 				return baseUrl + repoPageUrlPath
 			} else {
@@ -272,13 +271,4 @@ func (cs *scraper) mainUrl(urls []string) string {
 	}
 
 	return ""
-}
-
-func (cs *scraper) newDocument(url string) (*goquery.Document, error) {
-	resp, err := cs.goqueryClient.Get(url)
-	if err != nil {
-		return nil, err
-	}
-
-	return goquery.NewDocumentFromResponse(resp)
 }

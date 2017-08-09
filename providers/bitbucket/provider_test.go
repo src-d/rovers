@@ -10,6 +10,7 @@ import (
 	"github.com/src-d/rovers/providers/bitbucket/model"
 
 	. "gopkg.in/check.v1"
+	"gopkg.in/jarcoal/httpmock.v1"
 	rcore "gopkg.in/src-d/core-retrieval.v0"
 	"gopkg.in/src-d/go-kallax.v1"
 )
@@ -31,6 +32,9 @@ type ProviderSuite struct {
 var _ = Suite(&ProviderSuite{})
 
 func (s *ProviderSuite) SetUpTest(c *C) {
+	httpmock.Activate()
+	LoadAssets(c)
+
 	DB := rcore.Database()
 	s.DB = DB
 
@@ -44,6 +48,10 @@ func (s *ProviderSuite) SetUpTest(c *C) {
 	bitbucketProvider, ok := s.p.(*provider)
 	c.Assert(ok, Equals, true)
 	bitbucketProvider.lastCheckpoint = firstCheckpointWithGitRepositories
+}
+
+func (s *ProviderSuite) TearDownTest(c *C) {
+	httpmock.DeactivateAndReset()
 }
 
 func (s *ProviderSuite) TestProvider_Next(c *C) {

@@ -2,9 +2,10 @@ package bitbucket
 
 import (
 	. "gopkg.in/check.v1"
+	"gopkg.in/jarcoal/httpmock.v1"
 )
 
-const secondPage = "2008-08-13T20:24:13.972049+00:00"
+const secondPage = "2008-08-13T20:43:55.039582+00:00"
 
 type ClientSuite struct {
 	c *client
@@ -13,7 +14,14 @@ type ClientSuite struct {
 var _ = Suite(&ClientSuite{})
 
 func (s *ClientSuite) SetUpTest(c *C) {
+	httpmock.Activate()
+	LoadAssets(c)
+
 	s.c = newClient()
+}
+
+func (s *ClientSuite) TearDownTest(c *C) {
+	httpmock.DeactivateAndReset()
 }
 
 func (s *ClientSuite) TestClient_Repositories(c *C) {

@@ -21,3 +21,4 @@ import:
   version: master
 testImport:
 - package: gopkg.in/check.v1
+- package: gopkg.in/jarcoal/httpmock.v1
