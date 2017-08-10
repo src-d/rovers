@@ -38,12 +38,23 @@ func (s *BitbucketReplayerSuite) TestNext(c *C) {
 	s.createTuple(
 		c,
 		true,
+		gitScm,
 		link{"https://foo.bar", httpsCloneKey},
 		link{"ssh://foo.bar", "ssh"},
 	)
+
 	s.createTuple(
 		c,
 		false,
+		"hg",
+		link{"git://bar.baz", "git"},
+		link{"ssh://bar.baz", "ssh"},
+	)
+
+	s.createTuple(
+		c,
+		false,
+		gitScm,
 		link{"git://bar.baz", "git"},
 		link{"ssh://bar.baz", "ssh"},
 	)
@@ -80,7 +91,7 @@ type link struct {
 	Name string `json:"name"`
 }
 
-func (s *BitbucketReplayerSuite) createTuple(c *C, fork bool, links ...link) {
+func (s *BitbucketReplayerSuite) createTuple(c *C, fork bool, scm string, links ...link) {
 	var parent *model.Parent
 	if fork {
 		parent = &model.Parent{UUID: "foo"}
@@ -89,6 +100,7 @@ func (s *BitbucketReplayerSuite) createTuple(c *C, fork bool, links ...link) {
 	repo := &model.Repository{
 		ID:     kallax.NewULID(),
 		Parent: parent,
+		Scm:    scm,
 	}
 
 	for _, l := range links {

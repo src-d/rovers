@@ -14,8 +14,6 @@ import (
 )
 
 const (
-	gitScm = "git"
-
 	firstCheckpoint    = ""
 	minRequestDuration = time.Hour / 1000
 )

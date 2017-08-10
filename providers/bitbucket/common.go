@@ -8,7 +8,10 @@ import (
 	rmodel "gopkg.in/src-d/core-retrieval.v0/model"
 )
 
-const httpsCloneKey = "https"
+const (
+	gitScm        = "git"
+	httpsCloneKey = "https"
+)
 
 func getMention(r *model.Repository) *rmodel.Mention {
 	aliases := []string{}
