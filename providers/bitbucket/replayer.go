@@ -39,7 +39,7 @@ func (r *replayer) Next() (*rmodel.Mention, error) {
 }
 
 func (r *replayer) initialize() (err error) {
-	r.rs, err = r.store.Find(model.NewRepositoryQuery())
+	r.rs, err = r.store.Find(model.NewRepositoryQuery().FindByScm(gitScm))
 	return
 }
 
