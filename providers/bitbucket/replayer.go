@@ -10,9 +10,8 @@ import (
 )
 
 type replayer struct {
-	store         *model.RepositoryStore
-	rs            *model.RepositoryResultSet
-	isInitialized bool
+	store *model.RepositoryStore
+	rs    *model.RepositoryResultSet
 }
 
 func NewReplayer(db *sql.DB) core.RepoProvider {
@@ -52,5 +51,5 @@ func (r *replayer) Close() error {
 }
 
 func (r *replayer) Name() string {
-	return core.GithubProviderName
+	return core.BitbucketProviderName
 }

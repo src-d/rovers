@@ -48,7 +48,7 @@ func (p *provider) needsMoreData() bool {
 func (p *provider) initializeCheckpoint() error {
 	result, err := p.repositoryStore.FindOne(
 		model.NewRepositoryQuery().
-			Order(kallax.Asc(model.Schema.Repository.CreatedAt)),
+			Order(kallax.Desc(model.Schema.Repository.CreatedAt)),
 	)
 
 	switch err {
