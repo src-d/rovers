@@ -5,6 +5,7 @@ import (
 	"errors"
 	"io"
 	"testing"
+	"time"
 
 	"github.com/src-d/rovers/core"
 	"github.com/src-d/rovers/providers/bitbucket/model"
@@ -107,4 +108,27 @@ func (s *ProviderSuite) TestProvider_NextAckNext(c *C) {
 	c.Assert(r2, NotNil)
 	c.Assert(err, IsNil)
 	c.Assert(r, Not(DeepEquals), r2)
+}
+
+func (s *ProviderSuite) TestInitializeCheckpoint(c *C) {
+	p := NewProvider(s.DB).(*provider)
+	c.Assert(p.initializeCheckpoint(), IsNil)
+	c.Assert("", Equals, p.lastCheckpoint)
+
+	now := time.Now()
+	c.Assert(p.repositoryStore.Insert(mkRepo(now.Add(-1*time.Hour), "1")), IsNil)
+	c.Assert(p.repositoryStore.Insert(mkRepo(now.Add(-1*time.Minute), "2")), IsNil)
+
+	c.Assert(p.initializeCheckpoint(), IsNil)
+	c.Assert("2", Equals, p.lastCheckpoint)
+}
+
+func mkRepo(createdAt time.Time, next string) *model.Repository {
+	r := &model.Repository{
+		ID:   kallax.NewULID(),
+		Next: next,
+	}
+
+	r.CreatedAt = createdAt
+	return r
 }
