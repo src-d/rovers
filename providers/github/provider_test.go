@@ -84,7 +84,7 @@ func (s *GithubProviderSuite) TestGithubProvider_Next_FromStart_ReposTwoPages(c 
 
 func (s *GithubProviderSuite) TestGithubProvider_Next_End(c *C) {
 	repo := model.NewRepository()
-	repo.GithubID = 99999999
+	repo.GithubID = 999999999999
 
 	repos := []*model.Repository{
 		repo,
