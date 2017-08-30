@@ -72,6 +72,8 @@ func (c *client) decode(body io.Reader) (*response, error) {
 			return nil, err
 		}
 		record.Next = u.Query().Get(afterParam)
+	} else if len(record.Repositories) > 0 {
+		record.Next = record.Repositories[len(record.Repositories)-1].UpdatedOn
 	}
 
 	return &record, nil
