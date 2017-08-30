@@ -17,7 +17,8 @@ import (
 )
 
 const (
-	lastPage                           = "3000-01-00T17:25:17.038951+00:00"
+	lastPage                           = "2017-08-30T09:16:52.428086+00:00"
+	noResultsPage                      = "3000-01-00T17:25:17.038951+00:00"
 	firstCheckpointWithGitRepositories = "2011-08-10T00:42:35.509559+00:00"
 )
 
@@ -69,12 +70,29 @@ func (s *ProviderSuite) TestProvider_Next(c *C) {
 	c.Assert(result.Links.Clone[0].Href, Equals, r.Endpoint)
 }
 
+func (s *ProviderSuite) TestProvider_NextNoResults(c *C) {
+	bitbucketProvider, ok := s.p.(*provider)
+	c.Assert(ok, Equals, true)
+	bitbucketProvider.lastCheckpoint = noResultsPage
+	_, err := s.p.Next()
+	c.Assert(err, Equals, io.EOF)
+}
+
 func (s *ProviderSuite) TestProvider_NextLast(c *C) {
 	bitbucketProvider, ok := s.p.(*provider)
 	c.Assert(ok, Equals, true)
 	bitbucketProvider.lastCheckpoint = lastPage
 	_, err := s.p.Next()
+	c.Assert(err, IsNil)
+	bitbucketProvider.applyAck()
+
+	_, err = s.p.Next()
+	c.Assert(err, IsNil)
+	bitbucketProvider.applyAck()
+
+	_, err = s.p.Next()
 	c.Assert(err, Equals, io.EOF)
+	c.Assert(bitbucketProvider.lastCheckpoint, Equals, "2017-08-30T08:56:45.985079+00:00")
 }
 
 func (s *ProviderSuite) TestProvider_NextRetry(c *C) {
