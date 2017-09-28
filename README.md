@@ -32,7 +32,7 @@ $ export CONFIG_BING_KEY=bing-api-key
 ## Installation
 
 ```
-go get github.com/src-d/rovers/...
+go get -u github.com/src-d/rovers/...
 ```
 
 ## Usage
