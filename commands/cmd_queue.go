@@ -23,9 +23,12 @@ func (c *CmdQueue) getPersistFunction() (core.PersistFN, error) {
 	}
 
 	return func(repo *model.Mention) error {
-		j := queue.NewJob()
+		j, err := queue.NewJob()
+		if err != nil {
+			return err
+		}
 
-		if err := j.Encode(repo); err != nil {
+		if err = j.Encode(repo); err != nil {
 			return err
 		}
 
