@@ -1,0 +1,35 @@
+[[constraint]]
+  name = "github.com/inconshreveable/log15"
+  version = "2.13.0"
+
+[[constraint]]
+  name = "github.com/jessevdk/go-flags"
+  version = "1.3.0"
+
+[[constraint]]
+  branch = "master"
+  name = "github.com/mcuadros/go-defaults"
+
+[[constraint]]
+  branch = "master"
+  name = "github.com/src-d/envconfig"
+
+[[constraint]]
+  branch = "v1"
+  name = "gopkg.in/check.v1"
+
+[[constraint]]
+  name = "gopkg.in/inconshreveable/log15.v2"
+  version = "2.11.0"
+
+[[constraint]]
+  branch = "v1"
+  name = "gopkg.in/jarcoal/httpmock.v1"
+
+[[constraint]]
+  branch = "master"
+  name = "gopkg.in/src-d/framework.v0"
+
+[[constraint]]
+  name = "gopkg.in/src-d/go-kallax.v1"
+  version = "1.3.3"
