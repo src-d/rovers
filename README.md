@@ -56,3 +56,7 @@ By default this URL is set to `amqp://guest:guest@localhost:5672/`. To run tests
   docker run -d --hostname rabbit --name rabbit -p 8081:15672 -p 5672:5672 rabbitmq:3-management
   go test ./...
 ```
+
+# Running Rovers in Kubernetes
+
+You can use the official [Helm](https://github.com/kubernetes/helm) [chart](https://github.com/src-d/charts/tree/master/rovers) to deploy Rovers in your kubernetes cluster.
