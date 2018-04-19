@@ -30,7 +30,8 @@ type response struct {
 }
 
 type client struct {
-	c *http.Client
+	c        *http.Client
+	endpoint string
 }
 
 func newClient(token string) *client {
@@ -43,7 +44,7 @@ func newClient(token string) *client {
 
 	c.Timeout = httpTimeout
 
-	return &client{c}
+	return &client{c, githubApiURL}
 }
 
 // Repositories returns a response with the next page id and a list of Repositories.
@@ -51,7 +52,7 @@ func newClient(token string) *client {
 func (c *client) Repositories(since int) (*response, error) {
 	start := time.Now()
 
-	u := fmt.Sprintf(githubApiURL, since)
+	u := fmt.Sprintf(c.endpoint, since)
 	res, err := c.c.Get(u)
 	if err != nil {
 		return nil, err
@@ -81,7 +82,6 @@ func (c *client) Repositories(since int) (*response, error) {
 
 	total := c.toInt(res.Header.Get(rateLimitLimitHeader))
 	remaining := c.toInt(res.Header.Get(rateLimitRemainingHeader))
-
 	minRequestDuration := time.Hour / time.Duration(total)
 	defer func() {
 		needsWait := minRequestDuration - time.Since(start)
