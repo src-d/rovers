@@ -3,11 +3,12 @@ package github
 import (
 	"encoding/json"
 	"fmt"
-	"golang.org/x/oauth2"
 	"io"
 	"net/http"
 	"strconv"
 	"time"
+
+	"golang.org/x/oauth2"
 
 	"github.com/src-d/rovers/providers/github/model"
 )
@@ -62,6 +63,21 @@ func (c *client) Repositories(since int) (*response, error) {
 	}
 
 	repositories, err := c.decode(res.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	// remove those repositories that GitHub API encoded as null
+	// in the JSON reponse and were decoded as a nil element in the
+	// *model.Repository slice.
+	repos := make([]*model.Repository, 0, len(repositories))
+	for _, repo := range repositories {
+		if repo != nil {
+			repos = append(repos, repo)
+		}
+	}
+
+	repositories = repos
 
 	total := c.toInt(res.Header.Get(rateLimitLimitHeader))
 	remaining := c.toInt(res.Header.Get(rateLimitRemainingHeader))
