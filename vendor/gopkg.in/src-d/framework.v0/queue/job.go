@@ -21,6 +21,10 @@ type Job struct {
 	Priority Priority
 	// Timestamp is the time of creation.
 	Timestamp time.Time
+	// Retries is the number of times this job can be processed before being rejected.
+	Retries int32
+	// ErrorType is the kind of error that made the job failing.
+	ErrorType string
 
 	contentType  contentType
 	raw          []byte
@@ -35,8 +39,8 @@ type Job struct {
 type Acknowledger interface {
 	// Ack is called when the Job has finished.
 	Ack() error
-	// Reject is called if the job has errored. The parameter indicates whether the
-	// job should be put back in the queue or not.
+	// Reject is called if the job has errored. The parameter indicates
+	// whether the job should be put back in the queue or not.
 	Reject(requeue bool) error
 }
 
@@ -54,6 +58,11 @@ func NewJob() (*Job, error) {
 		Timestamp:   time.Now(),
 		contentType: msgpackContentType,
 	}, nil
+}
+
+// SetPriority sets job priority
+func (j *Job) SetPriority(priority Priority) {
+	j.Priority = priority
 }
 
 // Encode encodes the payload to the wire format used.
