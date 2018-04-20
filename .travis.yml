@@ -1,7 +1,8 @@
 language: go
 
 go:
-  - 1.9
+  - 1.9.x
+  - 1.10.x
   - tip
 
 matrix:
@@ -36,6 +37,7 @@ deploy:
   file: build/*.tar.gz
   skip_cleanup: true
   on:
+    go: 1.10.x
     tags: true
 
 after_deploy:
