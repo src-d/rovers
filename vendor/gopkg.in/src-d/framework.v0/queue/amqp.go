@@ -9,13 +9,25 @@ import (
 
 	"github.com/streadway/amqp"
 	log15 "gopkg.in/inconshreveable/log15.v2"
+	errors "gopkg.in/src-d/go-errors.v1"
 )
 
 var consumerSeq uint64
 
-const buriedQueueSuffix = ".buriedQueue"
-const buriedQueueExchangeSuffix = ".buriedExchange"
-const buriedNonBlockingRetries = 3
+var (
+	ErrConnectionFailed = errors.NewKind("failed to connect to RabbitMQ: %s")
+	ErrOpenChannel      = errors.NewKind("failed to open a channel: %s")
+	ErrRetrievingHeader = errors.NewKind("error retrieving '%s' header from message %s")
+)
+
+const (
+	buriedQueueSuffix         = ".buriedQueue"
+	buriedQueueExchangeSuffix = ".buriedExchange"
+	buriedNonBlockingRetries  = 3
+
+	retriesHeader string = "x-retries"
+	errorHeader   string = "x-error-type"
+)
 
 // AMQPBroker implements the Broker interface for AMQP.
 type AMQPBroker struct {
@@ -35,12 +47,12 @@ type connection interface {
 func NewAMQPBroker(url string) (Broker, error) {
 	conn, err := amqp.Dial(url)
 	if err != nil {
-		return nil, fmt.Errorf("failed to connect to RabbitMQ: %s", err)
+		return nil, ErrConnectionFailed.New(err)
 	}
 
 	ch, err := conn.Channel()
 	if err != nil {
-		return nil, fmt.Errorf("failed to open a channel: %s", err)
+		return nil, ErrOpenChannel.New(err)
 	}
 
 	b := &AMQPBroker{
@@ -169,6 +181,7 @@ func (b *AMQPBroker) Queue(name string) (Queue, error) {
 		amqp.Table{
 			"x-dead-letter-exchange":    rex,
 			"x-dead-letter-routing-key": name,
+			"x-max-priority":            uint8(PriorityUrgent),
 		},
 	)
 
@@ -191,11 +204,7 @@ func (b *AMQPBroker) Close() error {
 		return err
 	}
 
-	if err := b.connection().Close(); err != nil {
-		return err
-	}
-
-	return nil
+	return b.connection().Close()
 }
 
 // AMQPQueue implements the Queue interface for the AMQP.
@@ -211,6 +220,15 @@ func (q *AMQPQueue) Publish(j *Job) error {
 		return ErrEmptyJob
 	}
 
+	headers := amqp.Table{}
+	if j.Retries > 0 {
+		headers[retriesHeader] = j.Retries
+	}
+
+	if j.ErrorType != "" {
+		headers[errorHeader] = j.ErrorType
+	}
+
 	return q.conn.channel().Publish(
 		"",           // exchange
 		q.queue.Name, // routing key
@@ -223,6 +241,7 @@ func (q *AMQPQueue) Publish(j *Job) error {
 			Timestamp:    j.Timestamp,
 			ContentType:  string(j.contentType),
 			Body:         j.raw,
+			Headers:      headers,
 		},
 	)
 }
@@ -246,6 +265,7 @@ func (q *AMQPQueue) PublishDelayed(j *Job, delay time.Duration) error {
 			"x-dead-letter-routing-key": q.queue.Name,
 			"x-message-ttl":             int64(ttl),
 			"x-expires":                 int64(ttl) * 2,
+			"x-max-priority":            uint8(PriorityUrgent),
 		},
 	)
 	if err != nil {
@@ -271,21 +291,6 @@ func (q *AMQPQueue) PublishDelayed(j *Job, delay time.Duration) error {
 // RepublishBuried will republish in the main queue all the jobs that timed out without Ack
 // or were Rejected with requeue = False.
 func (q *AMQPQueue) RepublishBuried() error {
-	var buriedJobs []*Job
-	err := q.getBuriedJobs(&buriedJobs)
-	if err != nil {
-		return err
-	}
-
-	for _, j := range buriedJobs {
-		if err = q.Publish(j); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func (q *AMQPQueue) getBuriedJobs(jobs *[]*Job) error {
 	if q.buriedQueue == nil {
 		return fmt.Errorf("buriedQueue is nil, called RepublishBuried on the internal buried queue?")
 	}
@@ -324,7 +329,10 @@ func (q *AMQPQueue) getBuriedJobs(jobs *[]*Job) error {
 		}
 
 		retries = 0
-		*jobs = append(*jobs, j)
+
+		if err = q.Publish(j); err != nil {
+			return err
+		}
 	}
 }
 
@@ -332,7 +340,7 @@ func (q *AMQPQueue) getBuriedJobs(jobs *[]*Job) error {
 func (q *AMQPQueue) Transaction(txcb TxCallback) error {
 	ch, err := q.conn.connection().Channel()
 	if err != nil {
-		return fmt.Errorf("failed to open a channel: %s", err)
+		return ErrOpenChannel.New(err)
 	}
 
 	defer ch.Close()
@@ -358,11 +366,7 @@ func (q *AMQPQueue) Transaction(txcb TxCallback) error {
 		return err
 	}
 
-	if err := ch.TxCommit(); err != nil {
-		return err
-	}
-
-	return nil
+	return ch.TxCommit()
 }
 
 // Implements Queue.  The advertisedWindow value will be the exact
@@ -370,7 +374,7 @@ func (q *AMQPQueue) Transaction(txcb TxCallback) error {
 func (q *AMQPQueue) Consume(advertisedWindow int) (JobIter, error) {
 	ch, err := q.conn.connection().Channel()
 	if err != nil {
-		return nil, fmt.Errorf("failed to open a channel: %s", err)
+		return nil, ErrOpenChannel.New(err)
 	}
 
 	// enforce prefetching only one job, if this is removed the whole queue
@@ -473,6 +477,24 @@ func fromDelivery(d *amqp.Delivery) (*Job, error) {
 	j.acknowledger = &AMQPAcknowledger{d.Acknowledger, d.DeliveryTag}
 	j.tag = d.DeliveryTag
 	j.raw = d.Body
+
+	if retries, ok := d.Headers[retriesHeader]; ok {
+		retries, ok := retries.(int32)
+		if !ok {
+			return nil, ErrRetrievingHeader.New(retriesHeader, d.MessageId)
+		}
+
+		j.Retries = retries
+	}
+
+	if errorType, ok := d.Headers[errorHeader]; ok {
+		errorType, ok := errorType.(string)
+		if !ok {
+			return nil, ErrRetrievingHeader.New(retriesHeader, d.MessageId)
+		}
+
+		j.ErrorType = errorType
+	}
 
 	return j, nil
 }

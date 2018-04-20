@@ -27,8 +27,9 @@
   name = "gopkg.in/jarcoal/httpmock.v1"
 
 [[constraint]]
-  branch = "master"
   name = "gopkg.in/src-d/framework.v0"
+  revision = "fa0662426b72fa11652b46acce2e1e2d6bc06013"
+  source = "https://github.com/src-d/framework.git"
 
 [[constraint]]
   name = "gopkg.in/src-d/go-kallax.v1"
