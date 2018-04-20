@@ -3,11 +3,12 @@ package github
 import (
 	"encoding/json"
 	"fmt"
-	"golang.org/x/oauth2"
 	"io"
 	"net/http"
 	"strconv"
 	"time"
+
+	"golang.org/x/oauth2"
 
 	"github.com/src-d/rovers/providers/github/model"
 )
@@ -29,7 +30,8 @@ type response struct {
 }
 
 type client struct {
-	c *http.Client
+	c        *http.Client
+	endpoint string
 }
 
 func newClient(token string) *client {
@@ -42,7 +44,7 @@ func newClient(token string) *client {
 
 	c.Timeout = httpTimeout
 
-	return &client{c}
+	return &client{c, githubApiURL}
 }
 
 // Repositories returns a response with the next page id and a list of Repositories.
@@ -50,7 +52,7 @@ func newClient(token string) *client {
 func (c *client) Repositories(since int) (*response, error) {
 	start := time.Now()
 
-	u := fmt.Sprintf(githubApiURL, since)
+	u := fmt.Sprintf(c.endpoint, since)
 	res, err := c.c.Get(u)
 	if err != nil {
 		return nil, err
@@ -62,10 +64,24 @@ func (c *client) Repositories(since int) (*response, error) {
 	}
 
 	repositories, err := c.decode(res.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	// remove those repositories that GitHub API encoded as null
+	// in the JSON reponse and were decoded as a nil element in the
+	// *model.Repository slice.
+	repos := make([]*model.Repository, 0, len(repositories))
+	for _, repo := range repositories {
+		if repo != nil {
+			repos = append(repos, repo)
+		}
+	}
+
+	repositories = repos
 
 	total := c.toInt(res.Header.Get(rateLimitLimitHeader))
 	remaining := c.toInt(res.Header.Get(rateLimitRemainingHeader))
-
 	minRequestDuration := time.Hour / time.Duration(total)
 	defer func() {
 		needsWait := minRequestDuration - time.Since(start)
