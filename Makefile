@@ -7,8 +7,10 @@ DOCKER_ORG = srcd
 
 # Including ci Makefile
 CI_REPOSITORY ?= https://github.com/src-d/ci.git
-CI_PATH ?= $(shell pwd)/.ci
-CI_VERSION ?= v1
+CI_PATH ?= .ci
+CI_VERSION ?= ci-improvements
+
+.SUFFIXES:
 
 MAKEFILE := $(CI_PATH)/Makefile.main
 $(MAKEFILE):
