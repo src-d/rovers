@@ -5,6 +5,49 @@ hosting providers.
 
 Type `help` fore commands info.
 
+## Quick start using docker images
+
+### Generate needed API keys for the providers
+
+To be able to fetch github and cgit repositories, you should create several API keys:
+
+- Get Github token: https://github.com/settings/tokens
+- Get Bing token (Bing is the search engine used to fetch cgit repositories from internet): https://azure.microsoft.com/en-us/pricing/details/cognitive-services/search-api/web/
+
+### Download docker images
+
+Get the last version of rovers spark image:
+
+```bash
+docker pull quay.io/srcd/rovers
+```
+
+Also, you will need Postgres and RabbitMQ
+
+```bash
+docker pull postgres:9.6-alpine
+docker pull rabbitmq:3-management
+```
+
+### Start everything
+
+Start Rabbit and Postgres
+
+```bash
+docker run -d --name postgres -e POSTGRES_PASSWORD=testing -p 5432:5432 -e POSTGRES_USER=testing postgres:9.6-alpine
+```
+```bash
+docker run -d --hostname rabbitmq --name rabbitmq -p 8081:15672 -p 5672:5672 rabbitmq:3-management
+```
+
+Then, you can execute rovers using docker:
+```bash
+docker run --name rovers --link rabbitmq --link postgres -e CONFIG_DBUSER=testing -e CONFIG_DBPASS=testing -e CONFIG_DBHOST=postgres -e CONFIG_DBNAME=testing -e CONFIG_BROKER_URL=amqp://guest:guest@rabbitmq:5672/ -e CONFIG_GITHUB_TOKEN=[REPLACEWITHGHKEY] -e CONFIG_BING_KEY=[REPLACEWITHBINGKEY] quay.io/srcd/rovers /bin/sh -c "rovers initdb; rovers repos --queue=rovers"
+```
+After that, rovers will generate a lot of 'mentions' (git repositories found on the internet), and sending them to the 'rovers' queue in Rabbit.
+
+Finally, you can use [Borges](https://github.com/src-d/borges) to fetch the content of these repositories.
+
 ## Supported Providers
 
 ### GitHub
