@@ -1,10 +1,11 @@
 package queue
 
 import (
-	"errors"
 	"io"
 	"net/url"
 	"time"
+
+	"gopkg.in/src-d/go-errors.v1"
 )
 
 // Priority represents a priority level.
@@ -22,15 +23,15 @@ const (
 var (
 	// ErrAlreadyClosed is the error returned when trying to close an already closed
 	// connection.
-	ErrAlreadyClosed = errors.New("already closed")
+	ErrAlreadyClosed = errors.NewKind("already closed")
 	// ErrEmptyJob is the error returned when an empty job is published.
-	ErrEmptyJob = errors.New("invalid empty job")
+	ErrEmptyJob = errors.NewKind("invalid empty job")
 	// ErrTxNotSupported is the error returned when the transaction receives a
 	// callback does not know how to handle.
-	ErrTxNotSupported = errors.New("transactions not supported")
+	ErrTxNotSupported = errors.NewKind("transactions not supported")
 	// ErrUnsupportedProtocol is the error returned when a Broker does not know how
 	// to connect to a given URL
-	ErrUnsupportedProtocol = errors.New("unsupported protocol")
+	ErrUnsupportedProtocol = errors.NewKind("unsupported protocol")
 )
 
 const (
@@ -61,12 +62,31 @@ func NewBroker(uri string) (Broker, error) {
 	case protoMemory:
 		return NewMemoryBroker(), nil
 	default:
-		return nil, ErrUnsupportedProtocol
+		return nil, ErrUnsupportedProtocol.New()
 	}
 }
 
 // TxCallback is a function to be called in a transaction.
 type TxCallback func(q Queue) error
+
+// RepublishConditionFunc is a function used to filter jobs to republish.
+type RepublishConditionFunc func(job *Job) bool
+
+type republishConditions []RepublishConditionFunc
+
+func (c republishConditions) comply(job *Job) bool {
+	if len(c) == 0 {
+		return true
+	}
+
+	for _, condition := range c {
+		if condition(job) {
+			return true
+		}
+	}
+
+	return false
+}
 
 // Queue represents a message queue.
 type Queue interface {
@@ -80,8 +100,9 @@ type Queue interface {
 	// number of undelivered jobs the iterator will allow at any given
 	// time (see the Acknowledger interface).
 	Consume(advertisedWindow int) (JobIter, error)
-	// RepublishBuried republish all jobs in the buried queue to the main one
-	RepublishBuried() error
+	// RepublishBuried republish to the main queue those jobs complying
+	// one of the conditions, leaving the rest of them in the buried queue.
+	RepublishBuried(conditions ...RepublishConditionFunc) error
 }
 
 // JobIter represents an iterator over a set of Jobs.

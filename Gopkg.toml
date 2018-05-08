@@ -1,36 +1,39 @@
 [[constraint]]
-  name = "github.com/inconshreveable/log15"
-  version = "2.13.0"
-
-[[constraint]]
   name = "github.com/jessevdk/go-flags"
-  version = "1.3.0"
+  version = "1.4.0"
+  source = "https://github.com/jessevdk/go-flags.git"
 
 [[constraint]]
-  branch = "master"
   name = "github.com/mcuadros/go-defaults"
+  revision = "e1c978be3307be96ef03a0bd25d719ab50d277e4"
+  source = "https://github.com/mcuadros/go-defaults.git"
 
 [[constraint]]
-  branch = "master"
   name = "github.com/src-d/envconfig"
+  revision = "34ca5bb0e3815d60fe5008b1dd188beb83e2e7df"
+  source = "https://github.com/src-d/envconfig.git"
 
 [[constraint]]
-  branch = "v1"
   name = "gopkg.in/check.v1"
+  branch = "v1"
+  source = "https://github.com/go-check/check.git"
 
 [[constraint]]
   name = "gopkg.in/inconshreveable/log15.v2"
-  version = "2.11.0"
+  version = "2.13.0"
+  source = "https://github.com/inconshreveable/log15.git"
 
 [[constraint]]
-  branch = "v1"
   name = "gopkg.in/jarcoal/httpmock.v1"
+  branch = "v1"
+  source = "https://github.com/jarcoal/httpmock.git"
 
 [[constraint]]
   name = "gopkg.in/src-d/framework.v0"
-  revision = "fa0662426b72fa11652b46acce2e1e2d6bc06013"
+  revision = "bed6b25004fcbc1b034608f01d478aca4135b865"
   source = "https://github.com/src-d/framework.git"
 
 [[constraint]]
   name = "gopkg.in/src-d/go-kallax.v1"
-  version = "1.3.3"
+  version = "1.3.4"
+  source = "https://github.com/src-d/go-kallax.git"
