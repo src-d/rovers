@@ -1,9 +1,9 @@
 package bitbucket
 
 import (
-	"github.com/inconshreveable/log15"
 	"github.com/src-d/rovers/core"
 	"github.com/src-d/rovers/providers/bitbucket/model"
+	"gopkg.in/inconshreveable/log15.v2"
 
 	rmodel "gopkg.in/src-d/core-retrieval.v0/model"
 )

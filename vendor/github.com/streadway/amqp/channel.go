@@ -114,7 +114,7 @@ func (ch *Channel) shutdown(e *Error) {
 			ch.errors <- e
 		}
 
-		ch.consumers.closeAll()
+		ch.consumers.close()
 
 		for _, c := range ch.closes {
 			close(c)
@@ -296,7 +296,7 @@ func (ch *Channel) dispatch(msg message) {
 			c <- m.ConsumerTag
 		}
 		ch.notifyM.RUnlock()
-		ch.consumers.close(m.ConsumerTag)
+		ch.consumers.cancel(m.ConsumerTag)
 
 	case *basicReturn:
 		ret := newReturn(*m)
@@ -624,7 +624,11 @@ started with noAck.
 When global is true, these Qos settings apply to all existing and future
 consumers on all channels on the same connection.  When false, the Channel.Qos
 settings will apply to all existing and future consumers on this channel.
-RabbitMQ does not implement the global flag.
+
+Please see the RabbitMQ Consumer Prefetch documentation for an explanation of
+how the global flag is implemented in RabbitMQ, as it differs from the
+AMQP 0.9.1 specification in that global Qos settings are limited in scope to
+channels, not connections (https://www.rabbitmq.com/consumer-prefetch.html).
 
 To get round-robin behavior between consumers consuming from the same queue on
 different connections, set the prefetch count to 1, and the next available
@@ -679,10 +683,10 @@ func (ch *Channel) Cancel(consumer string, noWait bool) error {
 	}
 
 	if req.wait() {
-		ch.consumers.close(res.ConsumerTag)
+		ch.consumers.cancel(res.ConsumerTag)
 	} else {
 		// Potentially could drop deliveries in flight
-		ch.consumers.close(consumer)
+		ch.consumers.cancel(consumer)
 	}
 
 	return nil
@@ -816,7 +820,7 @@ func (ch *Channel) QueueDeclarePassive(name string, durable, autoDelete, exclusi
 QueueInspect passively declares a queue by name to inspect the current message
 count and consumer count.
 
-Use this method to check how many unacknowledged messages reside in the queue,
+Use this method to check how many messages ready for delivery reside in the queue,
 how many consumers are receiving deliveries, and whether a queue by this
 name already exists.
 
@@ -1032,11 +1036,14 @@ exception will be raised and the channel will be closed.
 Optional arguments can be provided that have specific semantics for the queue
 or server.
 
-When the channel or connection closes, all delivery chans will also close.
+Inflight messages, limited by Channel.Qos will be buffered until received from
+the returned chan.
 
-Deliveries on the returned chan will be buffered indefinitely. To limit memory
-of this buffer, use the Channel.Qos method to limit the amount of
-unacknowledged/buffered deliveries the server will deliver on this Channel.
+When the Channel or Connection is closed, all buffered and inflight messages will
+be dropped.
+
+When the consumer tag is cancelled, all inflight messages will be delivered until
+the returned chan is closed.
 
 */
 func (ch *Channel) Consume(queue, consumer string, autoAck, exclusive, noLocal, noWait bool, args Table) (<-chan Delivery, error) {
@@ -1068,7 +1075,7 @@ func (ch *Channel) Consume(queue, consumer string, autoAck, exclusive, noLocal, 
 	ch.consumers.add(consumer, deliveries)
 
 	if err := ch.call(req, res); err != nil {
-		ch.consumers.close(consumer)
+		ch.consumers.cancel(consumer)
 		return nil, err
 	}
 
@@ -1538,6 +1545,9 @@ is true.
 See also Delivery.Ack
 */
 func (ch *Channel) Ack(tag uint64, multiple bool) error {
+	ch.m.Lock()
+	defer ch.m.Unlock()
+
 	return ch.send(&basicAck{
 		DeliveryTag: tag,
 		Multiple:    multiple,
@@ -1552,6 +1562,9 @@ it must be redelivered or dropped.
 See also Delivery.Nack
 */
 func (ch *Channel) Nack(tag uint64, multiple bool, requeue bool) error {
+	ch.m.Lock()
+	defer ch.m.Unlock()
+
 	return ch.send(&basicNack{
 		DeliveryTag: tag,
 		Multiple:    multiple,
