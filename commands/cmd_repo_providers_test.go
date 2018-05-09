@@ -7,7 +7,8 @@ import (
 
 	. "gopkg.in/check.v1"
 	rmodel "gopkg.in/src-d/core-retrieval.v0/model"
-	"gopkg.in/src-d/framework.v0/queue"
+	"gopkg.in/src-d/go-queue.v1"
+	_ "gopkg.in/src-d/go-queue.v1/amqp"
 )
 
 func Test(t *testing.T) {

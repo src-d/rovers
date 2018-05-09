@@ -4,7 +4,7 @@ import (
 	"github.com/src-d/rovers/core"
 
 	"gopkg.in/src-d/core-retrieval.v0/model"
-	"gopkg.in/src-d/framework.v0/queue"
+	"gopkg.in/src-d/go-queue.v1"
 )
 
 type CmdQueue struct {
