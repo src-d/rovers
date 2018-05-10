@@ -6,6 +6,7 @@ import (
 	"github.com/src-d/rovers/commands"
 
 	"github.com/jessevdk/go-flags"
+	_ "gopkg.in/src-d/go-queue.v1/amqp"
 )
 
 func PanicIf(err error) {
