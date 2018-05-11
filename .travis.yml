@@ -20,7 +20,7 @@ env:
     - DBPASS=
     - CONFIG_GITHUB_TOKEN=$GITHUB_TOKEN
   matrix:
-    - POSTGRESQL_VERSION=10 RABBITMQ_VERSION=any
+    - POSTGRESQL_VERSION=9.5 RABBITMQ_VERSION=any
 cache:
   directories:
     - $HOME/Library/Caches/Homebrew
