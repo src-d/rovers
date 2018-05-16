@@ -1,0 +1,21 @@
+version: "{build}"
+image: Visual Studio 2017
+platform: x64
+clone_folder: C:\gopath\src\github.com\src-d\rovers
+environment:
+  GOPATH: C:\gopath
+  DBUSER: postgres
+  DBPASS: Password12!
+  DBNAME: postgres
+  CONFIG_BROKER: amqp://guest:guest@127.0.0.1:5672
+  POSTGRESQL_VERSION: 9.6
+  RABBITMQ_VERSION: any
+cache:
+  - C:\Users\appveyor\AppData\Local\Temp\chocolatey\ -> appveyor.yml
+install:
+  - set PATH=%GOPATH%\bin;C:\go\bin;C:\mingw-w64\x86_64-7.2.0-posix-seh-rt_v5-rev1\mingw64\bin;C:\msys64\usr\bin;%PATH%;"C:\Program Files\Git\mingw64\bin"
+  - mingw32-make ci-install
+build: off
+test_script:
+  - mingw32-make ci-script
+deploy: off
