@@ -40,6 +40,7 @@ func (s *GithubProviderSuite) SetUpTest(c *C) {
 }
 
 func (s *GithubProviderSuite) TestGithubProvider_Next_FromStart(c *C) {
+	s.skipIfNoToken(c)
 	for i := 0; i < 101; i++ {
 		repoUrl, err := s.provider.Next()
 		c.Assert(err, IsNil)
@@ -51,6 +52,7 @@ func (s *GithubProviderSuite) TestGithubProvider_Next_FromStart(c *C) {
 }
 
 func (s *GithubProviderSuite) TestGithubProvider_Next_FromStart_Repos(c *C) {
+	s.skipIfNoToken(c)
 	for i := 0; i < 100; i++ {
 		repoUrl, err := s.provider.Next()
 		c.Assert(err, IsNil)
@@ -68,6 +70,7 @@ func (s *GithubProviderSuite) TestGithubProvider_Next_FromStart_Repos(c *C) {
 }
 
 func (s *GithubProviderSuite) TestGithubProvider_Next_FromStart_ReposTwoPages(c *C) {
+	s.skipIfNoToken(c)
 	for i := 0; i < 101; i++ {
 		repoUrl, err := s.provider.Next()
 		c.Assert(err, IsNil)
@@ -85,6 +88,7 @@ func (s *GithubProviderSuite) TestGithubProvider_Next_FromStart_ReposTwoPages(c 
 }
 
 func (s *GithubProviderSuite) TestGithubProvider_Next_End(c *C) {
+	s.skipIfNoToken(c)
 	repo := model.NewRepository()
 	repo.GithubID = 999999999999
 
@@ -104,6 +108,7 @@ func (s *GithubProviderSuite) TestGithubProvider_Next_End(c *C) {
 }
 
 func (s *GithubProviderSuite) TestGithubProvider_Next_Retry(c *C) {
+	s.skipIfNoToken(c)
 	repoUrl, err := s.provider.Next()
 	c.Assert(err, IsNil)
 	c.Assert(repoUrl, NotNil)
@@ -260,4 +265,10 @@ func (s *GithubProviderSuite) TestGithubProviderNilRepositories(c *C) {
 	c.Assert(mention.Endpoint, Equals, "git://github.com/src-d/rovers")
 	err = s.provider.Ack(nil)
 	c.Assert(err, IsNil)
+}
+
+func (s *GithubProviderSuite) skipIfNoToken(c *C) {
+	if core.Config.Github.Token == "" {
+		c.Skip("CONFIG_GITHUB_TOKEN not defined")
+	}
 }
