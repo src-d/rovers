@@ -29,6 +29,10 @@ type response struct {
 	Remaining int
 }
 
+type errorResponse struct {
+	Message string `json:"message"`
+}
+
 type client struct {
 	c        *http.Client
 	endpoint string
@@ -60,7 +64,7 @@ func (c *client) Repositories(since int) (*response, error) {
 
 	defer res.Body.Close()
 	if res.StatusCode >= 400 {
-		return nil, fmt.Errorf("request error. Status code %s, %s", res.Status, res.Status)
+		return nil, c.decodeError(res)
 	}
 
 	repositories, err := c.decode(res.Body)
@@ -115,4 +119,13 @@ func (c *client) decode(body io.Reader) ([]*model.Repository, error) {
 	}
 
 	return record, nil
+}
+
+func (c *client) decodeError(resp *http.Response) error {
+	var errResp = &errorResponse{}
+	if err := json.NewDecoder(resp.Body).Decode(errResp); err != nil {
+		return fmt.Errorf("HTTP error: %s", resp.Status)
+	}
+
+	return fmt.Errorf("HTTP error: %s, %s", resp.Status, errResp.Message)
 }
