@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"golang.org/x/oauth2"
+	"gopkg.in/inconshreveable/log15.v2"
 
 	"github.com/src-d/rovers/providers/github/model"
 )
@@ -19,14 +20,12 @@ const (
 
 	rateLimitLimitHeader     = "X-RateLimit-Limit"
 	rateLimitRemainingHeader = "X-RateLimit-Remaining"
+	rateLimitResetHeader     = "X-RateLimit-Reset"
 )
 
 type response struct {
 	Next         int
 	Repositories []*model.Repository
-
-	Total     int
-	Remaining int
 }
 
 type errorResponse struct {
@@ -54,62 +53,89 @@ func newClient(token string) *client {
 // Repositories returns a response with the next page id and a list of Repositories.
 // It automatically slow down if we are doing requests too fast.
 func (c *client) Repositories(since int) (*response, error) {
-	start := time.Now()
+	for {
+		resp, retry, err := c.repositories(since)
+		if !retry {
+			return resp, err
+		}
 
+		log15.Warn("got retryable error", "err", err)
+	}
+}
+
+func (c *client) repositories(since int) (*response, bool, error) {
 	u := fmt.Sprintf(c.endpoint, since)
 	res, err := c.c.Get(u)
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 
+	defer c.wait(res)
 	defer res.Body.Close()
+
 	if res.StatusCode >= 400 {
-		return nil, c.decodeError(res)
+		return nil, c.isRateLimitError(res), c.decodeError(res)
 	}
 
 	repositories, err := c.decode(res.Body)
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 
 	// remove those repositories that GitHub API encoded as null
 	// in the JSON reponse and were decoded as a nil element in the
 	// *model.Repository slice.
-	repos := make([]*model.Repository, 0, len(repositories))
+	validRepositories := make([]*model.Repository, 0, len(repositories))
 	for _, repo := range repositories {
 		if repo != nil {
-			repos = append(repos, repo)
+			validRepositories = append(validRepositories, repo)
 		}
 	}
 
-	repositories = repos
-
-	total := c.toInt(res.Header.Get(rateLimitLimitHeader))
-	remaining := c.toInt(res.Header.Get(rateLimitRemainingHeader))
-	minRequestDuration := time.Hour / time.Duration(total)
-	defer func() {
-		needsWait := minRequestDuration - time.Since(start)
-		if needsWait > 0 {
-			time.Sleep(needsWait)
-		}
-	}()
-
 	next := 0
-	if len(repositories) != 0 {
-		next = repositories[len(repositories)-1].GithubID
+	if len(validRepositories) != 0 {
+		next = validRepositories[len(validRepositories)-1].GithubID
 	}
 
 	return &response{
 		Next:         next,
-		Repositories: repositories,
-		Total:        total,
-		Remaining:    remaining,
-	}, nil
+		Repositories: validRepositories,
+	}, false, nil
 }
 
 func (c *client) toInt(s string) int {
 	i, _ := strconv.Atoi(s)
 	return i
+}
+
+func (c *client) wait(res *http.Response) {
+	if res.Header.Get(rateLimitRemainingHeader) == "" {
+		return
+	}
+
+	remaining := c.toInt(res.Header.Get(rateLimitRemainingHeader))
+
+	now := time.Now().UTC().Unix()
+	resetTime := int64(c.toInt(res.Header.Get(rateLimitResetHeader)))
+	timeToReset := time.Duration(resetTime-now) * time.Second
+	if timeToReset < 0 || timeToReset > 1*time.Hour {
+		// If this happens, the system clock is probably wrong, so we assume we
+		// are at the beginning of the window and consider only total requests
+		// per hour.
+		timeToReset = 1 * time.Hour
+		remaining = c.toInt(res.Header.Get(rateLimitLimitHeader))
+	}
+
+	waitTime := timeToReset / time.Duration(remaining+1)
+	if waitTime > 0 {
+		log15.Debug("waiting", "wait", waitTime)
+		time.Sleep(waitTime)
+	}
+}
+
+func (c *client) isRateLimitError(res *http.Response) bool {
+	return res.StatusCode == 403 &&
+		res.Header.Get(rateLimitRemainingHeader) == "0"
 }
 
 func (c *client) decode(body io.Reader) ([]*model.Repository, error) {
