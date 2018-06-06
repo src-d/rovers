@@ -1,6 +1,6 @@
 # Package configuration
 PROJECT = rovers
-COMMANDS = rovers
+COMMANDS = .
 
 DOCKER_REGISTRY = quay.io
 DOCKER_ORG = srcd
