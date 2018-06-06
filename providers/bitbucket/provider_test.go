@@ -97,8 +97,8 @@ func (s *ProviderSuite) TestProvider_NextLast(c *C) {
 
 func (s *ProviderSuite) TestProvider_NextRetry(c *C) {
 	r, err := s.p.Next()
-	c.Assert(r, NotNil)
 	c.Assert(err, IsNil)
+	c.Assert(r, NotNil)
 	err = s.p.Ack(errors.New("WOOPS"))
 	c.Assert(err, IsNil)
 	r2, err := s.p.Next()
@@ -108,8 +108,8 @@ func (s *ProviderSuite) TestProvider_NextRetry(c *C) {
 
 func (s *ProviderSuite) TestProvider_NextNoAck(c *C) {
 	r, err := s.p.Next()
-	c.Assert(r, NotNil)
 	c.Assert(err, IsNil)
+	c.Assert(r, NotNil)
 	r2, err := s.p.Next()
 	c.Assert(r2, NotNil)
 	c.Assert(err, IsNil)
@@ -118,8 +118,8 @@ func (s *ProviderSuite) TestProvider_NextNoAck(c *C) {
 
 func (s *ProviderSuite) TestProvider_NextAckNext(c *C) {
 	r, err := s.p.Next()
-	c.Assert(r, NotNil)
 	c.Assert(err, IsNil)
+	c.Assert(r, NotNil)
 	err = s.p.Ack(nil)
 	c.Assert(err, IsNil)
 	r2, err := s.p.Next()
