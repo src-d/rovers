@@ -35,5 +35,5 @@
 
 [[constraint]]
   name = "gopkg.in/src-d/go-kallax.v1"
-  version = "1.3.4"
+  branch = "master"
   source = "https://github.com/src-d/go-kallax.git"

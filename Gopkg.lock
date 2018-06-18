@@ -504,14 +504,14 @@
   version = "v4.3.1"
 
 [[projects]]
+  branch = "master"
   name = "gopkg.in/src-d/go-kallax.v1"
   packages = [
     ".",
     "types"
   ]
-  revision = "b1269648051c4fa3feaceba211cc40837e1cdd01"
+  revision = "f853d80db08bdd9773d57f4fe4068596fc93bfa8"
   source = "https://github.com/src-d/go-kallax.git"
-  version = "1.3.4"
 
 [[projects]]
   branch = "master"
@@ -552,6 +552,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "c7ac0722a3f057fa61a644385abf4069f7fab428c2201d16b7c3291bec81687e"
+  inputs-digest = "f8c802fd99436506c675c44a87830bfdb98d8199b631f67708e38bf7840f4c8a"
   solver-name = "gps-cdcl"
   solver-version = 1

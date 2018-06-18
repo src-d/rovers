@@ -2,6 +2,7 @@ package cgit
 
 import (
 	"io"
+	"path/filepath"
 
 	"github.com/src-d/rovers/test"
 
@@ -26,9 +27,9 @@ var _ = Suite(&CgitScraperSuite{})
 func (s *CgitScraperSuite) SetUpTest(c *C) {
 	httpmock.Activate()
 
-	test.LoadAsset("https://a3nm.net", "assets/a3nm", c)
-	test.LoadAsset("https://ongardie.net", "assets/ongardie", c)
-	test.LoadAsset("http://cgit.openembedded.org", "assets/openembedded", c)
+	test.LoadAsset("https://a3nm.net", filepath.Join("assets", "a3nm"), c)
+	test.LoadAsset("https://ongardie.net", filepath.Join("assets", "ongardie"), c)
+	test.LoadAsset("http://cgit.openembedded.org", filepath.Join("assets", "openembedded"), c)
 }
 
 func (s *CgitScraperSuite) TearDownTest(c *C) {
