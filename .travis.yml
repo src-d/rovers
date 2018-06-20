@@ -35,5 +35,7 @@ jobs:
         file_glob: true
         file: build/*.tar.gz
         skip_cleanup: true
+        on:
+          tags: true
       after_deploy:
         -  DOCKER_PUSH_LATEST=1 make docker-push
