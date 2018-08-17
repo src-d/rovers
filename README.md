@@ -62,6 +62,8 @@ $ export CONFIG_GITHUB_TOKEN=github-token
 
 Uses the Bitbucket API to get new repositories as an anonymous user.
 
+**Note:** the first time this provider runs it may take a while to find git repositories, as the vast majority of repositories at the beginning of the API results are mercurial repositories.
+
 ### cgit
 
 cgit is a popular service to create your own self-hosted Git repository provider.

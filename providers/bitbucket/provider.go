@@ -14,7 +14,8 @@ import (
 )
 
 const (
-	firstCheckpoint    = ""
+	// checkpoint of the first git repository in bitbucket
+	firstCheckpoint    = "2011-06-05T04:06:42.088265+00:0"
 	minRequestDuration = time.Hour / 1000
 )
 
@@ -28,6 +29,7 @@ type provider struct {
 	applyAck          func()
 }
 
+// NewProvider creates a new bitbucket repository provider.
 func NewProvider(database *sql.DB) core.RepoProvider {
 	return &provider{
 		repositoryStore: model.NewRepositoryStore(database),
@@ -90,10 +92,10 @@ func (p *provider) Next() (*rmodel.Mention, error) {
 			}
 
 			return getMention(r), nil
-		} else {
-			log15.Debug("non git repository found", "repository", r.FullName, "scm", r.Scm)
-			p.repositoriesCache = repositories
 		}
+
+		log15.Info("non git repository found", "repository", r.FullName, "scm", r.Scm)
+		p.repositoriesCache = repositories
 	}
 
 }
