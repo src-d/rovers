@@ -2,9 +2,6 @@
 PROJECT = rovers
 COMMANDS = .
 
-DOCKER_REGISTRY = quay.io
-DOCKER_ORG = srcd
-
 GO_BUILD_ENV = CGO_ENABLED=0
 
 # Including ci Makefile
