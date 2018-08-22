@@ -131,7 +131,7 @@ func (s *ProviderSuite) TestProvider_NextAckNext(c *C) {
 func (s *ProviderSuite) TestInitializeCheckpoint(c *C) {
 	p := NewProvider(s.DB).(*provider)
 	c.Assert(p.initializeCheckpoint(), IsNil)
-	c.Assert("", Equals, p.lastCheckpoint)
+	c.Assert(firstCheckpoint, Equals, p.lastCheckpoint)
 
 	now := time.Now()
 	c.Assert(p.repositoryStore.Insert(mkRepo(now.Add(-1*time.Hour), "1")), IsNil)
