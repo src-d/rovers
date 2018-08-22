@@ -34,7 +34,7 @@ docker pull rabbitmq:3-management
 Start Rabbit and Postgres
 
 ```bash
-docker run -d --name postgres -e POSTGRES_PASSWORD=testing -p 5432:5432 -e POSTGRES_USER=testing postgres:9.6-alpine
+docker run -d --hostname postgres --name postgres -e POSTGRES_PASSWORD=testing -p 5432:5432 -e POSTGRES_USER=testing postgres:9.6-alpine
 ```
 ```bash
 docker run -d --hostname rabbitmq --name rabbitmq -p 8081:15672 -p 5672:5672 rabbitmq:3-management
@@ -42,7 +42,10 @@ docker run -d --hostname rabbitmq --name rabbitmq -p 8081:15672 -p 5672:5672 rab
 
 Then, you can execute rovers using docker:
 ```bash
-docker run --name rovers --link rabbitmq --link postgres -e CONFIG_DBUSER=testing -e CONFIG_DBPASS=testing -e CONFIG_DBHOST=postgres -e CONFIG_DBNAME=testing -e CONFIG_BROKER_URL=amqp://guest:guest@rabbitmq:5672/ -e CONFIG_GITHUB_TOKEN=[REPLACEWITHGHKEY] -e CONFIG_BING_KEY=[REPLACEWITHBINGKEY] quay.io/srcd/rovers /bin/sh -c "rovers initdb; rovers repos --queue=rovers"
+docker run --name rovers --link rabbitmq --link postgres \
+  -e CONFIG_GITHUB_TOKEN=[REPLACEWITHGHKEY] \
+  -e CONFIG_BING_KEY=[REPLACEWITHBINGKEY] \
+  quay.io/srcd/rovers /bin/sh -c "rovers initdb; rovers repos --queue=rovers"
 ```
 After that, rovers will generate a lot of 'mentions' (git repositories found on the internet), and sending them to the 'rovers' queue in Rabbit.
 
@@ -95,7 +98,7 @@ $ export CONFIG_BROKER_URL=url
 By default this URL is set to `amqp://guest:guest@localhost:5672/`. To run tests:
 
 ```bash
-  docker run --name some-postgres -e POSTGRES_PASSWORD=testing -p 5432:5432 -e POSTGRES_USER=testing -d postgres
+  docker run --hostname postgres --name postgres -e POSTGRES_PASSWORD=testing -p 5432:5432 -e POSTGRES_USER=testing -d postgres
   docker run -d --hostname rabbit --name rabbit -p 8081:15672 -p 5672:5672 rabbitmq:3-management
   go test ./...
 ```
