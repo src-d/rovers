@@ -3,44 +3,39 @@
 **rovers** is a service to retrieve repository URLs from multiple repository
 hosting providers.
 
-Type `help` fore commands info.
-
 # Quick start using docker images
 
 ## Download docker images
 
-Get the last version of rovers spark image:
+Get the latest rovers image:
 
 ```bash
 docker pull srcd/rovers
 ```
 
-Also, you will need Postgres and RabbitMQ
+### Start everything using docker-compose
 
-```bash
-docker pull postgres:9.6-alpine
-docker pull rabbitmq:3-management
-```
-
-## Start everything
+Install [docker-compose](https://docs.docker.com/compose/install/).
 
 Start Rabbit and Postgres
 
 ```bash
-docker run -d --hostname postgres --name postgres -e POSTGRES_PASSWORD=testing -p 5432:5432 -e POSTGRES_USER=testing postgres:9.6-alpine
-```
-```bash
-docker run -d --hostname rabbitmq --name rabbitmq -p 8081:15672 -p 5672:5672 rabbitmq:3-management
+docker-compose -d up rovers-postgres rovers-rabbitmq
 ```
 
-Then, you can execute rovers using docker:
+Export as environment variables the API keys([see section](#supported-providers)).Then, you can execute rovers:
 ```bash
-docker run --name rovers --link rabbitmq --link postgres \
-  -e CONFIG_GITHUB_TOKEN=[REPLACEWITHGHKEY] \
-  -e CONFIG_BING_KEY=[REPLACEWITHBINGKEY] \
-  srcd/rovers /bin/sh -c "rovers initdb; rovers repos --queue=rovers"
+docker-compose up --no-deps rovers
 ```
+
+If you need run just some of the availables supported-providers, you can use this command replacing the flag `--provider` with those providers you want to use:
+```bash
+docker-compose run --rm --no-deps --service-ports rovers /bin/sh -c "rovers initdb; rovers repos --provider=github --provider=bitbucket"
+```
+
 After that, rovers will generate a lot of 'mentions' (git repositories found on the internet), and sending them to the 'rovers' queue in Rabbit.
+
+To stop and remove all the containers running `docker-compose down`
 
 Finally, you can use [Borges](https://github.com/src-d/borges) to fetch the content of these repositories.
 
@@ -138,9 +133,8 @@ This service uses PostgreSQL and RabbitMQ.
 To execute test locally you need to run RabbitMQ and PostgreSQL.
 
 ```bash
-  docker run --hostname postgres --name postgres -e POSTGRES_PASSWORD=testing -p 5432:5432 -e POSTGRES_USER=testing -d postgres
-  docker run -d --hostname rabbit --name rabbit -p 8081:15672 -p 5672:5672 rabbitmq:3-management
-  go test ./...
+  docker-compose up -d rovers-postgres rovers-rabbitmq
+  make test
 ```
 
 # Running Rovers in Kubernetes
