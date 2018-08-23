@@ -1,0 +1,33 @@
+version: '3'
+
+services:
+
+  rovers:
+    image: srcd/rovers:latest
+    container_name: rovers
+    environment:
+      - CONFIG_GITHUB_TOKEN=${CONFIG_GITHUB_TOKEN:-unknown_api_key}
+      - CONFIG_BING_KEY=${CONFIG_BING_TOKEN:-unknown_api_key}
+      - CONFIG_BROKER_URL=amqp://guest:guest@rovers-rabbitmq:5672
+      - CONFIG_DBHOST=rovers-postgres
+    depends_on:
+      - rovers-postgres
+      - rovers-rabbitmq
+    command: /bin/sh -c "rovers initdb; rovers repos"
+
+  rovers-postgres:
+    image: postgres:10.5-alpine
+    container_name: rovers-postrgres
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_DB=testing
+      - POSTGRES_USER=testing
+      - POSTGRES_PASSWORD=testing
+
+  rovers-rabbitmq:
+    image: rabbitmq:3.7.7-management-alpine
+    container_name: rovers-rabbitmq
+    ports:
+    - "5672:5672"
+    - "15672:15672"
