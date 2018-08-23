@@ -20,7 +20,7 @@ type CmdRepoProviders struct {
 	CmdBase
 	CmdQueue
 
-	Providers   []string      `short:"p" long:"provider" optional:"yes" description:"list of providers to execute. (default: all)"`
+	Providers   []string      `short:"p" long:"provider" optional:"yes" description:"provider to execute, any of [github bitbucket cgit]. (If you don't set any provider, all supported provider will be used)"`
 	WatcherTime time.Duration `short:"t" long:"watcher-time" optional:"no" default:"1h" description:"Time to try again to get new repos"`
 }
 

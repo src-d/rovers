@@ -5,21 +5,14 @@ hosting providers.
 
 Type `help` fore commands info.
 
-## Quick start using docker images
+# Quick start using docker images
 
-### Generate needed API keys for the providers
-
-To be able to fetch github and cgit repositories, you should create several API keys:
-
-- Get Github token: https://github.com/settings/tokens
-- Get Bing token (Bing is the search engine used to fetch cgit repositories from internet): https://azure.microsoft.com/en-us/pricing/details/cognitive-services/search-api/web/
-
-### Download docker images
+## Download docker images
 
 Get the last version of rovers spark image:
 
 ```bash
-docker pull quay.io/srcd/rovers
+docker pull srcd/rovers
 ```
 
 Also, you will need Postgres and RabbitMQ
@@ -29,7 +22,7 @@ docker pull postgres:9.6-alpine
 docker pull rabbitmq:3-management
 ```
 
-### Start everything
+## Start everything
 
 Start Rabbit and Postgres
 
@@ -45,15 +38,27 @@ Then, you can execute rovers using docker:
 docker run --name rovers --link rabbitmq --link postgres \
   -e CONFIG_GITHUB_TOKEN=[REPLACEWITHGHKEY] \
   -e CONFIG_BING_KEY=[REPLACEWITHBINGKEY] \
-  quay.io/srcd/rovers /bin/sh -c "rovers initdb; rovers repos --queue=rovers"
+  srcd/rovers /bin/sh -c "rovers initdb; rovers repos --queue=rovers"
 ```
 After that, rovers will generate a lot of 'mentions' (git repositories found on the internet), and sending them to the 'rovers' queue in Rabbit.
 
 Finally, you can use [Borges](https://github.com/src-d/borges) to fetch the content of these repositories.
 
-## Supported Providers
+# Supported Providers
 
-### GitHub
+All the supported providers are used by default. In case you need run only some of them you must use the `--provider` flag:
+```bash
+rovers repos --provider=github --provider=bitbucket
+```
+
+## Generate needed API keys for the providers
+
+To be able to fetch github and cgit repositories, you should create several API keys:
+
+- Get Github token: https://github.com/settings/tokens
+- Get Bing token (Bing is the search engine used to fetch cgit repositories from internet): https://azure.microsoft.com/en-us/pricing/details/cognitive-services/search-api/web/
+
+## GitHub
 
 Uses the GitHub API to get new repositories. Requires a GitHub API token. You can set the token through the environment variable:
 
@@ -61,7 +66,7 @@ Uses the GitHub API to get new repositories. Requires a GitHub API token. You ca
 $ export CONFIG_GITHUB_TOKEN=github-token
 ```
 
-### Bitbucket
+## Bitbucket
 
 Uses the Bitbucket API to get new repositories as an anonymous user.
 
@@ -77,27 +82,60 @@ new repositories. Requires a Bing API key. You can set the key through the envir
 $ export CONFIG_BING_KEY=bing-api-key
 ```
 
-## Installation
+# Installation
 
 ```
 go get -u github.com/src-d/rovers/...
 ```
 
-## Usage
+# Usage
 
 Run `rovers --help` to get help about the supported commands and their options.
+
+
+To initialize the database schemas. You need to run this command only once.
+```
+rovers initdb
+```
+To start collecting repository URLs
+```
+rovers repos --provider=github
+```
+
+You can configure rovers by environment variables:
+
+Providers:
+- `CONFIG_GITHUB_TOKEN` to set the github api key.
+- `CONFIG_BING_KEY` to set the cgit api key.
+
+Broker:
+- `CONFIG_BROKER_URL` to set the broker url, by default `amqp://guest:guest@localhost:5672`
+
+Database:
+- `CONFIG_DBUSER`: database username,by default if not set `testing`
+- `CONFIG_DBPASS`: database user password,by default if not set `testing`
+- `CONFIG_DBHOST`: database host,by default if not set `0.0.0.0`
+- `CONFIG_DBPORT`: database port,by default if not set `5432`
+- `CONFIG_DBNAME`: database name,by default if not set `testing`
+- `CONFIG_DBSSLMODE`: ssl mode to use,by default if not set `disable`
+- `CONFIG_DBTIMEOUT`: connection timeout,by default if not set `30s`
+- `CONFIG_DBAPPNAME`: application name
+
+# Development
+
+## Build
+
+- `rm Makefile.main; rm -rf .ci` to make sure you will have the last Makefile changes.
+- `make dependencies` to download vendor dependencies.
+- `make packages` to generate binaries for several platforms.
+
+You will find the built binaries under `./build`.
 
 ## Test
 
 This service uses PostgreSQL and RabbitMQ.
 
-To execute test locally you need to run RabbitMQ and PostgreSQL too. To set broker's URL for RabbitMQ you can do it through the environment variable:
-
-```bash
-$ export CONFIG_BROKER_URL=url
-```
-
-By default this URL is set to `amqp://guest:guest@localhost:5672/`. To run tests:
+To execute test locally you need to run RabbitMQ and PostgreSQL.
 
 ```bash
   docker run --hostname postgres --name postgres -e POSTGRES_PASSWORD=testing -p 5432:5432 -e POSTGRES_USER=testing -d postgres
