@@ -23,25 +23,25 @@ Start Rabbit and Postgres
 docker-compose -d up rovers-postgres rovers-rabbitmq
 ```
 
-Export as environment variables the API keys([see section](#supported-providers)).Then, you can execute rovers:
+Export as environment variables the API keys ([see section](#supported-providers)). Then, you can execute rovers:
 ```bash
 docker-compose up --no-deps rovers
 ```
 
-If you need run just some of the availables supported-providers, you can use this command replacing the flag `--provider` with those providers you want to use:
+If you need to run just some of the available supported-providers, you can use this command replacing the flag `--provider` with those providers you want to use:
 ```bash
 docker-compose run --rm --no-deps --service-ports rovers /bin/sh -c "rovers initdb; rovers repos --provider=github --provider=bitbucket"
 ```
 
 After that, rovers will generate a lot of 'mentions' (git repositories found on the internet), and sending them to the 'rovers' queue in Rabbit.
 
-To stop and remove all the containers running `docker-compose down`
+To stop and remove all the containers running `docker-compose down`.
 
 Finally, you can use [Borges](https://github.com/src-d/borges) to fetch the content of these repositories.
 
 # Supported Providers
 
-All the supported providers are used by default. In case you need run only some of them you must use the `--provider` flag:
+All the supported providers are used by default. In case you need to run only some of them you must use the `--provider` flag:
 ```bash
 rovers repos --provider=github --provider=bitbucket
 ```
@@ -86,6 +86,8 @@ go get -u github.com/src-d/rovers/...
 # Usage
 
 Run `rovers --help` to get help about the supported commands and their options.
+The commands `initdb`, `replay` and `repos` also have their own `--help` switch
+for specific options related to them.
 
 
 To initialize the database schemas. You need to run this command only once.
@@ -97,7 +99,7 @@ To start collecting repository URLs
 rovers repos --provider=github
 ```
 
-You can configure rovers by environment variables:
+You can configure rovers using environment variables:
 
 Providers:
 - `CONFIG_GITHUB_TOKEN` to set the github api key.
@@ -107,13 +109,13 @@ Broker:
 - `CONFIG_BROKER_URL` to set the broker url, by default `amqp://guest:guest@localhost:5672`
 
 Database:
-- `CONFIG_DBUSER`: database username,by default if not set `testing`
-- `CONFIG_DBPASS`: database user password,by default if not set `testing`
-- `CONFIG_DBHOST`: database host,by default if not set `0.0.0.0`
-- `CONFIG_DBPORT`: database port,by default if not set `5432`
-- `CONFIG_DBNAME`: database name,by default if not set `testing`
-- `CONFIG_DBSSLMODE`: ssl mode to use,by default if not set `disable`
-- `CONFIG_DBTIMEOUT`: connection timeout,by default if not set `30s`
+- `CONFIG_DBUSER`: database username, by default if not set `testing`
+- `CONFIG_DBPASS`: database user password, by default if not set `testing`
+- `CONFIG_DBHOST`: database host, by default if not set `0.0.0.0`
+- `CONFIG_DBPORT`: database port, by default if not set `5432`
+- `CONFIG_DBNAME`: database name, by default if not set `testing`
+- `CONFIG_DBSSLMODE`: ssl mode to use, by default if not set `disable`
+- `CONFIG_DBTIMEOUT`: connection timeout, by default if not set `30s`
 - `CONFIG_DBAPPNAME`: application name
 
 # Development
@@ -130,7 +132,7 @@ You will find the built binaries under `./build`.
 
 This service uses PostgreSQL and RabbitMQ.
 
-To execute test locally you need to run RabbitMQ and PostgreSQL.
+To execute tests locally you need to run RabbitMQ and PostgreSQL.
 
 ```bash
   docker-compose up -d rovers-postgres rovers-rabbitmq
@@ -139,4 +141,4 @@ To execute test locally you need to run RabbitMQ and PostgreSQL.
 
 # Running Rovers in Kubernetes
 
-You can use the official [Helm](https://github.com/kubernetes/helm) [chart](https://github.com/src-d/charts/tree/master/rovers) to deploy Rovers in your kubernetes cluster.
+You can use the official [Helm](https://github.com/kubernetes/helm) [chart](https://github.com/src-d/charts/tree/master/rovers) to deploy Rovers in your Kubernetes cluster.
