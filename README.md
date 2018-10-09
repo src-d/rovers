@@ -56,7 +56,7 @@ To be able to fetch github and cgit repositories, you should create several API 
 
 ## GitHub
 
-Uses the GitHub API to get new repositories. Requires a GitHub API token. You can set the token through the environment variable:
+Uses the GitHub API to get new repositories. Requires a GitHub API token, which will only need repository read access. You can set the token through the environment variable:
 
 ```bash
 $ export CONFIG_GITHUB_TOKEN=github-token
