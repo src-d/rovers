@@ -1,7 +1,8 @@
 # rovers [![Build Status](https://travis-ci.org/src-d/rovers.svg?branch=master)](https://travis-ci.org/src-d/rovers) [![codecov.io](https://codecov.io/github/src-d/rovers/coverage.svg?branch=master&token=ObiptJsBpW)](https://codecov.io/github/src-d/rovers?branch=master)
 
 **rovers** is a service to retrieve repository URLs from multiple repository
-hosting providers.
+hosting providers and store the URLs and metadata to a PostgreSQL database while
+issuing messages to a RabbitMQ queue so you can connect other processes to it.
 
 # Quick start using docker images
 
