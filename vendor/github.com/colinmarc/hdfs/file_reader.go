@@ -12,6 +12,8 @@ import (
 	"github.com/golang/protobuf/proto"
 )
 
+const maxReadDir = 1024
+
 // A FileReader represents an existing file or directory in HDFS. It implements
 // io.Reader, io.ReaderAt, io.Seeker, and io.Closer, and can only be used for
 // reads. For writes, see FileWriter and Client.Create.
@@ -153,6 +155,10 @@ func (f *FileReader) Read(b []byte) (int, error) {
 		return 0, io.EOF
 	}
 
+	if len(b) == 0 {
+		return 0, nil
+	}
+
 	if f.blocks == nil {
 		err := f.getBlocks()
 		if err != nil {
@@ -190,12 +196,24 @@ func (f *FileReader) ReadAt(b []byte, off int64) (int, error) {
 		return 0, io.ErrClosedPipe
 	}
 
+	if off < 0 {
+		return 0, &os.PathError{"readat", f.name, errors.New("negative offset")}
+	}
+
 	_, err := f.Seek(off, 0)
 	if err != nil {
 		return 0, err
 	}
 
-	return io.ReadFull(f, b)
+	n, err := io.ReadFull(f, b)
+
+	// For some reason, os.File.ReadAt returns io.EOF in this case instead of
+	// io.ErrUnexpectedEOF.
+	if err == io.ErrUnexpectedEOF {
+		err = io.EOF
+	}
+
+	return n, err
 }
 
 // Readdir reads the contents of the directory associated with file and returns
@@ -229,17 +247,31 @@ func (f *FileReader) Readdir(n int) ([]os.FileInfo, error) {
 		f.readdirLast = ""
 	}
 
-	res, err := f.client.getDirList(f.name, f.readdirLast, n)
-	if err != nil {
-		return res, err
+	res := make([]os.FileInfo, 0)
+	for {
+		k := n - len(res)
+		if n <= 0 || k > maxReadDir {
+			k = maxReadDir
+		}
+
+		batch, err := f.client.getDirList(f.name, f.readdirLast, k)
+		if err != nil {
+			return nil, err
+		}
+
+		if len(batch) > 0 {
+			f.readdirLast = batch[len(batch)-1].Name()
+		}
+
+		res = append(res, batch...)
+		if len(batch) < k || (n > 0 && len(res) == n) {
+			break
+		}
 	}
 
-	if n > 0 {
-		if len(res) == 0 {
-			err = io.EOF
-		} else {
-			f.readdirLast = res[len(res)-1].Name()
-		}
+	var err error
+	if len(res) == 0 {
+		err = io.EOF
 	}
 
 	return res, err

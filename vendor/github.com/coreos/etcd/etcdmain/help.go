@@ -154,10 +154,14 @@ security flags:
 		enable peer client cert authentication.
 	--peer-trusted-ca-file ''
 		path to the peer server TLS trusted CA file.
+	--peer-cert-allowed-cn ''
+		Required CN for client certs connecting to the peer endpoint.
 	--peer-auto-tls 'false'
 		peer TLS using self-generated certificates if --peer-key-file and --peer-cert-file are not provided.
 	--peer-crl-file ''
 		path to the peer certificate revocation list file.
+	--cipher-suites ''
+		comma-separated list of supported TLS cipher suites between client/server and peers (empty will be auto-populated by Go).
 
 logging flags
 

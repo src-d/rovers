@@ -20,14 +20,13 @@ const transactionerLocalDir = "transactioner"
 
 type containerConfig struct {
 	configurable.BasicConfiguration
-	TempDir                 string `default:"/tmp/sourced" split_words:"true"`
-	CleanTempDir            bool   `default:"false" split_words:"true"`
-	Broker                  string `default:"amqp://localhost:5672"`
-	RootRepositoriesDir     string `default:"/tmp/root-repositories" split_words:"true"`
-	RootRepositoriesTempDir string `default:"/tmp/root-repositories-dot-copy" split_words:"true"`
-	Locking                 string `default:"local:"`
-	HDFS                    string `default:""`
-	BucketSize              int    `default:0`
+	TempDir             string `default:"/tmp/sourced" split_words:"true"`
+	CleanTempDir        bool   `default:"false" split_words:"true"`
+	Broker              string `default:"amqp://localhost:5672"`
+	RootRepositoriesDir string `default:"/tmp/root-repositories" split_words:"true"`
+	Locking             string `default:"local:"`
+	HDFS                string `default:""`
+	BucketSize          int    `default:0`
 }
 
 var config = &containerConfig{}
@@ -147,7 +146,6 @@ func RootedTransactioner() repository.RootedTransactioner {
 			remote = repository.NewHDFSFs(
 				config.HDFS,
 				config.RootRepositoriesDir,
-				config.RootRepositoriesTempDir,
 			)
 		}
 

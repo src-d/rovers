@@ -28,27 +28,11 @@
         <value>nn1,nn2</value>
     </property>
     <property>
-        <name>dfs.ha.namenodes.tests</name>
-        <value>nn1,nn2</value>
-    </property>
-    <property>
         <name>dfs.namenode.rpc-address.tests.nn1</name>
-        <value>hadoop-namenode-01:8020</value>
+        <value>namenode1:8020</value>
     </property>
     <property>
         <name>dfs.namenode.rpc-address.tests.nn2</name>
-        <value>hadoop-namenode-02:8020</value>
-    </property>
-    <property>
-        <name>dfs.namenode.rpc-address.tests.nn3</name>
-        <value>testnode:9000</value>
-    </property>
-    <property>
-        <name>dfs.namenode.http-address.tests.nn1</name>
-        <value>hadoop-namenode-01:50070</value>
-    </property>
-    <property>
-        <name>dfs.namenode.http-address.tests.nn2</name>
-        <value>hadoop-namenode-02:50070</value>
+        <value>namenode2:8020</value>
     </property>
 </configuration>

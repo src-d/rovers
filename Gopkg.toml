@@ -29,11 +29,11 @@
   source = "https://github.com/jarcoal/httpmock.git"
 
 [[constraint]]
-  name = "gopkg.in/src-d/framework.v0"
-  revision = "bed6b25004fcbc1b034608f01d478aca4135b865"
-  source = "https://github.com/src-d/framework.git"
-
-[[constraint]]
   name = "gopkg.in/src-d/go-kallax.v1"
   branch = "master"
   source = "https://github.com/src-d/go-kallax.git"
+
+[[override]]
+  name = "github.com/satori/go.uuid"
+  revision = "36e9d2ebbde5e3f13ab2e25625fd453271d6522e"
+  source = "https://github.com/satori/go.uuid.git"

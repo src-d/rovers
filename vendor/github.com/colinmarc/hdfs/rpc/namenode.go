@@ -151,10 +151,6 @@ func (c *NamenodeConnection) resolveConnection() error {
 	}
 
 	for _, host := range c.hostList {
-		if c.host == host {
-			continue
-		}
-
 		if host.lastErrorAt.After(time.Now().Add(-backoffDuration)) {
 			continue
 		}
@@ -221,14 +217,13 @@ func (c *NamenodeConnection) Execute(method string, req proto.Message, resp prot
 
 		err = c.readResponse(method, resp)
 		if err != nil {
-			if nerr, ok := err.(*NamenodeError); ok {
-				// if it's not a standby exception, we won't retry
-				if nerr.Exception != standbyExceptionClass {
-					return err
-				}
+			// Only retry on a standby exception.
+			if nerr, ok := err.(*NamenodeError); ok && nerr.Exception == standbyExceptionClass {
+				c.markFailure(err)
+				continue
 			}
-			c.markFailure(err)
-			continue
+
+			return err
 		}
 
 		break

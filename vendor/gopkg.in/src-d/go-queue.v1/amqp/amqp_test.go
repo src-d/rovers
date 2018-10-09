@@ -1,7 +1,10 @@
 package queue
 
 import (
+	"context"
 	"fmt"
+	"os"
+	"os/exec"
 	"testing"
 	"time"
 
@@ -12,6 +15,22 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )
+
+// RabbitMQ reconnect tests require running docker.
+// If `docker ps` command returned an error we skip some of the tests.
+var (
+	dockerIsRunning bool
+	dockerCmdOutput string
+	inAppVeyor      bool
+)
+
+func init() {
+	cmd := exec.Command("docker", "ps")
+	b, err := cmd.CombinedOutput()
+
+	dockerCmdOutput, dockerIsRunning = string(b), (err == nil)
+	inAppVeyor = os.Getenv("APPVEYOR") == "True"
+}
 
 func TestAMQPSuite(t *testing.T) {
 	suite.Run(t, new(AMQPSuite))
@@ -207,4 +226,82 @@ func TestAMQPRepublishBuried(t *testing.T) {
 	job, err := jobIter.Next()
 	require.NoError(t, err)
 	require.Equal(t, string(job.Raw), "republish")
+}
+
+func TestReconnect(t *testing.T) {
+	if inAppVeyor || !dockerIsRunning {
+		t.Skip()
+	}
+
+	broker, err := queue.NewBroker(testAMQPURI)
+	require.NoError(t, err)
+	defer func() { broker.Close() }()
+
+	queueName := test.NewName()
+	q, err := broker.Queue(queueName)
+	require.NoError(t, err)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	go rabbitHiccup(ctx, 5*time.Second)
+
+	tests := []struct {
+		name    string
+		payload string
+	}{
+		{name: "message 1", payload: "payload 1"},
+		{name: "message 2", payload: "payload 2"},
+		{name: "message 3", payload: "payload 3"},
+		{name: "message 3", payload: "payload 4"},
+	}
+
+	for _, test := range tests {
+		job, err := queue.NewJob()
+		require.NoError(t, err)
+
+		job.Raw = []byte(test.payload)
+
+		err = q.Publish(job)
+		require.NoError(t, err)
+		time.Sleep(100 * time.Millisecond)
+	}
+
+	n := len(tests)
+	jobIter, err := q.Consume(1)
+	require.NoError(t, err)
+	defer func() { jobIter.Close() }()
+
+	for i := 0; i < n; i++ {
+		if job, err := jobIter.Next(); err != nil {
+			t.Log(err)
+
+			job, err = queue.NewJob()
+			require.NoError(t, err)
+			job.Raw = []byte("check connection - retry till we connect")
+			err = q.Publish(job)
+			require.NoError(t, err)
+			break
+		} else {
+			t.Log(string(job.Raw))
+		}
+	}
+}
+
+// rabbitHiccup restarts rabbitmq every interval
+// it requires the RabbitMQ running in docker container:
+// docker run --name rabbitmq -d -p 127.0.0.1:5672:5672 rabbitmq:3-management
+func rabbitHiccup(ctx context.Context, interval time.Duration) error {
+	cmd := exec.Command("docker", "restart", "rabbitmq")
+	err := cmd.Start()
+	for err == nil {
+		select {
+		case <-ctx.Done():
+			err = ctx.Err()
+
+		case <-time.After(interval):
+			err = cmd.Start()
+		}
+	}
+
+	return err
 }
