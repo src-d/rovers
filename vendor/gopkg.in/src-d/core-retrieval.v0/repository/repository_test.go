@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/colinmarc/hdfs"
@@ -87,11 +88,11 @@ func (s *FilesystemSuite) Test() {
 		},
 		{
 			"os to HDFS",
-			NewCopier(s.newFilesystem(), NewHDFSFs(hdfsURL, s.newTempPath(), s.newTempPath()), 0),
+			NewCopier(s.newFilesystem(), NewHDFSFs(hdfsURL, s.newTempPath()), 0),
 		},
 		{
 			"mem to HDFS",
-			NewCopier(memfs.New(), NewHDFSFs(hdfsURL, s.newTempPath(), s.newTempPath()), 0),
+			NewCopier(memfs.New(), NewHDFSFs(hdfsURL, s.newTempPath()), 0),
 		},
 
 		{
@@ -112,11 +113,11 @@ func (s *FilesystemSuite) Test() {
 		},
 		{
 			"os to HDFS with bucketing",
-			NewCopier(s.newFilesystem(), NewHDFSFs(hdfsURL, s.newTempPath(), s.newTempPath()), 2),
+			NewCopier(s.newFilesystem(), NewHDFSFs(hdfsURL, s.newTempPath()), 2),
 		},
 		{
 			"mem to HDFS with bucketing",
-			NewCopier(memfs.New(), NewHDFSFs(hdfsURL, s.newTempPath(), s.newTempPath()), 2),
+			NewCopier(memfs.New(), NewHDFSFs(hdfsURL, s.newTempPath()), 2),
 		},
 	}
 
@@ -293,4 +294,108 @@ func testRootedTransactioner(t *testing.T, s RootedTransactioner) {
 type fsPair struct {
 	Name   string
 	Copier *Copier
+}
+
+func (s *FilesystemSuite) TestRepositoryTmpDeletion() {
+	require := require.New(s.T())
+
+	sivaFiles := s.newFilesystem()
+	require.NotNil(sivaFiles)
+
+	sivaFiles = &BrokenFS{
+		Filesystem: sivaFiles,
+	}
+
+	tmpFiles := s.newFilesystem()
+	require.NotNil(tmpFiles)
+
+	tmpFiles = &BrokenFS{
+		Filesystem: tmpFiles,
+	}
+
+	copier := NewCopier(tmpFiles, NewLocalFs(sivaFiles), 0)
+	require.NotNil(copier)
+
+	repo := NewSivaRootedTransactioner(copier)
+	require.NotNil(repo)
+
+	permissionsHex := "0000000000000000000000000000000000000001"
+	brokenHex := "0000000000000000000000000000000000000002"
+
+	require.NoError(createSiva(sivaFiles, permissionsHex, 0))
+	testTmpDeletion(require, tmpFiles, repo, permissionsHex)
+
+	require.NoError(createSiva(sivaFiles, brokenHex, 0444))
+	testTmpDeletion(require, tmpFiles, repo, brokenHex)
+}
+
+func testTmpDeletion(
+	require *require.Assertions,
+	tmpFiles billy.Filesystem,
+	repo RootedTransactioner,
+	hash string,
+) {
+	tx, err := repo.Begin(context.TODO(), plumbing.NewHash(hash))
+	require.Error(err)
+	require.Nil(tx)
+
+	files, err := tmpFiles.ReadDir("/")
+	require.NoError(err)
+	require.Len(files, 0)
+}
+
+func createSiva(tmpFS billy.Filesystem, name string, mode os.FileMode) error {
+	fileName := fmt.Sprintf("%s.siva", name)
+	file, err := tmpFS.Create(fileName)
+	if err != nil {
+		return err
+	}
+
+	_, err = file.Write([]byte("invalid siva contents"))
+	file.Close()
+
+	if err != nil {
+		return err
+	}
+
+	// tmp dir does not have Change interface
+	fullPath := filepath.Join(tmpFS.Root(), fileName)
+	return os.Chmod(fullPath, mode)
+}
+
+func NewBrokenFS(fs billy.Filesystem) billy.Filesystem {
+	return &BrokenFS{
+		Filesystem: fs,
+	}
+}
+
+type BrokenFS struct {
+	billy.Filesystem
+}
+
+func (fs *BrokenFS) OpenFile(
+	name string,
+	flag int,
+	perm os.FileMode,
+) (billy.File, error) {
+	file, err := fs.Filesystem.OpenFile(name, flag, perm)
+	if err != nil {
+		return nil, err
+	}
+
+	return &BrokenFile{
+		File: file,
+	}, nil
+}
+
+type BrokenFile struct {
+	billy.File
+}
+
+func (fs *BrokenFile) Read(p []byte) (int, error) {
+	return 0, fmt.Errorf("could not read from broken file")
+}
+
+func (fs *BrokenFile) Write(p []byte) (int, error) {
+	return 0, fmt.Errorf("could not write to broken file")
 }
