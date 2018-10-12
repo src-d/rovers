@@ -1,4 +1,6 @@
-# rovers [![Build Status](https://travis-ci.org/src-d/rovers.svg?branch=master)](https://travis-ci.org/src-d/rovers) [![codecov.io](https://codecov.io/github/src-d/rovers/coverage.svg?branch=master&token=ObiptJsBpW)](https://codecov.io/github/src-d/rovers?branch=master)
+# rovers
+[![Build Status](https://travis-ci.org/src-d/rovers.svg?branch=master)](https://travis-ci.org/src-d/rovers)
+[![codecov](https://codecov.io/gh/src-d/rovers/branch/master/graph/badge.svg)](https://codecov.io/gh/src-d/rovers)
 
 **rovers** is a service to retrieve repository URLs from multiple repository
 hosting providers.
