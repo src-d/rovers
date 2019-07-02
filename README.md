@@ -144,4 +144,4 @@ To execute tests locally you need to run RabbitMQ and PostgreSQL.
 
 # Running Rovers in Kubernetes
 
-You can use the official [Helm](https://github.com/kubernetes/helm) [chart](https://github.com/src-d/charts/tree/master/rovers) to deploy Rovers in your Kubernetes cluster.
+You can use the official [Helm](https://github.com/kubernetes/helm) [chart](https://github.com/src-d/charts/tree/master/stable/rovers) to deploy Rovers in your Kubernetes cluster.
